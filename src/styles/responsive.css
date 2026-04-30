@@ -1,0 +1,22 @@
+@media (max-width: 900px) {
+  .app-page {
+    padding: 18px;
+  }
+
+  .card {
+    padding: 20px;
+    border-radius: 24px;
+  }
+}
+
+@media (max-width: 520px) {
+  .app-page {
+    padding: 12px;
+  }
+
+  .primary-button,
+  .secondary-button,
+  .danger-button {
+    width: 100%;
+  }
+}

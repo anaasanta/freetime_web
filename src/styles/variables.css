@@ -1,0 +1,53 @@
+:root {
+  --background: #fbfdff;
+  --foreground: #1e293b;
+
+  --card: rgba(255, 255, 255, 0.42);
+  --card-solid: rgba(255, 255, 255, 0.64);
+  --card-foreground: #1e293b;
+
+  --muted: rgba(255, 255, 255, 0.52);
+  --muted-foreground: #64748b;
+
+  --border: rgba(148, 163, 184, 0.22);
+
+  --primary: #1e293b;
+  --primary-foreground: #ffffff;
+
+  --violet-soft: #f1edff;
+  --violet: #8b5cf6;
+
+  --sky-soft: #eef8ff;
+  --sky: #7dd3fc;
+
+  --emerald-soft: #eefdf7;
+  --emerald: #6ee7b7;
+
+  --indigo-soft: #eef2ff;
+  --indigo: #818cf8;
+
+  --cyan-soft: #ecfeff;
+  --cyan: #67e8f9;
+
+  --rose-soft: #f8f2ff;
+  --rose: #c4b5fd;
+
+  --amber-soft: #f6fbff;
+  --amber: #93c5fd;
+
+  --pink-soft: #f5f3ff;
+  --pink: #a78bfa;
+
+  --gradient-1: #dbeafe;
+  --gradient-2: #e0f2fe;
+  --gradient-3: #ecfeff;
+  --gradient-4: #f5f3ff;
+
+  --radius-card: 32px;
+  --radius-control: 18px;
+
+  --shadow-soft: 0 18px 45px rgba(90, 110, 140, 0.1);
+  --shadow-glow: 0 30px 80px rgba(125, 211, 252, 0.18);
+
+  --font-main: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
