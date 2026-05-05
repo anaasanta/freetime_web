@@ -3,6 +3,7 @@ import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
 
 import { allActivities } from './data/activities'
 import { mockUsers } from './data/mockUser'
+import { getRecommendations } from '@/data/recommender'
 
 import LoginView from './views/LoginView.vue'
 import HomeView from './views/HomeView.vue'
@@ -36,6 +37,8 @@ const savedActivities = computed(() => {
 const recommendedActivities = computed(() => {
   return allActivities.filter((activity) => !savedActivityIds.value.includes(activity.id)).slice(0, 4)
 })
+
+const testRecommendations = ref([])
 
 const selectedActivity = computed(() => {
   return allActivities.find((activity) => activity.id === selectedActivityId.value)
@@ -184,14 +187,15 @@ function startActivity(activityId) {
   goTo('profile')
 }
 
-function finishTest() {
-  selectedActivityId.value = 'reading'
+function finishTest(answers) {
+  testRecommendations.value = getRecommendations(answers)
+  selectedActivityId.value = testRecommendations.value[0]?.id || null
   selectedActivitySource.value = 'test'
   goTo('activity-result')
 }
 
 function rejectActivity() {
-  selectedActivityId.value = 'drawing'
+  selectedActivityId.value = testRecommendations.value[1]?.id || null
   selectedActivitySource.value = 'test-adjusted'
   replaceBrowserHistory('activity-result')
 }

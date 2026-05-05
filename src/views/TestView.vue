@@ -1,96 +1,156 @@
 <script setup>
-import { Dumbbell, Moon, Palette, X } from 'lucide-vue-next'
+import { ref, computed } from 'vue'
+import { Dumbbell, Moon, Palette, X, Frown, Annoyed, Laugh } from 'lucide-vue-next'
+import { testConfig } from '@/data/testConfig'
 
 const emit = defineEmits(['finish-test', 'close'])
+
+// Mapa de iconos por nombre (para poder usarlos dinámicamente desde el config)
+const iconMap = { Moon, Palette, Dumbbell, X, Frown, Annoyed, Laugh}
+
+// Estat iniial
+const energyValue   = ref(testConfig.energy.defaultValue)
+const selectedNeed  = ref(null)
+const timeValue     = ref(testConfig.time.defaultValue)
+
+// Posició barra energia (0–100%)
+const energyPercent = computed(() => {
+  const { min, max } = testConfig.energy
+  return ((energyValue.value - min) / (max - min)) * 100
+})
+
+// Posició barra temps (0–100%)
+const timePercent = computed(() => {
+  const { min, max } = testConfig.time
+  return ((timeValue.value - min) / (max - min)) * 100
+})
+
+const timeLabel = computed(() => testConfig.time.formatLabel(timeValue.value))
+
+function selectNeed(id) {
+  selectedNeed.value = selectedNeed.value === id ? null : id
+}
+
+function handleFinish() {
+  emit('finish-test', {
+    energy: energyValue.value,
+    need: selectedNeed.value,
+    time: timeValue.value,
+  })
+}
 </script>
 
 <template>
   <main class="app-page">
     <section class="page-container">
       <div class="test-top">
-        <span class="chip">FreeTime</span>
-
+        <span class="chip">{{ testConfig.chipLabel }}</span>
         <button class="close-button" type="button" @click="emit('close')">
           <X :size="20" />
         </button>
       </div>
 
       <div class="card test-card">
+
+        <!-- Intro -->
         <div class="intro">
-          <h1>Com et sents ara mateix?</h1>
-          <p>
-            Respon unes preguntes ràpides i et proposarem una activitat que encaixi amb el teu moment.
-          </p>
+          <h1>{{ testConfig.intro.title }}</h1>
+          <p>{{ testConfig.intro.description }}</p>
         </div>
 
+        <!-- Pregunta 1: Nivell d'energia -->
         <section class="question">
           <div class="question-heading">
-            <h2>Nivell d’energia</h2>
-            <span>Baixa → Alta</span>
+            <h2>{{ testConfig.energy.title }}</h2>
+            <span>{{ testConfig.energy.subtitle }}</span>
           </div>
 
           <div class="slider-card">
             <div class="emoji-row">
-              <span>🫠</span>
-              <span>😌</span>
-              <span>✨</span>
+              <component
+                v-for="icon in testConfig.energy.emojis"
+                :key="icon"
+                :is="iconMap[icon]"
+                :size="32"
+              />
             </div>
 
-            <div class="fake-slider">
-              <div class="fake-slider-thumb"></div>
+            <div class="slider-wrapper">
+              <input
+                v-model.number="energyValue"
+                type="range"
+                :min="testConfig.energy.min"
+                :max="testConfig.energy.max"
+                class="range-input"
+              />
+              <div
+                class="range-track"
+                :style="{ '--percent': energyPercent + '%' }"
+              ></div>
             </div>
 
             <div class="slider-labels">
-              <span>Molt poca energia</span>
-              <span>Molta energia</span>
+              <span>{{ testConfig.energy.labelMin }}</span>
+              <span>{{ testConfig.energy.labelMax }}</span>
             </div>
           </div>
         </section>
 
+        <!-- Pregunta 2: Què necessites avui? -->
         <section class="question">
-          <h2>Què necessites avui?</h2>
+          <h2>{{ testConfig.needs.title }}</h2>
 
           <div class="needs-grid">
-            <button class="need-option selected" type="button">
-              <Moon :size="32" />
-              <strong>Desconnectar</strong>
-              <span>Baixar revolucions</span>
-            </button>
-
-            <button class="need-option" type="button">
-              <Palette :size="32" />
-              <strong>Fer alguna cosa creativa</strong>
-              <span>Sense gaire esforç</span>
-            </button>
-
-            <button class="need-option" type="button">
-              <Dumbbell :size="32" />
-              <strong>Activar-me</strong>
-              <span>Moure una mica el cos</span>
+            <button
+              v-for="option in testConfig.needs.options"
+              :key="option.id"
+              class="need-option"
+              :class="{ selected: selectedNeed === option.id }"
+              type="button"
+              @click="selectNeed(option.id)"
+            >
+              <component :is="iconMap[option.icon]" :size="32" />
+              <strong>{{ option.label }}</strong>
+              <span>{{ option.description }}</span>
             </button>
           </div>
         </section>
 
+        <!-- Pregunta 3: Temps disponible -->
         <section class="question">
           <div class="question-heading">
-            <h2>Temps disponible</h2>
-            <span class="time-chip">45 min</span>
+            <h2>{{ testConfig.time.title }}</h2>
+            <span class="time-chip">{{ timeLabel }}</span>
           </div>
 
-          <div class="time-bar">
-            <div></div>
+          <div class="slider-wrapper">
+            <input
+              v-model.number="timeValue"
+              type="range"
+              :min="testConfig.time.min"
+              :max="testConfig.time.max"
+              step="5"
+              class="range-input"
+            />
+            <div
+              class="range-track"
+              :style="{ '--percent': timePercent + '%' }"
+            ></div>
           </div>
 
           <div class="slider-labels">
-            <span>10 min</span>
-            <span>1 h</span>
-            <span>2 h</span>
+            <span v-for="label in testConfig.time.labels" :key="label">{{ label }}</span>
           </div>
         </section>
 
-        <button class="primary-button finish-button" type="button" @click="emit('finish-test')">
-          Acabar test
+        <button
+          class="primary-button finish-button"
+          type="button"
+          @click="handleFinish"
+        >
+          {{ testConfig.finishButton }}
         </button>
+
       </div>
     </section>
   </main>
@@ -113,6 +173,7 @@ const emit = defineEmits(['finish-test', 'close'])
   border-radius: 999px;
   background: white;
   color: var(--foreground);
+  cursor: pointer;
 }
 
 .test-card {
@@ -171,24 +232,60 @@ const emit = defineEmits(['finish-test', 'close'])
   font-size: 2rem;
 }
 
-.fake-slider {
+/* ── Slider personalizado ── */
+.slider-wrapper {
   position: relative;
+  height: 30px;
+  display: flex;
+  align-items: center;
+}
+
+.range-track {
+  position: absolute;
+  left: 0;
+  right: 0;
   height: 12px;
   border-radius: 999px;
   background: linear-gradient(90deg, #cfd7ff, #c7efe2, #ffe3b8);
+  pointer-events: none;
 }
 
-.fake-slider-thumb {
-  position: absolute;
-  top: 50%;
-  left: 24%;
+.range-input {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 12px;
+  appearance: none;
+  -webkit-appearance: none;
+  background: transparent;
+  cursor: pointer;
+  margin: 0;
+}
+
+.range-input::-webkit-slider-thumb {
+  -webkit-appearance: none;
   width: 30px;
   height: 30px;
-  border: 5px solid var(--violet);
   border-radius: 50%;
   background: white;
-  transform: translateY(-50%);
+  border: 5px solid var(--violet);
   box-shadow: var(--shadow-soft);
+  cursor: pointer;
+  transition: transform 0.1s;
+}
+
+.range-input::-webkit-slider-thumb:hover {
+  transform: scale(1.1);
+}
+
+.range-input::-moz-range-thumb {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: white;
+  border: 5px solid var(--violet);
+  box-shadow: var(--shadow-soft);
+  cursor: pointer;
 }
 
 .slider-labels {
@@ -197,6 +294,10 @@ const emit = defineEmits(['finish-test', 'close'])
   margin-top: 12px;
   color: var(--muted-foreground);
   font-size: 0.9rem;
+}
+
+.emoji-row svg {
+  color: var(--violet);
 }
 
 .needs-grid {
@@ -215,6 +316,13 @@ const emit = defineEmits(['finish-test', 'close'])
   background: white;
   color: var(--foreground);
   text-align: left;
+  cursor: pointer;
+  transition: border-color 0.15s, background 0.15s, transform 0.1s;
+}
+
+.need-option:hover {
+  border-color: var(--violet);
+  transform: translateY(-2px);
 }
 
 .need-option svg {
@@ -235,19 +343,8 @@ const emit = defineEmits(['finish-test', 'close'])
   padding: 6px 12px;
   background: #fff7ed;
   color: #c2410c !important;
-}
-
-.time-bar {
-  height: 12px;
-  border-radius: 999px;
-  background: var(--muted);
-}
-
-.time-bar div {
-  width: 35%;
-  height: 100%;
-  border-radius: inherit;
-  background: linear-gradient(90deg, #a9c7ff, #9ee0ce);
+  font-weight: 700;
+  transition: all 0.2s;
 }
 
 .finish-button {
