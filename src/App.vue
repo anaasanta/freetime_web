@@ -12,6 +12,7 @@ import ActivityResultView from './views/ActivityResultView.vue'
 import ProfileView from './views/ProfileView.vue'
 import ScheduleDayView from './views/ScheduleDayView.vue'
 import ScheduleConfirmView from './views/ScheduleConfirmView.vue'
+import ExitSurveyModal from './components/ui/ExitSurveyModal.vue'
 
 const currentView = ref('login')
 const loginError = ref('')
@@ -26,6 +27,8 @@ const selectedActivityId = ref(null)
 const selectedActivitySource = ref('normal')
 
 const scheduleDraft = ref(null)
+
+const showExitSurvey = ref(false)
 
 const savedActivities = computed(() => {
   return savedActivityIds.value
@@ -200,6 +203,12 @@ function rejectActivity() {
   replaceBrowserHistory('activity-result')
 }
 
+function handleExitConfirm(reason) {
+  console.log('Motiu de sortida:', reason)
+  showExitSurvey.value = false
+  goTo('home')
+}
+
 function createScheduleDraft(activityId, date, time, reminder) {
   scheduleDraft.value = {
     activityId,
@@ -265,6 +274,7 @@ function confirmSchedule() {
     @remove="removeSavedActivity"
     @go-home="goTo('home')"
     @go-profile="goTo('profile')"
+    @feedback="showExitSurvey = true"
   />
 
   <ProfileView
@@ -295,4 +305,12 @@ function confirmSchedule() {
     :all-activities="allActivities"
     @confirm="confirmSchedule"
   />
+
+  <ExitSurveyModal
+    v-if="showExitSurvey"
+    @confirm="handleExitConfirm"
+    @cancel="showExitSurvey = false"
+  />
+  
+
 </template>

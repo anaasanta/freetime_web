@@ -11,6 +11,7 @@ import {
   Trash2,
   Plus,
 } from 'lucide-vue-next'
+import { activityResultConfig as c } from '@/data/activityResultConfig'
 
 const props = defineProps({
   activity: {
@@ -27,7 +28,7 @@ const props = defineProps({
   },
 })
 
-const emit = defineEmits(['reject', 'start', 'save', 'remove', 'go-home', 'go-profile'])
+const emit = defineEmits(['reject', 'start', 'save', 'remove', 'go-home', 'go-profile', 'feedback'])
 
 function iconFor(iconName) {
   if (iconName === 'book') return BookOpen
@@ -37,19 +38,15 @@ function iconFor(iconName) {
   if (iconName === 'palette') return Palette
   if (iconName === 'pencil') return Pencil
   if (iconName === 'heart') return Heart
-
   return Sparkles
 }
 
 function sourceLabel() {
-  if (props.source === 'test-adjusted') return 'Nova proposta'
-  if (props.source === 'test') return 'Primera proposta'
-  return 'Hobby'
+  return c.sourceLabels[props.source] ?? c.sourceLabels['normal']
 }
 
 function toggleSaved() {
   if (!props.activity) return
-
   if (props.isSaved) {
     emit('remove', props.activity.id)
   } else {
@@ -71,46 +68,40 @@ function toggleSaved() {
         </span>
 
         <h1>{{ activity.title }}</h1>
-
         <p>{{ activity.shortDescription }}</p>
       </section>
 
       <section class="detail-content">
         <div class="info-grid">
           <div>
-            <span>Temps</span>
+            <span>{{ c.infoGrid.duration }}</span>
             <strong>{{ activity.duration }}</strong>
           </div>
-
           <div>
-            <span>Dificultat</span>
+            <span>{{ c.infoGrid.difficulty }}</span>
             <strong>{{ activity.difficulty }}</strong>
           </div>
-
           <div>
-            <span>Materials</span>
+            <span>{{ c.infoGrid.materials }}</span>
             <strong>{{ activity.materials }}</strong>
           </div>
-
           <div>
-            <span>Preu</span>
+            <span>{{ c.infoGrid.price }}</span>
             <strong>{{ activity.price }}</strong>
           </div>
-
           <div>
-            <span>Energia</span>
+            <span>{{ c.infoGrid.energy }}</span>
             <strong>{{ activity.energy }}</strong>
           </div>
         </div>
 
         <section class="text-section">
-          <h2>Descripció</h2>
+          <h2>{{ c.sections.description }}</h2>
           <p>{{ activity.description }}</p>
         </section>
 
         <section class="text-section">
-          <h2>Com començar</h2>
-
+          <h2>{{ c.sections.howToStart }}</h2>
           <ol class="steps-list">
             <li v-for="step in activity.steps" :key="step">
               {{ step }}
@@ -119,13 +110,13 @@ function toggleSaved() {
         </section>
 
         <section class="benefit-box">
-          <strong>Benefici destacat</strong>
+          <strong>{{ c.sections.benefit }}</strong>
           <p>{{ activity.benefits }}</p>
         </section>
 
         <div class="actions">
           <button class="primary-button" type="button" @click="emit('start', activity.id)">
-            Començar activitat
+            {{ c.buttons.start }}
           </button>
 
           <button
@@ -136,8 +127,7 @@ function toggleSaved() {
           >
             <Trash2 v-if="isSaved" :size="18" />
             <Plus v-else :size="18" />
-
-            {{ isSaved ? 'Eliminar de la meva llista' : 'Afegir a la meva llista' }}
+            {{ isSaved ? c.buttons.removeFromList : c.buttons.addToList }}
           </button>
 
           <button
@@ -146,21 +136,20 @@ function toggleSaved() {
             type="button"
             @click="emit('reject')"
           >
-            No m’interessa
+            {{ c.buttons.reject }}
           </button>
 
-          <button class="secondary-button" type="button" @click="emit('go-home')">
-            Feedback
+          <button class="secondary-button" type="button" @click="emit('feedback')">
+            {{ c.buttons.backToHome }}
           </button>
         </div>
       </section>
     </div>
 
     <div v-else class="empty-detail">
-      <h1>No s’ha trobat aquesta activitat</h1>
-
+      <h1>{{ c.empty.title }}</h1>
       <button class="primary-button" type="button" @click="emit('go-home')">
-        Tornar a Home
+        {{ c.buttons.backToHome }}
       </button>
     </div>
   </main>
