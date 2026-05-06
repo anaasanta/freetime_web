@@ -209,6 +209,14 @@ function handleExitConfirm(reason) {
   goTo('home')
 }
 
+function onFeedback() {
+  if (selectedActivitySource.value === 'test' || selectedActivitySource.value === 'test-adjusted') {
+    showExitSurvey.value = true
+  } else {
+    goTo('home')
+  }
+}
+
 function createScheduleDraft(activityId, date, time, reminder) {
   scheduleDraft.value = {
     activityId,
@@ -274,7 +282,7 @@ function confirmSchedule() {
     @remove="removeSavedActivity"
     @go-home="goTo('home')"
     @go-profile="goTo('profile')"
-    @feedback="showExitSurvey = true"
+    @feedback="onFeedback"
   />
 
   <ProfileView
