@@ -30,7 +30,14 @@ import { activityCopy, homeCopy, landingCopy, themeCopy } from '@/data/uiText'
 import { logout, syncSelectedActivity, addSavedActivity, useAppSession } from '@/stores/appSession'
 
 const router = useRouter()
-const { currentUser, savedActivities, recommendedActivities, allActivities, plannedActivities } =
+const {
+  currentUser,
+  savedActivities,
+  startedActivities,
+  recommendedActivities,
+  allActivities,
+  plannedActivities,
+} =
   useAppSession()
 
 const searchText = ref('')
@@ -81,6 +88,14 @@ function iconFor(activity) {
 
 function isSavedActivity(activityId) {
   return savedActivities.value.some((activity) => activity.id === activityId)
+}
+
+function isStartedActivity(activityId) {
+  return startedActivities.value.some((activity) => activity.id === activityId)
+}
+
+function isNewSavedActivity(activityId) {
+  return isSavedActivity(activityId) && !isStartedActivity(activityId)
 }
 
 const avatarModules = import.meta.glob('../assets/avatars/*', {
@@ -324,6 +339,10 @@ function handleAddActivity(activityId) {
             :class="`tone-${activity.tone || 'violet'}`"
             @click="openActivity(activity.id)"
           >
+            <span v-if="isNewSavedActivity(activity.id)" class="new-activity-badge">
+              {{ homeCopy.newBadge }}
+            </span>
+
             <div class="activity-icon">
               <component :is="iconFor(activity)" :size="28" />
             </div>
@@ -387,6 +406,35 @@ function handleAddActivity(activityId) {
 
             <p>{{ activity.duration }} {{ activityCopy.durationUnit }}</p>
           </article>
+        </div>
+      </section>
+
+      <section class="home-section">
+        <div class="section-heading">
+          <h2>{{ homeCopy.startedActivitiesTitle }}</h2>
+        </div>
+
+        <div v-if="startedActivities.length > 0" class="activity-grid started-grid">
+          <article
+            v-for="activity in startedActivities"
+            :key="activity.id"
+            class="activity-card"
+            :class="`tone-${activity.tone || 'violet'}`"
+            @click="openActivity(activity.id)"
+          >
+            <div class="activity-icon">
+              <component :is="iconFor(activity)" :size="28" />
+            </div>
+
+            <div>
+              <h3>{{ activity.title }}</h3>
+              <p>{{ activity.shortDescription }}</p>
+            </div>
+          </article>
+        </div>
+
+        <div v-else class="empty-state">
+          {{ homeCopy.startedActivitiesEmpty }}
         </div>
       </section>
 
@@ -700,17 +748,41 @@ h1 {
 }
 
 .activity-card {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 14px;
   border: 1px solid var(--border);
   border-radius: 24px;
-  padding: 16px;
+  padding: 16px 68px 16px 16px;
   background: color-mix(in srgb, var(--surface-contrast) 88%, transparent);
   box-shadow: 0 8px 24px rgba(90, 110, 140, 0.06);
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease;
+}
+
+.started-grid {
+  grid-template-columns: repeat(3, minmax(260px, 1fr));
+}
+
+.new-activity-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  min-height: 24px;
+  border: 1px solid color-mix(in srgb, var(--violet) 36%, var(--border));
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: color-mix(in srgb, var(--violet-soft) 82%, var(--surface-contrast));
+  color: var(--violet-strong);
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .activity-card:hover,
@@ -840,6 +912,10 @@ h1 {
   }
 
   .saved-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .started-grid {
     grid-template-columns: 1fr;
   }
 

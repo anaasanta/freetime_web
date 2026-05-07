@@ -21,7 +21,7 @@ import {
 import AppBrand from '@/components/layout/AppBrand.vue'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import ThemeToggle from '@/components/theme/ThemeToggle.vue'
-import { landingCopy, themeCopy } from '@/data/uiText'
+import { homeCopy, landingCopy, profileCopy, themeCopy } from '@/data/uiText'
 import { logout, syncSelectedActivity, useAppSession } from '@/stores/appSession'
 
 const router = useRouter()
@@ -29,6 +29,7 @@ const router = useRouter()
 const {
   currentUser,
   savedActivities,
+  startedActivities,
   completedActivitiesDisplay,
   plannedActivities,
   allActivities,
@@ -55,27 +56,13 @@ function handleLogout() {
 
 const visibleDate = ref(new Date())
 const today = new Date()
-
-const monthNames = [
-  'Gener',
-  'Febrer',
-  'Març',
-  'Abril',
-  'Maig',
-  'Juny',
-  'Juliol',
-  'Agost',
-  'Setembre',
-  'Octubre',
-  'Novembre',
-  'Desembre',
-]
+const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate())
 
 const visibleYear = computed(() => visibleDate.value.getFullYear())
 const visibleMonth = computed(() => visibleDate.value.getMonth())
 
 const visibleMonthLabel = computed(() => {
-  return `${monthNames[visibleMonth.value]} ${visibleYear.value}`
+  return `${profileCopy.calendar.months[visibleMonth.value]} ${visibleYear.value}`
 })
 
 const avatarSrc = computed(() => {
@@ -87,7 +74,7 @@ const avatarSrc = computed(() => {
 })
 
 const profileTags = computed(() => {
-  return currentUser.value?.tags?.length ? currentUser.value.tags : ['Nou perfil']
+  return currentUser.value?.tags?.length ? currentUser.value.tags : [profileCopy.fallbackTag]
 })
 
 const savedDisplay = computed(() => {
@@ -98,6 +85,19 @@ const savedDisplay = computed(() => {
     })
     .filter(Boolean)
 })
+
+const startedDisplay = computed(() => {
+  return startedActivities.value
+    .map((item) => {
+      if (item?.title) return item
+      return allActivities.find((activity) => activity.id === item)
+    })
+    .filter(Boolean)
+})
+
+function isStartedActivity(activityId) {
+  return startedDisplay.value.some((activity) => activity.id === activityId)
+}
 
 const plannedDisplay = computed(() => {
   return plannedActivities.value
@@ -112,15 +112,24 @@ const plannedDisplay = computed(() => {
       return {
         id: item.id ?? `planned-${index}`,
         activityId: item.activityId ?? activity?.id ?? item.id,
-        title: item.title ?? activity?.title ?? 'Activitat programada',
+        title: item.title ?? activity?.title ?? profileCopy.planned.fallbackTitle,
         shortDescription:
-          item.shortDescription ?? activity?.shortDescription ?? 'Activitat guardada al calendari.',
+          item.shortDescription ?? activity?.shortDescription ?? profileCopy.planned.fallbackDescription,
         icon: item.icon ?? activity?.icon ?? 'sparkles',
         tone: item.tone ?? activity?.tone ?? 'violet',
         date: item.date,
-        time: item.time ?? '21:00',
-        reminder: item.reminder ?? '30 min abans',
+        time: item.time ?? profileCopy.planned.fallbackTime,
+        reminder: item.reminder ?? profileCopy.planned.fallbackReminder,
       }
+    })
+    .filter((item) => {
+      if (!item) return false
+
+      const parsed = parseDate(item.date)
+
+      if (!parsed) return true
+
+      return new Date(parsed.year, parsed.month, parsed.day) >= todayStart
     })
     .filter(Boolean)
 })
@@ -155,19 +164,14 @@ const completedDisplay = computed(() => {
 const energyStats = computed(() => {
   if (completedDisplay.value.length > 0) {
     return completedDisplay.value.slice(-5).map((item, index) => ({
-      label: `S${index + 1}`,
+      label: `${profileCopy.stats.labelPrefix}${index + 1}`,
       before: item.energyBefore,
       after: item.energyAfter,
       title: item.title,
     }))
   }
 
-  return [
-    { label: 'S1', before: 28, after: 56, title: 'Yoga i estiraments' },
-    { label: 'S2', before: 35, after: 52, title: 'Passeig curt' },
-    { label: 'S3', before: 22, after: 44, title: 'Playlist + respiració' },
-    { label: 'S4', before: 40, after: 70, title: 'Yoga i estiraments' },
-  ]
+  return profileCopy.stats.fallback
 })
 
 function iconFor(iconName) {
@@ -247,6 +251,7 @@ const calendarCells = computed(() => {
       planned,
       completed,
       isToday,
+      canSchedule: new Date(year, month, dayNumber) >= todayStart,
     }
   })
 
@@ -271,61 +276,76 @@ function tooltipForDay(day) {
   const messages = []
 
   if (day.isToday) {
-    messages.push('Avui')
+    messages.push(profileCopy.calendar.today)
   }
 
   day.completed.forEach((completed) => {
-    messages.push(`Fet: ${completed.title}`)
+    messages.push(`${profileCopy.calendar.completedPrefix}: ${completed.title}`)
   })
 
   day.planned.forEach((planned) => {
-    messages.push(`Programat: ${planned.title} · ${planned.time}`)
+    messages.push(`${profileCopy.calendar.plannedPrefix}: ${planned.title} ${profileCopy.separator} ${planned.time}`)
   })
 
-  return messages.join(' · ')
+  return messages.join(` ${profileCopy.separator} `)
+}
+
+function dateForDay(day) {
+  const month = String(visibleMonth.value + 1).padStart(2, '0')
+  const dayNumber = String(day.number).padStart(2, '0')
+
+  return `${visibleYear.value}-${month}-${dayNumber}`
+}
+
+function scheduleFromDay(day) {
+  router.push({
+    name: 'schedule-day',
+    query: { date: dateForDay(day) },
+  })
 }
 </script>
 
 <template>
-  <main class="profile-page">
-    <AppNavbar class="profile-toolbar">
-      <template #start>
-        <AppBrand :brand="landingCopy.nav.brand" :to="{ name: 'home' }" />
-      </template>
+  <main class="app-page profile-page">
+    <section class="page-container">
+      <AppNavbar class="profile-toolbar">
+        <template #start>
+          <AppBrand :brand="landingCopy.nav.brand" :to="{ name: 'home' }" />
+        </template>
 
-      <template #end>
-      <div class="toolbar-actions">
-        <ThemeToggle :labels="themeCopy.toggle" />
+        <template #end>
+          <div class="toolbar-actions">
+            <ThemeToggle :labels="themeCopy.toggle" />
 
-        <button
-          class="icon-button"
-          type="button"
-          title="Tornar a Home"
-          @click="router.push({ name: 'home' })"
-        >
-          <House :size="22" />
-        </button>
+            <button
+              class="icon-button"
+              type="button"
+              :title="profileCopy.nav.home"
+              @click="router.push({ name: 'home' })"
+            >
+              <House :size="22" />
+            </button>
 
-        <button
-          class="icon-button"
-          type="button"
-          title="Ajustos"
-          @click="router.push({ name: 'settings' })"
-        >
-          <Settings :size="20" />
-        </button>
+            <button
+              class="icon-button"
+              type="button"
+              :title="profileCopy.nav.settings"
+              @click="router.push({ name: 'settings' })"
+            >
+              <Settings :size="20" />
+            </button>
 
-        <button
-          class="icon-button"
-          type="button"
-          title="Sortir"
-          @click="handleLogout"
-        >
-          <LogOut :size="20" />
-        </button>
-      </div>
-      </template>
-    </AppNavbar>
+            <button
+              class="icon-button"
+              type="button"
+              :title="profileCopy.nav.logout"
+              @click="handleLogout"
+            >
+              <LogOut :size="20" />
+            </button>
+          </div>
+        </template>
+      </AppNavbar>
 
     <section class="profile-columns">
       <div class="left-column">
@@ -334,7 +354,7 @@ function tooltipForDay(day) {
             <img
               v-if="avatarSrc"
               :src="avatarSrc"
-              alt="Foto de perfil"
+              :alt="profileCopy.avatarAlt"
               class="profile-avatar-image"
             />
 
@@ -344,8 +364,8 @@ function tooltipForDay(day) {
           </div>
 
           <div class="profile-copy">
-            <h1>{{ user?.name || 'Usuària' }}</h1>
-            <p>{{ user?.handle || `@${user?.username || 'usuaria'}` }} · {{ user?.age || 24 }} anys</p>
+            <h1>{{ currentUser?.name }}</h1>
+            <p>{{ currentUser?.handle }} {{ profileCopy.separator }} {{ currentUser?.age }} {{ profileCopy.ageUnit }}</p>
 
             <div class="tag-list">
               <span v-for="tag in profileTags" :key="tag" class="chip">
@@ -357,11 +377,7 @@ function tooltipForDay(day) {
 
         <section class="glass-panel calendar-panel">
           <div class="panel-header">
-            <h2>Calendari del temps lliure</h2>
-
-            <button class="primary-button" type="button" @click="router.push({ name: 'schedule' })">
-            Programar
-            </button>
+            <h2>{{ profileCopy.calendar.title }}</h2>
           </div>
 
           <div class="calendar-controls">
@@ -379,13 +395,9 @@ function tooltipForDay(day) {
           </div>
 
           <div class="calendar-weekdays">
-            <span>Dl</span>
-            <span>Dt</span>
-            <span>Dc</span>
-            <span>Dj</span>
-            <span>Dv</span>
-            <span>Ds</span>
-            <span>Dg</span>
+            <span v-for="weekday in profileCopy.calendar.weekdays" :key="weekday">
+              {{ weekday }}
+            </span>
           </div>
 
           <div class="calendar-grid">
@@ -405,14 +417,26 @@ function tooltipForDay(day) {
                   mixed: day.planned.length > 0 && day.completed.length > 0,
                 }"
                 type="button"
-                :aria-label="tooltipForDay(day) || `Dia ${day.number}`"
+                :aria-label="tooltipForDay(day) || `${profileCopy.calendar.dayAria} ${day.number}`"
               >
                 {{ day.number }}
               </button>
 
-              <span v-if="tooltipForDay(day)" class="day-tooltip">
-                {{ tooltipForDay(day) }}
-              </span>
+              <div v-if="!day.empty && (tooltipForDay(day) || day.canSchedule)" class="day-tooltip">
+                <span v-if="tooltipForDay(day)" class="day-tooltip-text">
+                  {{ tooltipForDay(day) }}
+                </span>
+
+                <button
+                  v-if="day.canSchedule"
+                  class="day-add-button"
+                  type="button"
+                  :aria-label="`${profileCopy.calendar.addActivityAria} ${day.number}`"
+                  @click.stop="scheduleFromDay(day)"
+                >
+                  {{ profileCopy.calendar.addActivity }}
+                </button>
+              </div>
             </div>
           </div>
         </section>
@@ -422,8 +446,8 @@ function tooltipForDay(day) {
         <section class="glass-panel right-panel">
           <div class="panel-block">
             <div class="panel-header">
-              <h2>Activitats programades</h2>
-              <span class="section-counter">{{ plannedDisplay.length }} activitats</span>
+              <h2>{{ profileCopy.plannedActivitiesTitle }}</h2>
+              <span class="section-counter">{{ plannedDisplay.length }} {{ profileCopy.counters.activities }}</span>
             </div>
 
             <div v-if="plannedDisplay.length > 0" class="activity-list">
@@ -440,26 +464,26 @@ function tooltipForDay(day) {
 
                 <div class="activity-copy">
                   <h3>{{ activity.title }}</h3>
-                  <p>{{ activity.date }} · {{ activity.time }}</p>
+                  <p>{{ activity.date }} {{ profileCopy.separator }} {{ activity.time }}</p>
                   <small>{{ activity.reminder }}</small>
                 </div>
               </article>
             </div>
 
             <div v-else class="empty-box">
-              Encara no tens activitats programades.
+              {{ profileCopy.empty.planned }}
             </div>
           </div>
 
           <div class="panel-block saved-block">
             <div class="panel-header">
-              <h2>Les meves activitats</h2>
-              <span class="section-counter">{{ savedDisplay.length }} guardades</span>
+              <h2>{{ profileCopy.startedActivitiesTitle }}</h2>
+              <span class="section-counter">{{ startedDisplay.length }} {{ profileCopy.counters.started }}</span>
             </div>
 
-            <div v-if="savedDisplay.length > 0" class="scroll-area">
+            <div v-if="startedDisplay.length > 0" class="activity-list">
               <article
-                v-for="activity in savedDisplay"
+                v-for="activity in startedDisplay"
                 :key="activity.id"
                 class="activity-row compact"
                 :class="`tone-${activity.tone || 'violet'}`"
@@ -477,7 +501,41 @@ function tooltipForDay(day) {
             </div>
 
             <div v-else class="empty-box">
-              Encara no tens activitats guardades.
+              {{ profileCopy.empty.started }}
+            </div>
+          </div>
+
+          <div class="panel-block saved-block">
+            <div class="panel-header">
+              <h2>{{ profileCopy.savedActivitiesTitle }}</h2>
+              <span class="section-counter">{{ savedDisplay.length }} {{ profileCopy.counters.saved }}</span>
+            </div>
+
+            <div v-if="savedDisplay.length > 0" class="scroll-area">
+              <article
+                v-for="activity in savedDisplay"
+                :key="activity.id"
+                class="activity-row compact"
+                :class="`tone-${activity.tone || 'violet'}`"
+                @click="openActivity(activity.id)"
+              >
+                <span v-if="!isStartedActivity(activity.id)" class="new-activity-badge">
+                  {{ homeCopy.newBadge }}
+                </span>
+
+                <div class="activity-icon">
+                  <component :is="iconFor(activity.icon)" :size="28" />
+                </div>
+
+                <div class="activity-copy">
+                  <h3>{{ activity.title }}</h3>
+                  <p>{{ activity.shortDescription }}</p>
+                </div>
+              </article>
+            </div>
+
+            <div v-else class="empty-box">
+              {{ profileCopy.empty.saved }}
             </div>
           </div>
         </section>
@@ -486,8 +544,8 @@ function tooltipForDay(day) {
 
     <section class="glass-panel stats-panel">
       <div class="panel-header">
-        <h2>Seguiment d’energia</h2>
-        <span class="section-counter">Últimes activitats</span>
+        <h2>{{ profileCopy.statsTitle }}</h2>
+        <span class="section-counter">{{ profileCopy.counters.latestActivities }}</span>
       </div>
 
       <div class="stats-chart">
@@ -510,11 +568,11 @@ function tooltipForDay(day) {
       <div class="insight-box">
         <CalendarDays :size="18" />
         <p>
-          <strong>Insight:</strong>
-          Les activitats registrades mostren la diferència entre l’energia abans i després
-          de fer cada activitat.
+          <strong>{{ profileCopy.stats.insightLabel }}:</strong>
+          {{ profileCopy.stats.insightText }}
         </p>
       </div>
+    </section>
     </section>
   </main>
 </template>
@@ -523,20 +581,23 @@ function tooltipForDay(day) {
 .profile-page {
   width: 100%;
   min-height: 100vh;
-  padding: 24px 28px 36px;
   display: flex;
   flex-direction: column;
   gap: 24px;
 }
 
 .profile-toolbar {
-  margin-bottom: 4px;
+  margin-bottom: 44px;
+}
+
+.profile-toolbar :deep(.theme-toggle) {
+  border-color: var(--surface-stroke-strong);
 }
 
 .toolbar-actions {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 10px;
 }
 
 .icon-button {
@@ -545,10 +606,9 @@ function tooltipForDay(day) {
   width: 50px;
   height: 50px;
   border: 1px solid var(--surface-stroke-strong);
-  border-radius: 18px;
-  background: color-mix(in srgb, var(--surface-contrast) 56%, transparent);
-  backdrop-filter: blur(14px);
-  box-shadow: 0 10px 26px rgba(90, 110, 140, 0.08);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-contrast) 92%, transparent);
+  box-shadow: var(--shadow-soft);
   color: var(--foreground);
   transition:
     transform 0.18s ease,
@@ -558,8 +618,8 @@ function tooltipForDay(day) {
 
 .icon-button:hover {
   transform: translateY(-1px);
-  background: color-mix(in srgb, var(--surface-contrast) 72%, transparent);
-  box-shadow: 0 14px 32px rgba(90, 110, 140, 0.14);
+  background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
+  box-shadow: var(--shadow-panel);
 }
 
 .profile-columns {
@@ -594,10 +654,10 @@ function tooltipForDay(day) {
 }
 
 .avatar-shell {
-  width: 108px;
-  height: 108px;
+  width: 122px;
+  height: 122px;
   flex: 0 0 auto;
-  border-radius: 30px;
+  border-radius: 60px;
   overflow: hidden;
   background: color-mix(in srgb, var(--surface-contrast) 62%, transparent);
   box-shadow: 0 12px 28px rgba(90, 110, 140, 0.08);
@@ -788,6 +848,9 @@ function tooltipForDay(day) {
   left: 50%;
   bottom: calc(100% + 10px);
   z-index: 60;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
   width: max-content;
   max-width: 260px;
   padding: 10px 12px;
@@ -804,7 +867,7 @@ function tooltipForDay(day) {
   transform: translateX(-50%) translateY(6px);
   opacity: 0;
   visibility: hidden;
-  pointer-events: none;
+  pointer-events: auto;
   transition:
     opacity 0.18s ease,
     transform 0.18s ease,
@@ -828,11 +891,36 @@ function tooltipForDay(day) {
   transform: translateX(-50%) translateY(0);
 }
 
+.day-tooltip-text {
+  display: block;
+}
+
+.day-add-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 34px;
+  border: 1px solid rgba(167, 139, 250, 0.5);
+  border-radius: 999px;
+  padding: 7px 12px;
+  background: color-mix(in srgb, var(--violet-soft) 58%, var(--surface-contrast));
+  color: var(--violet-strong);
+  font-size: 0.8rem;
+  font-weight: 900;
+  white-space: nowrap;
+  box-shadow: 0 8px 18px rgba(124, 58, 237, 0.08);
+}
+
+.day-add-button:hover {
+  transform: translateY(-1px);
+  border-color: rgba(124, 58, 237, 0.5);
+}
+
 .right-panel {
   flex: 1;
   min-height: 0;
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-rows: auto auto minmax(0, 1fr);
   gap: 22px;
   padding: 24px;
 }
@@ -843,7 +931,7 @@ function tooltipForDay(day) {
 }
 
 .saved-block {
-  flex: 1;
+  height: 100%;
   min-height: 0;
 }
 
@@ -856,7 +944,7 @@ function tooltipForDay(day) {
 .scroll-area {
   flex: 1;
   min-height: 0;
-  max-height: 420px;
+  height: 100%;
   overflow-y: auto;
   padding-right: 6px;
   display: flex;
@@ -865,17 +953,37 @@ function tooltipForDay(day) {
 }
 
 .activity-row {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 14px;
   border: 1px solid var(--surface-stroke-strong);
   border-radius: 24px;
-  padding: 16px;
+  padding: 16px 68px 16px 16px;
   background: color-mix(in srgb, var(--surface-contrast) 46%, transparent);
   cursor: pointer;
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease;
+}
+
+.new-activity-badge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  min-height: 24px;
+  border: 1px solid color-mix(in srgb, var(--violet) 36%, var(--border));
+  border-radius: 999px;
+  padding: 4px 8px;
+  background: color-mix(in srgb, var(--violet-soft) 82%, var(--surface-contrast));
+  color: var(--violet-strong);
+  font-size: 0.72rem;
+  font-weight: 900;
+  line-height: 1;
 }
 
 .activity-row:hover {
@@ -928,6 +1036,7 @@ function tooltipForDay(day) {
 }
 
 .stats-panel {
+  margin-top: 32px;
   padding: 24px;
 }
 

@@ -12,6 +12,7 @@ const currentUser = ref(null)
 const loginError = ref('')
 
 const savedActivityIds = ref([])
+const startedActivityIds = ref([])
 const completedActivities = ref([])
 const plannedActivities = ref([])
 
@@ -22,6 +23,12 @@ const testRecommendations = ref([])
 
 const savedActivities = computed(() =>
   savedActivityIds.value
+    .map((id) => allActivities.find((activity) => activity.id === id))
+    .filter(Boolean),
+)
+
+const startedActivities = computed(() =>
+  startedActivityIds.value
     .map((id) => allActivities.find((activity) => activity.id === id))
     .filter(Boolean),
 )
@@ -60,6 +67,7 @@ function normalizePlannedActivities(items) {
 function resetSessionState() {
   currentUser.value = null
   savedActivityIds.value = []
+  startedActivityIds.value = []
   completedActivities.value = []
   plannedActivities.value = []
   selectedActivityId.value = null
@@ -97,6 +105,7 @@ function persistCurrentUserState() {
 
   states[currentUser.value.id] = {
     savedActivityIds: savedActivityIds.value,
+    startedActivityIds: startedActivityIds.value,
     completedActivities: completedActivities.value,
     plannedActivities: plannedActivities.value,
   }
@@ -107,14 +116,19 @@ function persistCurrentUserState() {
 function getUserState(user) {
   const states = getPersistedUserStates()
   const persisted = states[user.id]
+  const baseCompletedActivities = Array.isArray(persisted?.completedActivities)
+    ? [...persisted.completedActivities]
+    : [...user.completedActivities]
+  const completedActivityIds = baseCompletedActivities.map((activity) => activity.activityId)
 
   return {
     savedActivityIds: Array.isArray(persisted?.savedActivityIds)
       ? [...persisted.savedActivityIds]
       : [...user.savedActivityIds],
-    completedActivities: Array.isArray(persisted?.completedActivities)
-      ? [...persisted.completedActivities]
-      : [...user.completedActivities],
+    startedActivityIds: Array.isArray(persisted?.startedActivityIds)
+      ? [...persisted.startedActivityIds]
+      : [...new Set([...(user.startedActivityIds ?? []), ...completedActivityIds])],
+    completedActivities: baseCompletedActivities,
     plannedActivities: Array.isArray(persisted?.plannedActivities)
       ? normalizePlannedActivities(persisted.plannedActivities)
       : normalizePlannedActivities(user.plannedActivities),
@@ -134,6 +148,7 @@ function persistSession() {
   const payload = {
     userId: currentUser.value.id,
     savedActivityIds: savedActivityIds.value,
+    startedActivityIds: startedActivityIds.value,
     completedActivities: completedActivities.value,
     plannedActivities: plannedActivities.value,
     selectedActivityId: selectedActivityId.value,
@@ -167,6 +182,11 @@ function restoreSession() {
     savedActivityIds.value = Array.isArray(session.savedActivityIds)
       ? [...session.savedActivityIds]
       : persistedUserState.savedActivityIds
+    startedActivityIds.value = Array.isArray(session.startedActivityIds)
+      ? [...session.startedActivityIds]
+      : Array.isArray(session.completedActivities)
+        ? [...new Set(session.completedActivities.map((activity) => activity.activityId))]
+        : persistedUserState.startedActivityIds
     completedActivities.value = Array.isArray(session.completedActivities)
       ? [...session.completedActivities]
       : persistedUserState.completedActivities
@@ -195,6 +215,7 @@ export function initializeAppSession() {
     [
       currentUser,
       savedActivityIds,
+      startedActivityIds,
       completedActivities,
       plannedActivities,
       selectedActivityId,
@@ -226,6 +247,7 @@ export function login(credentials) {
 
   currentUser.value = foundUser
   savedActivityIds.value = persistedUserState.savedActivityIds
+  startedActivityIds.value = persistedUserState.startedActivityIds
   completedActivities.value = persistedUserState.completedActivities
   plannedActivities.value = persistedUserState.plannedActivities
   selectedActivityId.value = null
@@ -257,6 +279,14 @@ export function addSavedActivity(activityId) {
   }
 }
 
+export function addStartedActivity(activityId) {
+  addSavedActivity(activityId)
+
+  if (!startedActivityIds.value.includes(activityId)) {
+    startedActivityIds.value.push(activityId)
+  }
+}
+
 export function removeSavedActivity(activityId) {
   savedActivityIds.value = savedActivityIds.value.filter((id) => id !== activityId)
 }
@@ -270,7 +300,7 @@ function formatDate(date) {
 }
 
 export function startActivity(activityId) {
-  addSavedActivity(activityId)
+  addStartedActivity(activityId)
 
   completedActivities.value.push({
     id: `completed-${activityId}-${Date.now()}`,
@@ -331,6 +361,7 @@ export function useAppSession() {
     currentUser,
     loginError,
     savedActivities,
+    startedActivities,
     recommendedActivities,
     completedActivitiesDisplay,
     plannedActivities,
@@ -342,6 +373,7 @@ export function useAppSession() {
     logout,
     syncSelectedActivity,
     addSavedActivity,
+    addStartedActivity,
     removeSavedActivity,
     startActivity,
     finishTest,

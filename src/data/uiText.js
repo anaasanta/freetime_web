@@ -249,8 +249,11 @@ export const homeCopy = {
   testTooltip:
     'Respon unes preguntes i t’ensenyarem activitats recomanades segons el teu estat d’ànim, energia i temps disponible.',
   savedActivitiesTitle: 'Les teves activitats',
+  startedActivitiesTitle: 'Activitats començades',
   savedActivitiesEmpty:
     'Encara no tens activitats guardades. Pots afegir-ne des de recomanacions o fent el test.',
+  startedActivitiesEmpty:
+    'Encara no has començat cap activitat. Prem "Començar activitat" quan vulguis provar-ne una.',
   recommendedTitle: 'Recomanades',
   recommendedBadge: 'Per a tu',
   nextActivityLabel: 'Següent activitat',
@@ -258,6 +261,7 @@ export const homeCopy = {
   plannedSeparator: '·',
   viewButton: 'Veure',
   alreadySaved: 'Ja afegit',
+  newBadge: 'Nou',
   tooltips: {
     addSaved: 'Afegir a les meves activitats',
     profile: 'Veure el teu perfil i les activitats guardades',
@@ -268,6 +272,75 @@ export const homeCopy = {
     addActivity: 'Afegir activitat',
     previousSaved: 'Veure activitats anteriors',
     nextSaved: 'Veure més activitats',
+  },
+}
+
+export const profileCopy = {
+  ageUnit: 'anys',
+  separator: '·',
+  avatarAlt: 'Foto de perfil',
+  fallbackTag: 'Nou perfil',
+  plannedActivitiesTitle: 'Activitats programades',
+  startedActivitiesTitle: 'Activitats començades',
+  savedActivitiesTitle: 'Les meves activitats',
+  statsTitle: 'Seguiment d’energia',
+  counters: {
+    activities: 'activitats',
+    started: 'començades',
+    saved: 'guardades',
+    latestActivities: 'Últimes activitats',
+  },
+  empty: {
+    planned: 'Encara no tens activitats programades.',
+    started: 'Encara no has començat cap activitat.',
+    saved: 'Encara no tens activitats guardades.',
+  },
+  nav: {
+    home: 'Tornar a Home',
+    settings: 'Ajustos',
+    logout: 'Sortir',
+  },
+  calendar: {
+    title: 'Calendari del temps lliure',
+    addActivity: '+ Afegir activitat',
+    addActivityAria: 'Afegir activitat al dia',
+    today: 'Avui',
+    completedPrefix: 'Fet',
+    plannedPrefix: 'Programat',
+    dayAria: 'Dia',
+    weekdays: ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'],
+    months: [
+      'Gener',
+      'Febrer',
+      'Març',
+      'Abril',
+      'Maig',
+      'Juny',
+      'Juliol',
+      'Agost',
+      'Setembre',
+      'Octubre',
+      'Novembre',
+      'Desembre',
+    ],
+  },
+  planned: {
+    fallbackTitle: 'Activitat programada',
+    fallbackDescription: 'Activitat guardada al calendari.',
+    fallbackTime: '21:00',
+    fallbackReminder: '30 min abans',
+  },
+  stats: {
+    labelPrefix: 'S',
+    fallback: [
+      { label: 'S1', before: 28, after: 56, title: 'Yoga i estiraments' },
+      { label: 'S2', before: 35, after: 52, title: 'Passeig curt' },
+      { label: 'S3', before: 22, after: 44, title: 'Playlist + respiració' },
+      { label: 'S4', before: 40, after: 70, title: 'Yoga i estiraments' },
+    ],
+    insightLabel: 'Insight',
+    insightText:
+      'Les activitats registrades mostren la diferència entre l’energia abans i després de fer cada activitat.',
   },
 }
 

@@ -70,7 +70,7 @@ function handleSaveToggle() {
 function handleStart() {
   if (!selectedActivity.value) return
   startActivity(selectedActivity.value.id)
-  router.push({ name: 'schedule' })
+  router.push({ name: 'schedule-day' })
 }
 
 function handleReject() {
@@ -526,4 +526,3 @@ function handleReject() {
   }
 }
 </style>
-
