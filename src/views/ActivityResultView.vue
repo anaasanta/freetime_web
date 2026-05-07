@@ -15,6 +15,7 @@ import {
   X,
   CircleHelp,
 } from 'lucide-vue-next'
+import { activityResultConfig as c } from '@/data/activityResultConfig'
 import {
   addSavedActivity,
   rejectActivity,
@@ -53,7 +54,6 @@ function iconFor(iconName) {
   if (iconName === 'palette') return Palette
   if (iconName === 'pencil') return Pencil
   if (iconName === 'heart') return Heart
-
   return Sparkles
 }
 
@@ -108,22 +108,18 @@ function handleReject() {
             <span>Temps</span>
             <strong>{{ selectedActivity.duration }} {{ activityCopy.durationUnit }}</strong>
           </div>
-
           <div>
             <span>Dificultat</span>
             <strong>{{ selectedActivity.difficulty }}</strong>
           </div>
-
           <div>
             <span>Materials</span>
             <strong>{{ selectedActivity.materials }}</strong>
           </div>
-
           <div>
             <span>Preu</span>
             <strong>{{ selectedActivity.price }}</strong>
           </div>
-
           <div>
             <span>Energia</span>
             <strong>{{ selectedActivity.energy }}</strong>
@@ -136,8 +132,7 @@ function handleReject() {
         </section>
 
         <section class="text-section">
-          <h2>Com començar</h2>
-
+          <h2>{{ c.sections.howToStart }}</h2>
           <ol class="steps-list">
             <li v-for="step in selectedActivity.steps" :key="step">
               {{ step }}
@@ -173,8 +168,7 @@ function handleReject() {
           >
             <Trash2 v-if="isSaved" :size="18" />
             <Plus v-else :size="18" />
-
-            {{ isSaved ? 'Eliminar de la meva llista' : 'Afegir a la meva llista' }}
+            {{ isSaved ? c.buttons.removeFromList : c.buttons.addToList }}
           </button>
 
           <button
@@ -183,7 +177,7 @@ function handleReject() {
             type="button"
             @click="handleReject"
           >
-            No m’interessa
+            {{ c.buttons.reject }}
           </button>
 
           <button class="secondary-button" type="button" @click="router.push({ name: 'home' })">
@@ -532,3 +526,4 @@ function handleReject() {
   }
 }
 </style>
+
