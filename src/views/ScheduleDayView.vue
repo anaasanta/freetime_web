@@ -8,6 +8,7 @@ import {
   BookOpen,
   Sparkles,
 } from 'lucide-vue-next'
+import { activityCopy } from '@/data/uiText'
 
 const props = defineProps({
   savedActivities: {
@@ -100,7 +101,7 @@ function scheduleDrawing() {
 
                 <div>
                   <h3>{{ activity.title }}</h3>
-                  <p>{{ activity.duration }}</p>
+                  <p>{{ activity.duration }} {{ activityCopy.durationUnit }}</p>
                 </div>
 
                 <button
@@ -139,7 +140,7 @@ function scheduleDrawing() {
 
                 <div>
                   <h3>{{ activity.title }}</h3>
-                  <p>{{ activity.duration }}</p>
+                  <p>{{ activity.duration }} {{ activityCopy.durationUnit }}</p>
                 </div>
 
                 <button

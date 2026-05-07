@@ -1,61 +1,124 @@
 <script setup>
-import { ref } from 'vue'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { mockUsers } from '@/data/mockUser'
+import { authCopy, landingCopy, themeCopy } from '@/data/uiText'
+import AppBrand from '@/components/layout/AppBrand.vue'
+import AppNavbar from '@/components/layout/AppNavbar.vue'
+import ThemeToggle from '@/components/theme/ThemeToggle.vue'
+import AppPanel from '@/components/ui/AppPanel.vue'
+import BaseField from '@/components/ui/BaseField.vue'
+import FormMessage from '@/components/ui/FormMessage.vue'
+import { useAppSession } from '@/stores/appSession'
 
-defineProps({
-  errorMessage: {
-    type: String,
-    default: '',
-  },
-})
+const route = useRoute()
+const router = useRouter()
+const { loginError, login } = useAppSession()
 
-const emit = defineEmits(['login'])
+const loginCopy = authCopy.login
 
-const username = ref('laura')
-const password = ref('12345')
+const username = ref(loginCopy.defaultCredentials.username)
+const password = ref(loginCopy.defaultCredentials.password)
+
+const primarySampleUser = computed(() => mockUsers[0] ?? null)
+
+const sampleUsers = computed(() =>
+  mockUsers.map((user) => `${user.username} / ${user.password}`),
+)
+
+const sampleUserSummary = computed(() => sampleUsers.value.join(' · '))
 
 function submitLogin() {
-  emit('login', {
+  const isValid = login({
     username: username.value.trim(),
     password: password.value,
   })
+
+  if (!isValid) return
+
+  const redirectTarget =
+    typeof route.query.redirect === 'string' ? route.query.redirect : null
+
+  router.replace(redirectTarget || { name: 'home' })
+}
+
+function fillSampleUser() {
+  if (!primarySampleUser.value) return
+
+  username.value = primarySampleUser.value.username
+  password.value = primarySampleUser.value.password
 }
 </script>
 
 <template>
   <main class="app-page login-page">
+    <div class="page-container">
+      <AppNavbar>
+        <template #start>
+          <AppBrand :brand="landingCopy.nav.brand" :to="{ name: 'landing' }" />
+        </template>
+
+        <template #end>
+          <ThemeToggle :labels="themeCopy.toggle" />
+        </template>
+      </AppNavbar>
+    </div>
+
     <section class="page-container login-container">
-      <div class="card login-card">
-        <h1>Benvinguda a FreeTime</h1>
+      <AppPanel panel-class="login-card">
+        <div class="page-header">
+          <h1 class="page-title">{{ loginCopy.title }}</h1>
 
-        <p>
-          Organitza el teu temps lliure i descobreix activitats adaptades al teu moment.
-        </p>
+          <p class="page-description">{{ loginCopy.description }}</p>
+        </div>
 
-        <form class="login-form" @submit.prevent="submitLogin">
-          <label>
-            Usuari
-            <input v-model="username" type="text" placeholder="Ex: laura" />
-          </label>
+        <form class="form-stack" @submit.prevent="submitLogin">
+          <BaseField
+            :id="loginCopy.fields.username.id"
+            v-model="username"
+            :label="loginCopy.fields.username.label"
+            :placeholder="loginCopy.fields.username.placeholder"
+            :autocomplete="loginCopy.fields.username.autocomplete"
+          />
 
-          <label>
-            Contrasenya
-            <input v-model="password" type="password" placeholder="Ex: 12345" />
-          </label>
+          <BaseField
+            :id="loginCopy.fields.password.id"
+            v-model="password"
+            :label="loginCopy.fields.password.label"
+            type="password"
+            :placeholder="loginCopy.fields.password.placeholder"
+            :autocomplete="loginCopy.fields.password.autocomplete"
+          />
 
-          <p v-if="errorMessage" class="error-message">
-            {{ errorMessage }}
-          </p>
+          <FormMessage v-if="loginError">
+            {{ loginError }}
+          </FormMessage>
 
           <button class="primary-button" type="submit">
-            Entrar
+            {{ loginCopy.submitLabel }}
           </button>
         </form>
 
-        <div class="login-help">
-          <strong>Usuaris de prova:</strong>
-          <span>laura / 12345</span>
-          <span>nou / 12345</span>
+        <div class="login-links">
+          <button class="text-link-button" type="button" @click="router.push({ name: 'forgot-password' })">
+            {{ loginCopy.links.forgotPassword }}
+          </button>
+
+          <button class="text-link-button" type="button" @click="router.push({ name: 'register' })">
+            {{ loginCopy.links.register }}
+          </button>
         </div>
+      </AppPanel>
+
+      <div class="login-test-access">
+        <button class="secondary-button login-test-button" type="button" @click="fillSampleUser">
+          {{ loginCopy.testAccess.buttonLabel }}
+        </button>
+
+        <p class="login-test-caption">
+          <strong>{{ loginCopy.testAccess.helperLabel }}:</strong>
+          {{ sampleUserSummary }}
+        </p>
       </div>
     </section>
   </main>
@@ -64,69 +127,64 @@ function submitLogin() {
 <style scoped>
 .login-page {
   display: flex;
-  align-items: center;
+  flex-direction: column;
 }
 .login-container {
-    display: flex;
-    justify-content: center;
-
+  display: grid;
+  justify-items: center;
 }
 
 .login-card {
+  width: min(100%, 820px);
+  max-width: 720px;
+  max-height: 500px;;
+  margin-top: 200px;
+  box-shadow: var(--shadow-panel-strong);
+  backdrop-filter: blur(22px);
+}
+
+.login-links {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 14px;
+  margin-top: 18px;
+}
+
+.login-test-access {
+  display: grid;
+  justify-items: center;
+  gap: 10px;
   width: min(100%, 720px);
   max-width: 720px;
+  margin-top: 14px;
 }
 
-h1 {
-  margin: 20px 0 10px;
-  color: var(--foreground);
-  font-size: clamp(2.2rem, 6vw, 3.4rem);
-  line-height: 1;
-  letter-spacing: -0.04em;
+.login-test-button {
+  min-height: 42px;
+  padding-inline: 18px;
+  border-color: var(--info-border);
+  background: color-mix(in srgb, var(--surface-contrast) 82%, var(--gradient-1));
+  color: var(--info-accent);
+  box-shadow: 0 8px 22px rgba(125, 211, 252, 0.12);
 }
 
-p {
-  color: var(--muted-foreground);
-  line-height: 1.6;
-}
-
-.login-form {
-  display: grid;
-  gap: 18px;
-  margin-top: 28px;
-}
-
-label {
-  display: grid;
-  gap: 8px;
-  color: var(--foreground);
-  font-weight: 800;
-}
-
-input {
-  width: 100%;
-  border: 1px solid var(--border);
-  border-radius: 16px;
-  padding: 14px 16px;
-  background: white;
-  color: var(--foreground);
-}
-
-.error-message {
+.login-test-caption {
   margin: 0;
-  border: 1px solid #fecdd3;
-  border-radius: 16px;
-  padding: 12px 14px;
-  background: #fff1f2;
-  color: #e11d48;
-  font-weight: 700;
+  color: var(--muted-foreground);
+  font-size: 0.92rem;
+  line-height: 1.5;
+  text-align: center;
 }
 
-.login-help {
-  display: grid;
-  gap: 4px;
-  margin-top: 22px;
-  color: var(--muted-foreground);
-  font-size: 0.9rem;
+.login-test-caption strong {
+  color: var(--info-accent);
+}
+
+@media (max-width: 640px) {
+  .login-links {
+    flex-direction: column;
+    align-items: flex-start;
+  }
 }
 </style>

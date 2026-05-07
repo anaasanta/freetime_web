@@ -1,9 +1,11 @@
 <script setup>
 import { ref, computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { Dumbbell, Moon, Palette, X, Frown, Annoyed, Laugh } from 'lucide-vue-next'
 import { testConfig } from '@/data/testConfig'
+import { finishTest } from '@/stores/appSession'
 
-const emit = defineEmits(['finish-test', 'close'])
+const router = useRouter()
 
 // Mapa de iconos por nombre (para poder usarlos dinámicamente desde el config)
 const iconMap = { Moon, Palette, Dumbbell, X, Frown, Annoyed, Laugh}
@@ -32,10 +34,21 @@ function selectNeed(id) {
 }
 
 function handleFinish() {
-  emit('finish-test', {
+  const selectedId = finishTest({
     energy: energyValue.value,
     need: selectedNeed.value,
     time: timeValue.value,
+  })
+
+  if (!selectedId) {
+    router.replace({ name: 'home' })
+    return
+  }
+
+  router.push({
+    name: 'activity',
+    params: { id: selectedId },
+    query: { source: 'test' },
   })
 }
 </script>
@@ -45,7 +58,7 @@ function handleFinish() {
     <section class="page-container">
       <div class="test-top">
         <span class="chip">{{ testConfig.chipLabel }}</span>
-        <button class="close-button" type="button" @click="emit('close')">
+        <button class="close-button" type="button" @click="router.push({ name: 'home' })">
           <X :size="20" />
         </button>
       </div>
@@ -165,15 +178,29 @@ function handleFinish() {
 }
 
 .close-button {
+  position: absolute;
+  top: clamp(20px, 3vw, 34px);
+  right: clamp(20px, 3vw, 34px);
   display: grid;
   place-items: center;
-  width: 44px;
-  height: 44px;
-  border: 1px solid var(--border);
+  width: 46px;
+  height: 46px;
+  border: 1px solid var(--surface-stroke-strong);
   border-radius: 999px;
-  background: white;
+  background: var(--card);
   color: var(--foreground);
-  cursor: pointer;
+  box-shadow: var(--shadow-panel);
+  backdrop-filter: blur(14px);
+  transition:
+    transform 0.18s ease,
+    background-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+.close-button:hover {
+  transform: translateY(-1px);
+  background: var(--surface-strong);
+  box-shadow: var(--shadow-panel-strong);
 }
 
 .test-card {

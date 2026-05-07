@@ -1,42 +1,61 @@
 :root {
   --background: #fbfdff;
   --foreground: #1e293b;
+  --foreground-soft: #334155;
+  --foreground-muted-soft: #94a3b8;
 
   --card: rgba(255, 255, 255, 0.42);
   --card-solid: rgba(255, 255, 255, 0.64);
   --card-foreground: #1e293b;
+  --surface-soft: rgba(255, 255, 255, 0.58);
+  --surface-strong: rgba(255, 255, 255, 0.88);
+  --surface-contrast: #ffffff;
+  --surface-stroke-strong: rgba(255, 255, 255, 0.78);
+  --surface-inset-highlight: rgba(255, 255, 255, 0.55);
 
   --muted: rgba(255, 255, 255, 0.52);
   --muted-foreground: #64748b;
 
   --border: rgba(148, 163, 184, 0.22);
+  --border-focus: rgba(139, 92, 246, 0.45);
 
   --primary: #1e293b;
   --primary-foreground: #ffffff;
+  --primary-shadow: rgba(30, 41, 59, 0.14);
 
   --violet-soft: #f1edff;
   --violet: #8b5cf6;
+  --violet-strong: #655aa6;
 
   --sky-soft: #eef8ff;
-  --sky: #7dd3fc;
+  --sky: #5995b1;
 
   --emerald-soft: #eefdf7;
   --emerald: #6ee7b7;
 
   --indigo-soft: #eef2ff;
-  --indigo: #818cf8;
+  --indigo: #6871c4;
 
   --cyan-soft: #ecfeff;
-  --cyan: #67e8f9;
+  --cyan: #6db0b9;
 
   --rose-soft: #f8f2ff;
-  --rose: #c4b5fd;
+  --rose: #b0a6da;
 
   --amber-soft: #f6fbff;
   --amber: #93c5fd;
 
   --pink-soft: #f5f3ff;
-  --pink: #a78bfa;
+  --pink: #bf89ba;
+
+  --danger-soft: #fff1f2;
+  --danger-border: #fecdd3;
+  --danger-foreground: #e11d48;
+
+  --info-soft: rgba(237, 246, 255, 0.9);
+  --info-border: rgba(125, 211, 252, 0.45);
+  --info-foreground: #0f3c5c;
+  --info-accent: #0369a1;
 
   --gradient-1: #dbeafe;
   --gradient-2: #e0f2fe;
@@ -48,6 +67,62 @@
 
   --shadow-soft: 0 18px 45px rgba(90, 110, 140, 0.1);
   --shadow-glow: 0 30px 80px rgba(125, 211, 252, 0.18);
+  --shadow-panel: 0 14px 36px rgba(90, 110, 140, 0.08);
+  --shadow-panel-strong: 0 22px 60px rgba(99, 102, 241, 0.12);
 
   --font-main: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+}
+
+:root[data-theme='dark'] {
+  --background: #05070d;
+  --foreground: #eef4ff;
+  --foreground-soft: #dbe8ff;
+  --foreground-muted-soft: #7d8ba4;
+
+  --card: rgba(10, 14, 24, 0.56);
+  --card-solid: rgba(9, 13, 22, 0.78);
+  --card-foreground: #eef4ff;
+  --surface-soft: rgba(8, 12, 22, 0.56);
+  --surface-strong: rgba(11, 16, 28, 0.84);
+  --surface-contrast: #0a0f1b;
+  --surface-stroke-strong: rgba(255, 255, 255, 0.08);
+  --surface-inset-highlight: rgba(255, 255, 255, 0.06);
+
+  --muted: rgba(15, 23, 42, 0.7);
+  --muted-foreground: #94a3b8;
+
+  --border: rgba(148, 163, 184, 0.2);
+  --border-focus: rgba(125, 211, 252, 0.48);
+
+  --primary: #111827;
+  --primary-foreground: #f8fafc;
+  --primary-shadow: rgba(0, 0, 0, 0.34);
+
+  --violet-soft: #25143f;
+  --sky-soft: #0d1c2c;
+  --emerald-soft: #0d201b;
+  --indigo-soft: #161e47;
+  --cyan-soft: #0b2128;
+  --rose-soft: #231534;
+  --amber-soft: #0d1a29;
+  --pink-soft: #1a1639;
+
+  --danger-soft: rgba(68, 10, 28, 0.42);
+  --danger-border: rgba(251, 113, 133, 0.32);
+  --danger-foreground: #fecdd3;
+
+  --info-soft: rgba(9, 34, 51, 0.72);
+  --info-border: rgba(125, 211, 252, 0.28);
+  --info-foreground: #d7f0ff;
+  --info-accent: #7dd3fc;
+
+  --gradient-1: #10203a;
+  --gradient-2: #12273a;
+  --gradient-3: #122733;
+  --gradient-4: #1e163b;
+
+  --shadow-soft: 0 18px 45px rgba(0, 0, 0, 0.28);
+  --shadow-glow: 0 30px 80px rgba(109, 40, 217, 0.16);
+  --shadow-panel: 0 14px 36px rgba(0, 0, 0, 0.3);
+  --shadow-panel-strong: 0 22px 60px rgba(0, 0, 0, 0.38);
 }

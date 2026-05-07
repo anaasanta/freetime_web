@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { useRouter } from 'vue-router'
 import {
   House,
   Settings,
@@ -17,36 +18,40 @@ import {
   ChevronLeft,
   ChevronRight,
 } from 'lucide-vue-next'
+import AppBrand from '@/components/layout/AppBrand.vue'
+import AppNavbar from '@/components/layout/AppNavbar.vue'
+import ThemeToggle from '@/components/theme/ThemeToggle.vue'
+import { landingCopy, themeCopy } from '@/data/uiText'
+import { logout, syncSelectedActivity, useAppSession } from '@/stores/appSession'
+
+const router = useRouter()
+
+const {
+  currentUser,
+  savedActivities,
+  completedActivitiesDisplay,
+  plannedActivities,
+  allActivities,
+} = useAppSession()
 
 const avatarModules = import.meta.glob('../assets/avatars/*', {
   eager: true,
   import: 'default',
 })
 
-const props = defineProps({
-  user: {
-    type: Object,
-    default: null,
-  },
-  savedActivities: {
-    type: Array,
-    default: () => [],
-  },
-  completedActivities: {
-    type: Array,
-    default: () => [],
-  },
-  plannedActivities: {
-    type: Array,
-    default: () => [],
-  },
-  allActivities: {
-    type: Array,
-    default: () => [],
-  },
-})
+function openActivity(activityId, source = 'normal') {
+  syncSelectedActivity(activityId, source)
+  router.push({
+    name: 'activity',
+    params: { id: activityId },
+    query: source === 'normal' ? {} : { source },
+  })
+}
 
-const emit = defineEmits(['go-home', 'logout', 'go-settings', 'open-activity', 'go-schedule'])
+function handleLogout() {
+  logout()
+  router.replace({ name: 'landing' })
+}
 
 const visibleDate = ref(new Date())
 const today = new Date()
@@ -74,7 +79,7 @@ const visibleMonthLabel = computed(() => {
 })
 
 const avatarSrc = computed(() => {
-  const avatarFile = props.user?.avatar
+  const avatarFile = currentUser.value?.avatar
 
   if (!avatarFile) return null
 
@@ -82,24 +87,24 @@ const avatarSrc = computed(() => {
 })
 
 const profileTags = computed(() => {
-  return props.user?.tags?.length ? props.user.tags : ['Nou perfil']
+  return currentUser.value?.tags?.length ? currentUser.value.tags : ['Nou perfil']
 })
 
 const savedDisplay = computed(() => {
-  return props.savedActivities
+  return savedActivities.value
     .map((item) => {
       if (item?.title) return item
-      return props.allActivities.find((activity) => activity.id === item)
+      return allActivities.find((activity) => activity.id === item)
     })
     .filter(Boolean)
 })
 
 const plannedDisplay = computed(() => {
-  return props.plannedActivities
+  return plannedActivities.value
     .map((item, index) => {
       const activity =
         item.activity ||
-        props.allActivities.find((activityItem) => activityItem.id === item.activityId) ||
+        allActivities.find((activityItem) => activityItem.id === item.activityId) ||
         null
 
       if (!activity && !item.title) return null
@@ -121,11 +126,11 @@ const plannedDisplay = computed(() => {
 })
 
 const completedDisplay = computed(() => {
-  return props.completedActivities
+  return completedActivitiesDisplay.value
     .map((item, index) => {
       const activity =
         item.activity ||
-        props.allActivities.find((activityItem) => activityItem.id === item.activityId) ||
+        allActivities.find((activityItem) => activityItem.id === item.activityId) ||
         null
 
       if (!activity) return null
@@ -283,22 +288,29 @@ function tooltipForDay(day) {
 
 <template>
   <main class="profile-page">
-    <header class="profile-toolbar">
-      <button
-        class="icon-button"
-        type="button"
-        title="Tornar a Home"
-        @click="emit('go-home')"
-      >
-        <House :size="22" />
-      </button>
+    <AppNavbar class="profile-toolbar">
+      <template #start>
+        <AppBrand :brand="landingCopy.nav.brand" :to="{ name: 'home' }" />
+      </template>
 
+      <template #end>
       <div class="toolbar-actions">
+        <ThemeToggle :labels="themeCopy.toggle" />
+
+        <button
+          class="icon-button"
+          type="button"
+          title="Tornar a Home"
+          @click="router.push({ name: 'home' })"
+        >
+          <House :size="22" />
+        </button>
+
         <button
           class="icon-button"
           type="button"
           title="Ajustos"
-          @click="emit('go-settings')"
+          @click="router.push({ name: 'settings' })"
         >
           <Settings :size="20" />
         </button>
@@ -307,12 +319,13 @@ function tooltipForDay(day) {
           class="icon-button"
           type="button"
           title="Sortir"
-          @click="emit('logout')"
+          @click="handleLogout"
         >
           <LogOut :size="20" />
         </button>
       </div>
-    </header>
+      </template>
+    </AppNavbar>
 
     <section class="profile-columns">
       <div class="left-column">
@@ -346,7 +359,7 @@ function tooltipForDay(day) {
           <div class="panel-header">
             <h2>Calendari del temps lliure</h2>
 
-            <button class="primary-button" type="button" @click="emit('schedule')">
+            <button class="primary-button" type="button" @click="router.push({ name: 'schedule' })">
             Programar
             </button>
           </div>
@@ -419,7 +432,7 @@ function tooltipForDay(day) {
                 :key="activity.id"
                 class="activity-row"
                 :class="`tone-${activity.tone || 'violet'}`"
-                @click="emit('open-activity', activity.activityId)"
+                @click="openActivity(activity.activityId)"
               >
                 <div class="activity-icon">
                   <component :is="iconFor(activity.icon)" :size="28" />
@@ -450,7 +463,7 @@ function tooltipForDay(day) {
                 :key="activity.id"
                 class="activity-row compact"
                 :class="`tone-${activity.tone || 'violet'}`"
-                @click="emit('open-activity', activity.id)"
+                @click="openActivity(activity.id)"
               >
                 <div class="activity-icon">
                   <component :is="iconFor(activity.icon)" :size="28" />
@@ -517,10 +530,7 @@ function tooltipForDay(day) {
 }
 
 .profile-toolbar {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  gap: 16px;
+  margin-bottom: 4px;
 }
 
 .toolbar-actions {
@@ -534,9 +544,9 @@ function tooltipForDay(day) {
   place-items: center;
   width: 50px;
   height: 50px;
-  border: 1px solid rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--surface-stroke-strong);
   border-radius: 18px;
-  background: rgba(255, 255, 255, 0.54);
+  background: color-mix(in srgb, var(--surface-contrast) 56%, transparent);
   backdrop-filter: blur(14px);
   box-shadow: 0 10px 26px rgba(90, 110, 140, 0.08);
   color: var(--foreground);
@@ -548,7 +558,7 @@ function tooltipForDay(day) {
 
 .icon-button:hover {
   transform: translateY(-1px);
-  background: rgba(255, 255, 255, 0.72);
+  background: color-mix(in srgb, var(--surface-contrast) 72%, transparent);
   box-shadow: 0 14px 32px rgba(90, 110, 140, 0.14);
 }
 
@@ -569,9 +579,9 @@ function tooltipForDay(day) {
 }
 
 .glass-panel {
-  border: 1px solid rgba(255, 255, 255, 0.74);
+  border: 1px solid var(--surface-stroke-strong);
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.28);
+  background: color-mix(in srgb, var(--surface-contrast) 30%, transparent);
   backdrop-filter: blur(16px);
   box-shadow: 0 10px 32px rgba(90, 110, 140, 0.06);
 }
@@ -589,7 +599,7 @@ function tooltipForDay(day) {
   flex: 0 0 auto;
   border-radius: 30px;
   overflow: hidden;
-  background: rgba(255, 255, 255, 0.6);
+  background: color-mix(in srgb, var(--surface-contrast) 62%, transparent);
   box-shadow: 0 12px 28px rgba(90, 110, 140, 0.08);
 }
 
@@ -669,8 +679,8 @@ function tooltipForDay(day) {
 
 .calendar-nav-button,
 .calendar-month-button {
-  border: 1px solid rgba(255, 255, 255, 0.78);
-  background: rgba(255, 255, 255, 0.52);
+  border: 1px solid var(--surface-stroke-strong);
+  background: color-mix(in srgb, var(--surface-contrast) 54%, transparent);
   backdrop-filter: blur(14px);
   color: var(--foreground);
   box-shadow: 0 8px 24px rgba(90, 110, 140, 0.06);
@@ -731,9 +741,9 @@ function tooltipForDay(day) {
   place-items: center;
   width: clamp(38px, 4.4vw, 54px);
   height: clamp(38px, 4.4vw, 54px);
-  border: 1px solid rgba(255, 255, 255, 0.78);
+  border: 1px solid var(--surface-stroke-strong);
   border-radius: 999px;
-  background: rgba(255, 255, 255, 0.48);
+  background: color-mix(in srgb, var(--surface-contrast) 50%, transparent);
   backdrop-filter: blur(12px);
   color: #64748b;
   font-size: 1rem;
@@ -783,7 +793,7 @@ function tooltipForDay(day) {
   padding: 10px 12px;
   border: 1px solid rgba(180, 190, 220, 0.36);
   border-radius: 14px;
-  background: rgba(255, 255, 255, 0.94);
+  background: color-mix(in srgb, var(--surface-contrast) 94%, transparent);
   backdrop-filter: blur(14px);
   box-shadow: 0 12px 30px rgba(80, 100, 140, 0.14);
   color: var(--foreground);
@@ -809,7 +819,7 @@ function tooltipForDay(day) {
   transform: translateX(-50%);
   border-width: 7px;
   border-style: solid;
-  border-color: rgba(255, 255, 255, 0.94) transparent transparent transparent;
+  border-color: color-mix(in srgb, var(--surface-contrast) 94%, transparent) transparent transparent transparent;
 }
 
 .day-wrapper:hover .day-tooltip {
@@ -858,10 +868,10 @@ function tooltipForDay(day) {
   display: flex;
   align-items: center;
   gap: 14px;
-  border: 1px solid rgba(255, 255, 255, 0.76);
+  border: 1px solid var(--surface-stroke-strong);
   border-radius: 24px;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.44);
+  background: color-mix(in srgb, var(--surface-contrast) 46%, transparent);
   cursor: pointer;
   transition:
     transform 0.18s ease,
@@ -913,7 +923,7 @@ function tooltipForDay(day) {
 .empty-box {
   padding: 18px;
   border-radius: 20px;
-  background: rgba(255, 255, 255, 0.36);
+  background: color-mix(in srgb, var(--surface-contrast) 38%, transparent);
   color: var(--muted-foreground);
 }
 
