@@ -1,11 +1,10 @@
 <script setup>
 import AppPanel from '@/components/ui/AppPanel.vue'
-import BorderGlow from '@/components/ui/BorderGlow.vue'
 import RotatingText from '@/components/ui/RotatingText/RotatingText.vue'
 import LandingNavbar from '@/components/landing/LandingNavbar.vue'
-import LandingPreviewCard from '@/components/landing/LandingPreviewCard.vue'
 import LandingCommentsMarquee from '@/components/landing/LandingCommentsMarquee.vue'
 import LandingContactSection from '@/components/landing/LandingContactSection.vue'
+import HeroLogo from '@/components/landing/Imagen2.png'
 import { landingCopy } from '@/data/uiText'
 </script>
 
@@ -49,40 +48,17 @@ import { landingCopy } from '@/data/uiText'
             />
           </h2>
 
-          <p class="landing-description">
-            {{ landingCopy.hero.description }}
-          </p>
+          <div class="landing-description" aria-label="Descripció de FreeTime">
+            <p>{{ landingCopy.hero.description }}</p>
+            <span class="landing-description-note">{{ landingCopy.hero.descriptionNote }}</span>
+          </div>
 
           <!-- Buttons removed: navbar contains primary actions -->
-
-          <div class="landing-stats">
-            <BorderGlow
-              v-for="stat in landingCopy.hero.stats"
-              :key="stat.label"
-              class-name="landing-stat landing-stat--highlight"
-              background-color="rgba(255, 255, 255, 0.94)"
-              glow-color="252 72 86"
-              :colors="['#a78bfa', '#7dd3fc', '#6ee7b7']"
-            >
-              <strong>{{ stat.value }}</strong>
-              <span>{{ stat.label }}</span>
-            </BorderGlow>
-          </div>
         </div>
 
-        <!-- Vista previa compacta de la app -->
-        <LandingPreviewCard
-          :eyebrow="landingCopy.preview.eyebrow"
-          :title="landingCopy.preview.title"
-          :subtitle="landingCopy.preview.subtitle"
-          :search-label="landingCopy.preview.searchLabel"
-          :test-label="landingCopy.preview.testLabel"
-          :cards="landingCopy.preview.cards"
-          :recommendations="landingCopy.preview.recommendations"
-          :summary-label="landingCopy.preview.summaryLabel"
-          :summary-text="landingCopy.preview.summaryText"
-          :summary-button="landingCopy.preview.summaryButton"
-        />
+        <div class="landing-hero-art" aria-hidden="true">
+          <img :src="HeroLogo" alt="" class="landing-hero-logo" />
+        </div>
       </div>
     </section>
 
@@ -159,17 +135,16 @@ import { landingCopy } from '@/data/uiText'
 
 .landing-shell {
   display: grid;
-  grid-template-columns: minmax(0, 0.95fr) minmax(520px, 0.95fr);
-  gap: 42px;
-  align-items: stretch;
+  grid-template-columns: minmax(760px, 1.18fr) minmax(340px, 0.62fr);
+  gap: clamp(28px, 4vw, 72px);
+  align-items: center;
 }
 
 .landing-copy {
   display: grid;
-  gap: 26px;
-  max-width: 820px;
-  min-height: 100%;
-  padding-top: 18px;
+  gap: 24px;
+  max-width: 990px;
+  padding: 46px 0 34px;
 }
 
 .landing-eyebrow {
@@ -212,11 +187,44 @@ import { landingCopy } from '@/data/uiText'
 }
 
 .landing-description {
+  position: relative;
+  display: grid;
+  gap: 14px;
+  max-width: 98ch;
+  margin-top: 12px;
+  margin-left: clamp(10px, 1.1vw, 54px);
+  padding: 0 0 0 28px;
+  color: color-mix(in srgb, var(--foreground) 72%, var(--muted-foreground));
+}
+
+.landing-description::before {
+  position: absolute;
+  top: 4px;
+  bottom: 4px;
+  left: 0;
+  width: 5px;
+  border-radius: 999px;
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--violet-strong) 82%, white),
+    color-mix(in srgb, var(--sky) 72%, white),
+    color-mix(in srgb, var(--emerald) 64%, white)
+  );
+  content: '';
+}
+
+.landing-description p {
   margin: 0;
-  max-width: 58ch;
-  color: var(--muted-foreground);
-  font-size: 1.1rem;
-  line-height: 1.75;
+  color: color-mix(in srgb, var(--foreground) 82%, var(--muted-foreground));
+  font-size: clamp(1.08rem, 1.28vw, 1.22rem);
+  line-height: 1.55;
+}
+
+.landing-description-note {
+  color: color-mix(in srgb, var(--muted-foreground) 88%, var(--foreground));
+  font-size: clamp(1rem, 1.35vw, 1.12rem);
+  font-weight: 650;
+  line-height: 1.55;
 }
 
 .landing-rotating-line {
@@ -226,7 +234,7 @@ import { landingCopy } from '@/data/uiText'
   margin: -10px 0 0;
   color: var(--foreground-soft);
   font-size: clamp(3.2rem, 7vw, 6.2rem);
-  line-height: 1.4;
+  line-height: 1;
   font-weight: 800;
   letter-spacing: -0.045em;
 }
@@ -265,51 +273,20 @@ import { landingCopy } from '@/data/uiText'
   }
 }
 
-.landing-stats {
-  display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 14px;
-  margin-top: auto;
-  padding-top: 28px;
+.landing-hero-art {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 420px;
 }
 
-.landing-stat {
-  display: grid;
-  gap: 4px;
-  padding: 16px 18px;
-  border: 1px solid color-mix(in srgb, var(--surface-contrast) 78%, transparent);
-  border-radius: 22px;
-  background: color-mix(in srgb, var(--surface-contrast) 72%, transparent);
-  box-shadow: 0 12px 26px rgba(90, 110, 140, 0.07);
-}
-
-.landing-stat--highlight {
-  min-height: 100%;
-  padding: 24px 22px;
-  border-radius: 26px;
-  background: linear-gradient(180deg, rgba(255,255,255,0.9), rgba(245,243,255,0.95));
-  box-shadow: 0 20px 50px rgba(109, 40, 217, 0.08), 0 6px 18px rgba(125,211,252,0.06);
-  border: 1px solid rgba(139,92,246,0.12);
-  transform: translateY(-2px);
-}
-
-.landing-stat--highlight strong {
-  color: var(--violet-strong);
-  font-size: 1.3rem;
-}
-
-.landing-stat strong {
-  font-size: 1.18rem;
-}
-
-.landing-stat span {
-  color: var(--muted-foreground);
-  line-height: 1.5;
-}
-
-.landing-visual {
-  display: grid;
-  align-items: start;
+.landing-hero-logo {
+  width: min(100%, 560px);
+  max-height: 62vh;
+  border-radius: 50%;
+  image-rendering: auto;
+  filter: none;
+  object-fit: contain;
 }
 
 .landing-section-header {
@@ -372,6 +349,20 @@ import { landingCopy } from '@/data/uiText'
     grid-template-columns: 1fr;
     gap: 24px;
   }
+
+  .landing-description {
+    max-width: 76ch;
+    margin-left: 0;
+  }
+
+  .landing-hero-art {
+    justify-content: flex-start;
+    min-height: auto;
+  }
+
+  .landing-hero-logo {
+    width: min(64vw, 360px);
+  }
 }
 
 @media (max-width: 760px) {
@@ -383,7 +374,6 @@ import { landingCopy } from '@/data/uiText'
     font-size: 0.84rem;
   }
 
-  .landing-stats,
   .feature-grid {
     grid-template-columns: 1fr;
   }

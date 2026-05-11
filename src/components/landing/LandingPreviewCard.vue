@@ -1,6 +1,6 @@
 <script setup>
 import GradientCard from '@/components/ui/GradientCard.vue'
-import Screenshot from '@/components/landing/home.png'
+import Screenshot from '@/components/landing/Imagen2.png'
 </script>
 
 <template>

@@ -1,12 +1,28 @@
 <script setup>
 import {
+  Amphora,
+  Bike,
+  BookOpen,
+  CirclePlay,
+  CookingPot,
   Dumbbell,
   Footprints,
+  HandFist,
   Headphones,
+  Languages,
+  MountainSnow,
+  Music,
+  NotebookPen,
+  Origami,
   Palette,
   Pencil,
-  BookOpen,
+  Rose,
+  ScissorsLineDashed,
   Sparkles,
+  Spool,
+  SunMedium,
+  Volleyball,
+  Waves,
 } from 'lucide-vue-next'
 import { activityCopy } from '@/data/uiText'
 
@@ -34,6 +50,22 @@ function iconFor(activity) {
   if (activity.icon === 'palette') return Palette
   if (activity.icon === 'pencil') return Pencil
   if (activity.icon === 'book') return BookOpen
+  if (activity.icon === 'amphora') return Amphora
+  if (activity.icon === 'bike') return Bike
+  if (activity.icon === 'circle-play') return CirclePlay
+  if (activity.icon === 'cooking-pot') return CookingPot
+  if (activity.icon === 'hand-fist') return HandFist
+  if (activity.icon === 'languages') return Languages
+  if (activity.icon === 'mountain-snow') return MountainSnow
+  if (activity.icon === 'music') return Music
+  if (activity.icon === 'notebook-pen') return NotebookPen
+  if (activity.icon === 'origami') return Origami
+  if (activity.icon === 'rose') return Rose
+  if (activity.icon === 'scissors-line-dashed') return ScissorsLineDashed
+  if (activity.icon === 'spool') return Spool
+  if (activity.icon === 'sun-medium') return SunMedium
+  if (activity.icon === 'volleyball') return Volleyball
+  if (activity.icon === 'waves') return Waves
 
   return Sparkles
 }

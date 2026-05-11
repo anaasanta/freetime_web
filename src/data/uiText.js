@@ -20,8 +20,10 @@ export const landingCopy = {
     titleFull: 'FreeTime',
     rotatingPrefix: 'per',
     rotatingWords: ['respirar', 'crear', 'desconnectar', 'gaudir', 'descobrir'],
-    //description:
-      //'Una manera serena de descobrir activitats, seguir com et sents i reservar-te espai per al que et fa be.',
+    description:
+      'Quan tens temps lliure i zero idees, FreeTime et dona plans que sí venen de gust: hobbies curts, moments tranquils o activitats per activar-te segons com et sents avui.',
+    descriptionNote:
+      'Prova, guarda i descobreix què t’encaixa sense convertir el descans en una altra tasca.',
     primaryAction: 'Començar',
     primaryRoute: { name: 'register' },
     secondaryAction: 'Veure inici de sessio',

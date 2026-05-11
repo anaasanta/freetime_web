@@ -2,21 +2,37 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import {
+  Amphora,
+  Bike,
   House,
   Settings,
   LogOut,
   UserRound,
   BookOpen,
+  CirclePlay,
+  CookingPot,
   Dumbbell,
   Footprints,
+  HandFist,
   Headphones,
   Heart,
+  Languages,
+  MountainSnow,
+  Music,
+  NotebookPen,
+  Origami,
   Palette,
   Pencil,
+  Rose,
+  ScissorsLineDashed,
   Sparkles,
+  Spool,
+  SunMedium,
   CalendarDays,
   ChevronLeft,
   ChevronRight,
+  Volleyball,
+  Waves,
 } from 'lucide-vue-next'
 import AppBrand from '@/components/layout/AppBrand.vue'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
@@ -182,6 +198,22 @@ function iconFor(iconName) {
   if (iconName === 'palette') return Palette
   if (iconName === 'pencil') return Pencil
   if (iconName === 'heart') return Heart
+  if (iconName === 'amphora') return Amphora
+  if (iconName === 'bike') return Bike
+  if (iconName === 'circle-play') return CirclePlay
+  if (iconName === 'cooking-pot') return CookingPot
+  if (iconName === 'hand-fist') return HandFist
+  if (iconName === 'languages') return Languages
+  if (iconName === 'mountain-snow') return MountainSnow
+  if (iconName === 'music') return Music
+  if (iconName === 'notebook-pen') return NotebookPen
+  if (iconName === 'origami') return Origami
+  if (iconName === 'rose') return Rose
+  if (iconName === 'scissors-line-dashed') return ScissorsLineDashed
+  if (iconName === 'spool') return Spool
+  if (iconName === 'sun-medium') return SunMedium
+  if (iconName === 'volleyball') return Volleyball
+  if (iconName === 'waves') return Waves
 
   return Sparkles
 }
