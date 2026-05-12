@@ -30,7 +30,8 @@ import {
   Trash2,
 } from 'lucide-vue-next'
 import { useAppSession } from '@/stores/appSession'
-import { profileCopy } from '@/data/uiText'
+import { getProfileCopy } from '@/data/homeCopyI18n'
+import { useI18n } from '@/stores/i18n'
 
 function iconFor(iconName) {
   if (iconName === 'book') return BookOpen
@@ -79,6 +80,8 @@ const props = defineProps({
 const emit = defineEmits(['confirm', 'cancel', 'delete'])
 
 const { allActivities, plannedActivities, savedActivities } = useAppSession()
+const { currentLanguage } = useI18n()
+const profileCopy = computed(() => getProfileCopy(currentLanguage.value))
 
 // State
 const searchQuery = ref('')
@@ -117,7 +120,7 @@ const selectedActivity = computed(() =>
 const isValid = computed(() => selectedActivityId.value && selectedTime.value)
 
 const modalTitle = computed(() =>
-  props.mode === 'edit' ? profileCopy.planned.modalEditTitle : profileCopy.planned.modalTitle,
+  props.mode === 'edit' ? profileCopy.value.planned.modalEditTitle : profileCopy.value.planned.modalTitle,
 )
 
 function handleConfirm() {
@@ -162,7 +165,7 @@ function handleCancel() {
         <!-- Activities List -->
         <div class="activities-list">
           <div class="activity-section">
-            <h3 class="activity-section-title">Les teves activitats</h3>
+            <h3 class="activity-section-title">{{ profileCopy.savedActivitiesTitle }}</h3>
 
             <button
               v-if="myActivities.length === 0"
@@ -170,7 +173,7 @@ function handleCancel() {
               class="no-activities"
               type="button"
             >
-              No tens activitats guardades
+              {{ profileCopy.empty.saved }}
             </button>
 
             <button

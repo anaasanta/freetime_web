@@ -40,10 +40,15 @@ import AppBrand from '@/components/layout/AppBrand.vue'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import ThemeToggle from '@/components/theme/ThemeToggle.vue'
 import ActivityScheduleModal from '@/components/ui/ActivityScheduleModal.vue'
-import { homeCopy, landingCopy, profileCopy, themeCopy } from '@/data/uiText'
+import { landingCopy } from '@/data/uiText'
+import { getHomeCopy, getProfileCopy } from '@/data/homeCopyI18n'
 import { logout, syncSelectedActivity, useAppSession, addPlannedActivity, updatePlannedActivity, deletePlannedActivity } from '@/stores/appSession'
+import { useI18n } from '@/stores/i18n'
 
 const router = useRouter()
+const { currentLanguage } = useI18n()
+const homeCopy = computed(() => getHomeCopy(currentLanguage.value))
+const profileCopy = computed(() => getProfileCopy(currentLanguage.value))
 
 const {
   currentUser,
@@ -96,7 +101,7 @@ const visibleYear = computed(() => visibleDate.value.getFullYear())
 const visibleMonth = computed(() => visibleDate.value.getMonth())
 
 const visibleMonthLabel = computed(() => {
-  return `${profileCopy.calendar.months[visibleMonth.value]} ${visibleYear.value}`
+  return `${profileCopy.value.calendar.months[visibleMonth.value]} ${visibleYear.value}`
 })
 
 const avatarSrc = computed(() => {
@@ -108,7 +113,7 @@ const avatarSrc = computed(() => {
 })
 
 const profileTags = computed(() => {
-  return currentUser.value?.tags?.length ? currentUser.value.tags : [profileCopy.fallbackTag]
+  return currentUser.value?.tags?.length ? currentUser.value.tags : [profileCopy.value.fallbackTag]
 })
 
 const savedDisplay = computed(() => {
@@ -150,14 +155,14 @@ const plannedDisplay = computed(() => {
       return {
         id: item.id ?? `planned-${index}`,
         activityId: item.activityId ?? activity?.id ?? item.id,
-        title: item.title ?? activity?.title ?? profileCopy.planned.fallbackTitle,
+        title: item.title ?? activity?.title ?? profileCopy.value.planned.fallbackTitle,
         shortDescription:
-          item.shortDescription ?? activity?.shortDescription ?? profileCopy.planned.fallbackDescription,
+          item.shortDescription ?? activity?.shortDescription ?? profileCopy.value.planned.fallbackDescription,
         icon: item.icon ?? activity?.icon ?? 'sparkles',
         tone: item.tone ?? activity?.tone ?? 'violet',
         date: item.date,
-        time: item.time ?? profileCopy.planned.fallbackTime,
-        reminder: item.reminder ?? profileCopy.planned.fallbackReminder,
+        time: item.time ?? profileCopy.value.planned.fallbackTime,
+        reminder: item.reminder ?? profileCopy.value.planned.fallbackReminder,
         image: activityImages[imageKeyPng] || activityImages[imageKeyJpg] || activityImages[imageKeySvg] || null,
       }
     })
@@ -203,14 +208,14 @@ const completedDisplay = computed(() => {
 const energyStats = computed(() => {
   if (completedDisplay.value.length > 0) {
     return completedDisplay.value.slice(-5).map((item, index) => ({
-      label: `${profileCopy.stats.labelPrefix}${index + 1}`,
+      label: `${profileCopy.value.stats.labelPrefix}${index + 1}`,
       before: item.energyBefore,
       after: item.energyAfter,
       title: item.title,
     }))
   }
 
-  return profileCopy.stats.fallback
+  return profileCopy.value.stats.fallback
 })
 
 function iconFor(iconName) {
@@ -331,15 +336,15 @@ function tooltipForDay(day) {
   const messages = []
 
   if (day.isToday) {
-    messages.push(profileCopy.calendar.today)
+    messages.push(profileCopy.value.calendar.today)
   }
 
   day.completed.forEach((completed) => {
-    messages.push(`${profileCopy.calendar.completedPrefix}: ${completed.title}`)
+    messages.push(`${profileCopy.value.calendar.completedPrefix}: ${completed.title}`)
   })
 
   day.planned.forEach((planned) => {
-    messages.push(`${planned.title} ${profileCopy.separator} ${planned.time}`)
+    messages.push(`${planned.title} ${profileCopy.value.separator} ${planned.time}`)
   })
 
   return messages.join(' : ')
@@ -442,7 +447,7 @@ const activitiesForSchedulingDay = computed(() => {
 const selectedSchedulingDayLabel = computed(() => {
   if (!selectedScheduleDay.value) return ''
   const day = selectedScheduleDay.value.number
-  const monthName = profileCopy.calendar.months[visibleMonth.value]
+  const monthName = profileCopy.value.calendar.months[visibleMonth.value]
   const year = visibleYear.value
   return `${day} de ${monthName} de ${year}`
 })
@@ -473,7 +478,7 @@ const selectedSchedulingDayLabel = computed(() => {
               class="icon-button"
               type="button"
               :title="profileCopy.nav.settings"
-              @click="router.push({ name: 'settings' })"
+              @click="router.push({ name: 'settings', query: { from: 'profile' } })"
             >
               <Settings :size="20" />
             </button>
@@ -622,7 +627,7 @@ const selectedSchedulingDayLabel = computed(() => {
             <div class="scheduling-header">
               <button class="back-to-activities" type="button" @click="exitSchedulingMode">
                 <ChevronLeft :size="18" />
-                <span>Enrere</span>
+                <span>{{ profileCopy.calendar.back }}</span>
               </button>
               <div class="scheduling-title">
                 <p class="scheduling-date">{{ selectedSchedulingDayLabel }}</p>
@@ -630,7 +635,7 @@ const selectedSchedulingDayLabel = computed(() => {
             </div>
 
             <div class="day-activities-section">
-              <h3>Activitats programades</h3>
+              <h3>{{ profileCopy.plannedActivitiesTitle }}</h3>
 
               <div v-if="activitiesForSchedulingDay.length > 0" class="activity-list">
                 <article
@@ -649,19 +654,19 @@ const selectedSchedulingDayLabel = computed(() => {
                     <p>{{ activity.time }}</p>
                   </div>
 
-                  <button class="edit-schedule-button" type="button" :aria-label="`Editar ${activity.title}`" @click="openEditActivityModal(activity.id)">
+                  <button class="edit-schedule-button" type="button" :aria-label="`${profileCopy.calendar.editActivityAria}: ${activity.title}`" @click="openEditActivityModal(activity.id)">
                     <Edit2 :size="16" />
                   </button>
                 </article>
               </div>
 
               <div v-else class="empty-box">
-                No hi ha activitats programades per a aquest dia
+                {{ profileCopy.calendar.noActivitiesForDay }}
               </div>
 
               <button class="add-schedule-button" type="button" @click="openAddActivityModal">
                 <Plus :size="18" />
-                <span>Afegir activitat</span>
+                <span>{{ profileCopy.calendar.addActivityShort }}</span>
               </button>
             </div>
           </template>

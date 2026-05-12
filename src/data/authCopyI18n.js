@@ -55,6 +55,7 @@ export function getAuthCopy(language) {
         description: 'Pantalla para ajustar tu perfil.',
         note: 'No forma parte del prototipo',
         backLabel: 'Volver al perfil',
+        backHomeLabel: 'Volver al inicio',
       },
       aiConsult: {
         ...authCopy.aiConsult,
@@ -120,6 +121,7 @@ export function getAuthCopy(language) {
         description: 'Screen to adjust your profile.',
         note: 'Not part of the prototype',
         backLabel: 'Back to profile',
+        backHomeLabel: 'Back to home',
       },
       aiConsult: {
         ...authCopy.aiConsult,

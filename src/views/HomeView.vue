@@ -334,7 +334,7 @@ function cancelConfirmDelete() {
                 <span class="tooltip-bubble">{{ displayCopy.tooltips.logout }}</span>
             </div>
             <div class="tooltip-wrapper">
-                <button class="settings-button" type="button" @click="router.push({ name: 'settings' })">
+                <button class="settings-button" type="button" @click="router.push({ name: 'settings', query: { from: 'home' } })">
                 <Settings :size="20" />
                 </button>
 

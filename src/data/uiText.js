@@ -278,6 +278,7 @@ export const authCopy = {
     note:
       'Mes endavant hi podras editar notificacions, preferencies d`activitats, accessibilitat i dades personals.',
     backLabel: 'Tornar al perfil',
+    backHomeLabel: 'Tornar a Home',
   },
   aiConsult: {
     title: 'Consulta FreeTimeIA',
@@ -359,11 +360,15 @@ export const profileCopy = {
   calendar: {
     title: 'Calendari del temps lliure',
     addActivity: '+ Afegir activitat',
+    addActivityShort: 'Afegir activitat',
     addActivityAria: 'Afegir activitat al dia',
     today: 'Avui',
     completedPrefix: 'Fet',
     plannedPrefix: 'Programat',
     dayAria: 'Dia',
+    back: 'Enrere',
+    editActivityAria: 'Editar activitat',
+    noActivitiesForDay: 'No hi ha activitats programades per a aquest dia',
     weekdays: ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'],
     months: [
       'Gener',

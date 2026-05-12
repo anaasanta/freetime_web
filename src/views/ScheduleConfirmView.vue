@@ -1,6 +1,10 @@
 <script setup>
 import { computed } from 'vue'
+import { useRouter } from 'vue-router'
 import { Bell, CalendarDays, CheckCircle2, Clock3 } from 'lucide-vue-next'
+import { getScheduleConfirmCopy } from '@/data/scheduleCopyI18n'
+import { confirmSchedule, useAppSession } from '@/stores/appSession'
+import { useI18n } from '@/stores/i18n'
 
 const props = defineProps({
   draft: {
@@ -14,20 +18,32 @@ const props = defineProps({
 })
 
 const emit = defineEmits(['confirm'])
+const router = useRouter()
+const { currentLanguage } = useI18n()
+const { scheduleDraft, allActivities: sessionActivities } = useAppSession()
+const scheduleCopy = computed(() => getScheduleConfirmCopy(currentLanguage.value))
+const visibleDraft = computed(() => props.draft ?? scheduleDraft.value)
+const visibleActivities = computed(() => (props.allActivities.length > 0 ? props.allActivities : sessionActivities.value))
 
 const activity = computed(() => {
-  if (!props.draft) return null
-  return props.allActivities.find((item) => item.id === props.draft.activityId)
+  if (!visibleDraft.value) return null
+  return visibleActivities.value.find((item) => item.id === visibleDraft.value.activityId)
 })
+
+function handleConfirm() {
+  emit('confirm')
+  confirmSchedule()
+  router.push({ name: 'profile' })
+}
 </script>
 
 <template>
     <main class="confirm-page">
-        <div v-if="draft && activity" class="confirm-layout">
+        <div v-if="visibleDraft && activity" class="confirm-layout">
         <section class="confirm-main">
-          <span class="chip">Programació</span>
+          <span class="chip">{{ scheduleCopy.chip }}</span>
 
-          <h1>Confirma la teva activitat</h1>
+          <h1>{{ scheduleCopy.title }}</h1>
 
           <div class="selected-activity" :class="`tone-${activity.tone}`">
             <div class="activity-icon">
@@ -43,55 +59,55 @@ const activity = computed(() => {
           <div class="settings-grid">
             <div class="setting-card">
               <CalendarDays :size="24" />
-              <span>Dia</span>
-              <strong>{{ draft.day }}</strong>
+              <span>{{ scheduleCopy.labels.day }}</span>
+              <strong>{{ visibleDraft.day }}</strong>
             </div>
 
             <div class="setting-card">
               <Clock3 :size="24" />
-              <span>Hora</span>
-              <strong>{{ draft.time }}</strong>
+              <span>{{ scheduleCopy.labels.time }}</span>
+              <strong>{{ visibleDraft.time }}</strong>
             </div>
 
             <div class="setting-card">
               <Bell :size="24" />
-              <span>Recordatori</span>
-              <strong>{{ draft.reminder }}</strong>
+              <span>{{ scheduleCopy.labels.reminder }}</span>
+              <strong>{{ visibleDraft.reminder }}</strong>
             </div>
           </div>
         </section>
 
         <aside class="summary-panel">
-          <h2>Resum</h2>
+          <h2>{{ scheduleCopy.summaryTitle }}</h2>
 
           <div class="summary-item">
-            <span>Activitat</span>
+            <span>{{ scheduleCopy.labels.activity }}</span>
             <strong>{{ activity.title }}</strong>
           </div>
 
           <div class="summary-item">
-            <span>Dia</span>
-            <strong>{{ draft.day }}</strong>
+            <span>{{ scheduleCopy.labels.day }}</span>
+            <strong>{{ visibleDraft.day }}</strong>
           </div>
 
           <div class="summary-item">
-            <span>Hora</span>
-            <strong>{{ draft.time }}</strong>
+            <span>{{ scheduleCopy.labels.time }}</span>
+            <strong>{{ visibleDraft.time }}</strong>
           </div>
 
           <div class="summary-item">
-            <span>Recordatori</span>
-            <strong>{{ draft.reminder }}</strong>
+            <span>{{ scheduleCopy.labels.reminder }}</span>
+            <strong>{{ visibleDraft.reminder }}</strong>
           </div>
 
-          <button class="primary-button" type="button" @click="emit('confirm')">
-            Confirmar
+          <button class="primary-button" type="button" @click="handleConfirm">
+            {{ scheduleCopy.confirm }}
           </button>
         </aside>
       </div>
 
     <div v-else class="empty-confirm">
-        <h1>No hi ha cap activitat pendent de confirmar</h1>
+        <h1>{{ scheduleCopy.empty }}</h1>
     </div>
     </main>
 </template>

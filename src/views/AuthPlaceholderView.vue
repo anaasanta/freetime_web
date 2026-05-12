@@ -45,14 +45,18 @@ const content = computed(() => ({
   title: props.title || routeCopy.value.title,
   description: props.description || routeCopy.value.description,
   note: props.note || routeCopy.value.note,
-  backLabel: props.backLabel || routeCopy.value.backLabel,
+  backLabel:
+    props.backLabel ||
+    (route.name === 'settings' && route.query.from === 'home'
+      ? authPageCopy.value.settings.backHomeLabel
+      : routeCopy.value.backLabel),
 }))
 
 function goBack() {
   emit('back')
 
   if (route.name === 'settings') {
-    router.push({ name: 'profile' })
+    router.push({ name: route.query.from === 'home' ? 'home' : 'profile' })
     return
   }
 
