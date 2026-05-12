@@ -1,18 +1,28 @@
 export const landingCopy = {
+  accessibility: {
+    heroDescriptionLabel: 'Descripcio de FreeTime',
+  },
+  sections: {
+    features: 'features',
+    comments: 'comments',
+    contact: 'contact',
+  },
   nav: {
     brand: 'FreeTime',
+    brandRoute: { name: 'landing' },
+    ariaLabel: 'Navegacio principal',
     links: [
       { label: 'Com funciona', href: '#features' },
       { label: 'Comentaris', href: '#comments' },
       { label: 'Contactans', href: '#contact' },
     ],
-    primaryAction: 'Començar',
+    primaryAction: 'Registra`t',
     primaryRoute: { name: 'register' },
-    secondaryAction: 'Inici de sessio',
+    secondaryAction: 'Iniciar sessio',
     secondaryRoute: { name: 'login' },
     tooltips: {
-      login: 'Entrar amb un compte existent.',
-      register: 'Crear un compte nou.',
+      login: 'Entrar al compte',
+      register: 'Crear compte',
     },
   },
   hero: {
@@ -20,11 +30,19 @@ export const landingCopy = {
     titleFull: 'FreeTime',
     rotatingPrefix: 'per',
     rotatingWords: ['respirar', 'crear', 'desconnectar', 'gaudir', 'descobrir'],
+    rotatingConfig: {
+      interval: 2300,
+      staggerDuration: 0.02,
+      splitBy: 'characters',
+      mainClassName: 'landing-rotating-shell',
+      splitLevelClassName: 'landing-rotating-word-group',
+      elementLevelClassName: 'landing-rotating-word',
+    },
     description:
       'Quan tens temps lliure i zero idees, FreeTime et dona plans que sí venen de gust: hobbies curts, moments tranquils o activitats per activar-te segons com et sents avui.',
     descriptionNote:
       'Prova, guarda i descobreix què t’encaixa sense convertir el descans en una altra tasca.',
-    primaryAction: 'Començar',
+    primaryAction: 'Registra`t',
     primaryRoute: { name: 'register' },
     secondaryAction: 'Veure inici de sessio',
     secondaryRoute: { name: 'login' },
@@ -59,6 +77,8 @@ export const landingCopy = {
     },
   },
   preview: {
+    ariaLabel: 'Vista previa de la app',
+    imageAlt: 'Vista previa de FreeTime',
     eyebrow: 'Vista inicial',
     title: 'Vista prèvia de l’app',
     subtitle:
@@ -102,6 +122,9 @@ export const landingCopy = {
   commentsHeader: {
     ariaLabel: 'Comentaris destacats',
     title: 'Comentaris dels nostres usuaris.',
+    previousLabel: 'Comentari anterior',
+    nextLabel: 'Comentari següent',
+    speedSeconds: 42,
   },
   comments: [
     {
@@ -118,6 +141,21 @@ export const landingCopy = {
       quote: 'M`agrada que no sembli una demo genèrica, sinó una eina pensada per l`usuari.',
       author: 'Núria',
       role: 'Dissenyadora',
+    },
+    {
+      quote: 'La interfície m`ajuda a decidir ràpid sense sentir que estic fent deures.',
+      author: 'Sergi',
+      role: 'Professor',
+    },
+    {
+      quote: 'Per fi una app que no m`omple d`opcions i em dona idees útils.',
+      author: 'Marta',
+      role: 'Infermera',
+    },
+    {
+      quote: 'Puc guardar plans i tornar més tard sense perdre`m pel camí.',
+      author: 'Pau',
+      role: 'Desenvolupador',
     },
 
   ],
@@ -205,6 +243,12 @@ export const authCopy = {
     testAccess: {
       buttonLabel: 'Rellenar con usuario de prueba',
       helperLabel: 'Acceso rápido de prueba',
+      pairSeparator: ' / ',
+      listSeparator: ' · ',
+    },
+    passwordToggle: {
+      showLabel: 'Mostrar contraseña',
+      hideLabel: 'Ocultar contraseña',
     },
     defaultCredentials: {
       username: '',
@@ -257,7 +301,6 @@ export const homeCopy = {
   startedActivitiesEmpty:
     'Encara no has començat cap activitat. Prem "Començar activitat" quan vulguis provar-ne una.',
   recommendedTitle: 'Recomanades',
-  recommendedBadge: 'Per a tu',
   nextActivityLabel: 'Següent activitat',
   noNextActivity: 'Encara no tens cap activitat programada',
   plannedSeparator: '·',
@@ -266,9 +309,20 @@ export const homeCopy = {
   newBadge: 'Nou',
   tooltips: {
     addSaved: 'Afegir a les meves activitats',
+    deleteTooltip: 'Eliminar de les meves activitats',
     profile: 'Veure el teu perfil i les activitats guardades',
     logout: 'Tancar sessió',
     settings: 'Configuració',
+  },
+  advancedSearch: {
+    tooltip: 'Cerca i filtra',
+  },
+  deleteActivity: 'Eliminar de les meves activitats',
+  deleteConfirm: {
+    title: 'Eliminar activitat',
+    message: "Estàs segur/a que vols eliminar aquesta activitat de les teves guardades?",
+    confirm: 'Eliminar',
+    cancel: 'Cancel·lar',
   },
   aria: {
     addActivity: 'Afegir activitat',
@@ -352,6 +406,42 @@ export const activityCopy = {
   aiConsult: {
     question: 'Tens mes dubtes? Consulta FreeTimeIA',
     button: 'Consultar',
+  },
+}
+
+export const scheduleCopy = {
+  chip: 'Programar',
+  title: 'Tria un dia del calendari',
+  hint: 'Per al prototip funcional, pots programar Yoga el dimarts o Dibuix relaxant el divendres.',
+  sections: {
+    saved: 'De la teva llista',
+    recommended: 'Recomanacions',
+  },
+  buttons: {
+    schedule: 'Programar',
+  },
+  empty: 'Encara no tens activitats guardades.',
+  monthLabel: 'Març',
+  weekdays: ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg'],
+}
+
+export const activityResultCopy = {
+  labels: {
+    duration: 'Temps',
+    difficulty: 'Dificultat',
+    materials: 'Materials',
+    price: 'Preu',
+    energy: 'Energia',
+  },
+  sections: {
+    description: 'Descripció',
+    benefit: 'Benefici destacat',
+  },
+  buttons: {
+    start: 'Començar activitat',
+    feedback: 'Feedback',
+    backHome: 'Tornar a Home',
+    notFound: 'No s’ha trobat aquesta activitat',
   },
 }
 

@@ -40,7 +40,7 @@ import {
   syncSelectedActivity,
   useAppSession,
 } from '@/stores/appSession'
-import { activityCopy } from '@/data/uiText'
+import { activityCopy, activityResultCopy } from '@/data/uiText'
 
 const route = useRoute()
 const router = useRouter()
@@ -137,29 +137,29 @@ function handleReject() {
 
         <div class="info-grid">
           <div>
-            <span>Temps</span>
+            <span>{{ activityResultCopy.labels.duration }}</span>
             <strong>{{ selectedActivity.duration }} {{ activityCopy.durationUnit }}</strong>
           </div>
           <div>
-            <span>Dificultat</span>
+            <span>{{ activityResultCopy.labels.difficulty }}</span>
             <strong>{{ selectedActivity.difficulty }}</strong>
           </div>
           <div>
-            <span>Materials</span>
+            <span>{{ activityResultCopy.labels.materials }}</span>
             <strong>{{ selectedActivity.materials }}</strong>
           </div>
           <div>
-            <span>Preu</span>
+            <span>{{ activityResultCopy.labels.price }}</span>
             <strong>{{ selectedActivity.price }}</strong>
           </div>
           <div>
-            <span>Energia</span>
+            <span>{{ activityResultCopy.labels.energy }}</span>
             <strong>{{ selectedActivity.energy }}</strong>
           </div>
         </div>
 
         <section class="text-section">
-          <h2>Descripció</h2>
+          <h2>{{ activityResultCopy.sections.description }}</h2>
           <p>{{ selectedActivity.description }}</p>
         </section>
 
@@ -173,7 +173,7 @@ function handleReject() {
         </section>
 
         <section class="benefit-box">
-          <strong>Benefici destacat</strong>
+          <strong>{{ activityResultCopy.sections.benefit }}</strong>
           <p>{{ selectedActivity.benefits }}</p>
         </section>
         <section class="ai-consult-strip">
@@ -189,7 +189,7 @@ function handleReject() {
 
         <div class="actions">
           <button class="primary-button" type="button" @click="handleStart">
-            Començar activitat
+            {{ activityResultCopy.buttons.start }}
           </button>
 
           <button
@@ -213,7 +213,7 @@ function handleReject() {
           </button>
 
           <button class="secondary-button" type="button" @click="router.push({ name: 'home' })">
-            Feedback
+            {{ activityResultCopy.buttons.feedback }}
           </button>
         </div>
 
@@ -222,10 +222,10 @@ function handleReject() {
     </div>
 
     <div v-else class="empty-detail">
-      <h1>No s’ha trobat aquesta activitat</h1>
+      <h1>{{ activityResultCopy.buttons.notFound }}</h1>
 
       <button class="primary-button" type="button" @click="router.push({ name: 'home' })">
-        Tornar a Home
+        {{ activityResultCopy.buttons.backHome }}
       </button>
     </div>
   </main>

@@ -1,12 +1,10 @@
 <script setup>
-import { ref } from 'vue'
 import { RouterLink } from 'vue-router'
 
 import AppBrand from '@/components/layout/AppBrand.vue'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import LandingSectionLink from '@/components/landing/LandingSectionLink.vue'
 import ThemeToggle from '@/components/theme/ThemeToggle.vue'
-import { themeCopy } from '@/data/uiText'
 
 const onSectionLinkClick = (event, href) => {
   if (!href || !href.startsWith('#')) {
@@ -25,70 +23,20 @@ const onSectionLinkClick = (event, href) => {
   window.history.replaceState(null, '', nextUrl)
 }
 
-const activeTooltip = ref('')
-const tooltipStyle = ref({})
-
-function resolveAnchorPosition(event) {
-  if (typeof event.clientX === 'number' && typeof event.clientY === 'number') {
-    return { x: event.clientX, y: event.clientY }
-  }
-
-  const target = event.currentTarget
-
-  if (!target || typeof target.getBoundingClientRect !== 'function') {
-    return { x: window.innerWidth / 2, y: 80 }
-  }
-
-  const rect = target.getBoundingClientRect()
-
-  return {
-    x: rect.left + rect.width / 2,
-    y: rect.top,
-  }
-}
-
-function updateTooltipPosition(event, text) {
-  if (!text) return
-
-  const tooltipWidth = 220
-  const margin = 16
-  const viewportWidth = window.innerWidth
-  const anchor = resolveAnchorPosition(event)
-
-  let left = anchor.x - tooltipWidth / 2
-
-  if (left < margin) {
-    left = margin
-  }
-
-  if (left + tooltipWidth > viewportWidth - margin) {
-    left = viewportWidth - tooltipWidth - margin
-  }
-
-  const top = Math.max(anchor.y - 62, margin)
-
-  activeTooltip.value = text
-  tooltipStyle.value = {
-    left: `${left}px`,
-    top: `${top}px`,
-    '--tooltip-pointer-x': `${anchor.x - left}px`,
-  }
-}
-
-function openTooltip(event, text) {
-  updateTooltipPosition(event, text)
-}
-
-function closeTooltip() {
-  activeTooltip.value = ''
-}
-
 defineProps({
   brand: {
     type: String,
     required: true,
   },
   tagline: {
+    type: String,
+    default: '',
+  },
+  brandRoute: {
+    type: [String, Object],
+    default: '/',
+  },
+  ariaLabel: {
     type: String,
     default: '',
   },
@@ -125,11 +73,11 @@ defineProps({
 <template>
   <AppNavbar class="landing-navbar">
     <template #start>
-      <AppBrand :brand="brand" :tagline="tagline" :to="{ name: 'landing' }" />
+      <AppBrand :brand="brand" :tagline="tagline" :to="brandRoute" />
     </template>
 
     <template #center>
-      <nav class="landing-links" aria-label="Navegacion principal">
+      <nav class="landing-links" :aria-label="ariaLabel">
         <LandingSectionLink
           v-for="link in links"
           :key="link.href"
@@ -142,45 +90,37 @@ defineProps({
 
     <template #end>
       <div class="landing-navbar-actions">
-        <ThemeToggle :labels="themeCopy.toggle" />
+        <ThemeToggle />
 
         <div class="landing-tooltip-wrap">
           <RouterLink
             class="secondary-button landing-navbar-button"
             :to="secondaryRoute"
-            @mouseenter="openTooltip($event, tooltips.login)"
-            @mousemove="updateTooltipPosition($event, tooltips.login)"
-            @mouseleave="closeTooltip"
-            @focus="openTooltip($event, tooltips.login)"
-            @blur="closeTooltip"
+            aria-describedby="landing-login-tooltip"
           >
             {{ secondaryAction }}
           </RouterLink>
+
+          <span id="landing-login-tooltip" class="landing-tooltip-bubble" role="tooltip">
+            {{ tooltips.login }}
+          </span>
         </div>
 
         <div class="landing-tooltip-wrap">
           <RouterLink
             class="primary-button landing-navbar-button"
             :to="primaryRoute"
-            @mouseenter="openTooltip($event, tooltips.register)"
-            @mousemove="updateTooltipPosition($event, tooltips.register)"
-            @mouseleave="closeTooltip"
-            @focus="openTooltip($event, tooltips.register)"
-            @blur="closeTooltip"
+            aria-describedby="landing-register-tooltip"
           >
             {{ primaryAction }}
           </RouterLink>
+
+          <span id="landing-register-tooltip" class="landing-tooltip-bubble" role="tooltip">
+            {{ tooltips.register }}
+          </span>
         </div>
       </div>
     </template>
-
-    <span
-      v-if="activeTooltip"
-      class="landing-tooltip-bubble landing-tooltip-bubble--floating"
-      :style="tooltipStyle"
-    >
-      {{ activeTooltip }}
-    </span>
   </AppNavbar>
 </template>
 
@@ -206,6 +146,7 @@ defineProps({
 .landing-tooltip-wrap {
   position: relative;
   display: inline-flex;
+  justify-content: center;
 }
 
 .landing-navbar-button {
@@ -213,37 +154,53 @@ defineProps({
   padding-inline: 16px;
 }
 
+.landing-navbar-button:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--sky) 70%, white);
+  outline-offset: 3px;
+}
+
 .landing-tooltip-bubble {
   position: absolute;
-  width: 220px;
-  padding: 10px 12px;
+  top: calc(100% + 10px);
+  left: 50%;
+  width: max-content;
+  max-width: min(180px, 80vw);
+  padding: 8px 10px;
   border: 1px solid color-mix(in srgb, var(--violet-strong) 18%, transparent);
-  border-radius: 14px;
+  border-radius: 10px;
   background: color-mix(in srgb, var(--surface-contrast) 92%, white);
   color: var(--foreground);
   font-size: 0.82rem;
-  line-height: 1.45;
+  font-weight: 700;
+  line-height: 1.25;
   text-align: center;
   box-shadow: 0 12px 28px rgba(30, 41, 59, 0.1);
+  opacity: 0;
   pointer-events: none;
-  z-index: 6;
+  transform: translateX(-50%) translateY(-4px);
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
+  z-index: 30;
 }
 
-.landing-tooltip-bubble--floating {
-  position: fixed;
-}
-
-.landing-tooltip-bubble--floating::after {
-  content: '';
+.landing-tooltip-bubble::after {
   position: absolute;
-  left: clamp(18px, var(--tooltip-pointer-x), calc(100% - 18px));
-  top: calc(100% - 1px);
-  width: 12px;
-  height: 12px;
-  background: color-mix(in srgb, var(--surface-contrast) 92%, white);
+  top: -6px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  border-top: 1px solid color-mix(in srgb, var(--violet-strong) 18%, transparent);
   border-left: 1px solid color-mix(in srgb, var(--violet-strong) 18%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--violet-strong) 18%, transparent);
-  transform: translateX(-50%) rotate(-45deg);
+  background: color-mix(in srgb, var(--surface-contrast) 92%, white);
+  content: '';
+  transform: translateX(-50%) rotate(45deg);
+}
+
+.landing-tooltip-wrap:hover .landing-tooltip-bubble,
+.landing-tooltip-wrap:focus-within .landing-tooltip-bubble {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
 }
 
 .landing-navbar .primary-button {

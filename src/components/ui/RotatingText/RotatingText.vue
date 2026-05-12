@@ -2,6 +2,7 @@
 import { AnimatePresence, Motion } from 'motion-v';
 import type { MotionProps } from 'motion-v';
 import { computed, onMounted, onUnmounted, ref, watch } from 'vue';
+import { useAccessibility } from '@/stores/accessibility'
 
 type StaggerFrom = 'first' | 'last' | 'center' | 'random' | number;
 type SplitBy = 'characters' | 'words' | 'lines';
@@ -62,6 +63,9 @@ const props = withDefaults(defineProps<RotatingTextProps>(), {
 
 const currentTextIndex = ref(0);
 let intervalId: ReturnType<typeof setInterval> | null = null;
+const { reducedMotion } = useAccessibility()
+
+const activeText = computed(() => props.texts[currentTextIndex.value] || '')
 
 const splitIntoCharacters = (text: string): string[] => {
   if (typeof Intl !== 'undefined' && 'Segmenter' in Intl) {
@@ -183,10 +187,19 @@ const cleanupInterval = (): void => {
 };
 
 const startInterval = (): void => {
-  if (props.auto) {
+  if (props.auto && !reducedMotion.value) {
     intervalId = setInterval(next, props.rotationInterval);
   }
 };
+
+watch(reducedMotion, () => {
+  cleanupInterval()
+  if (reducedMotion.value) {
+    currentTextIndex.value = 0
+  } else {
+    startInterval()
+  }
+})
 
 defineExpose({
   next,
@@ -213,7 +226,17 @@ onUnmounted(() => {
 </script>
 
 <template>
+  <span v-if="reducedMotion" :class="cn('flex flex-wrap whitespace-pre-wrap relative', mainClassName)" v-bind="$attrs">
+    <span class="sr-only">
+      {{ activeText }}
+    </span>
+    <span aria-hidden="true" :class="cn(splitBy === 'lines' ? 'flex flex-col w-full' : 'flex flex-wrap whitespace-pre-wrap relative')">
+      {{ activeText }}
+    </span>
+  </span>
+
   <Motion
+    v-else
     tag="span"
     :class="cn('flex flex-wrap whitespace-pre-wrap relative', mainClassName)"
     v-bind="$attrs"

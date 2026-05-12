@@ -3,21 +3,27 @@ import { computed } from 'vue'
 import { Moon, Sun } from 'lucide-vue-next'
 
 import { useTheme } from '@/stores/theme'
+import { useI18n } from '@/stores/i18n'
 
 const props = defineProps({
   labels: {
     type: Object,
-    default: () => ({
-      light: 'Canviar a mode clar',
-      dark: 'Canviar a mode fosc',
-    }),
+    default: undefined,
   },
 })
 
 const { currentTheme, isDarkTheme, toggleTheme } = useTheme()
+const { t } = useI18n()
+
+const labels = computed(() =>
+  props.labels ?? {
+    light: t.value.toggle.light,
+    dark: t.value.toggle.dark,
+  },
+)
 
 const buttonLabel = computed(() =>
-  isDarkTheme.value ? props.labels.light : props.labels.dark,
+  isDarkTheme.value ? labels.value.light : labels.value.dark,
 )
 
 const iconComponent = computed(() => (currentTheme.value === 'dark' ? Moon : Sun))

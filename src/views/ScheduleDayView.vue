@@ -24,7 +24,7 @@ import {
   Volleyball,
   Waves,
 } from 'lucide-vue-next'
-import { activityCopy } from '@/data/uiText'
+import { activityCopy, scheduleCopy } from '@/data/uiText'
 
 const props = defineProps({
   savedActivities: {
@@ -83,15 +83,15 @@ function scheduleDrawing() {
     <main class="schedule-page">
         <div class="schedule-layout">
         <section class="calendar-panel">
-          <span class="chip">Programar</span>
+          <span class="chip">{{ scheduleCopy.chip }}</span>
 
-          <h1>Tria un dia del calendari</h1>
+          <h1>{{ scheduleCopy.title }}</h1>
 
           <div class="month-card">
-            <h2>Març</h2>
+            <h2>{{ scheduleCopy.monthLabel }}</h2>
 
             <div class="calendar-grid">
-              <span v-for="dayName in ['Dl', 'Dt', 'Dc', 'Dj', 'Dv', 'Ds', 'Dg']" :key="dayName">
+              <span v-for="dayName in scheduleCopy.weekdays" :key="dayName">
                 {{ dayName }}
               </span>
 
@@ -108,14 +108,14 @@ function scheduleDrawing() {
           </div>
 
           <p class="hint">
-            Per al prototip funcional, pots programar Yoga el dimarts o Dibuix relaxant el divendres.
+            {{ scheduleCopy.hint }}
           </p>
         </section>
 
         <section class="activities-panel">
           <div>
             <div class="section-heading">
-              <h2>De la teva llista</h2>
+              <h2>{{ scheduleCopy.sections.saved }}</h2>
               <span class="chip">Guardades</span>
             </div>
 
@@ -142,20 +142,19 @@ function scheduleDrawing() {
                   type="button"
                   @click.stop="scheduleYoga"
                 >
-                  Programar
+                  {{ scheduleCopy.buttons.schedule }}
                 </button>
               </article>
             </div>
 
             <div v-else class="empty-state">
-              Encara no tens activitats guardades.
+              {{ scheduleCopy.empty }}
             </div>
           </div>
 
           <div>
             <div class="section-heading">
-              <h2>Recomanacions</h2>
-              <span class="chip">Per a tu</span>
+              <h2>{{ scheduleCopy.sections.recommended }}</h2>
             </div>
 
             <div class="activity-list">
@@ -181,7 +180,7 @@ function scheduleDrawing() {
                   type="button"
                   @click.stop="scheduleDrawing"
                 >
-                  Programar
+                  {{ scheduleCopy.buttons.schedule }}
                 </button>
               </article>
             </div>

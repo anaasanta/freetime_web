@@ -3,7 +3,8 @@ import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
 import AppPanel from '@/components/ui/AppPanel.vue'
-import { authCopy } from '@/data/uiText'
+import { getAuthCopy } from '@/data/authCopyI18n'
+import { useI18n } from '@/stores/i18n'
 
 const props = defineProps({
   title: {
@@ -28,6 +29,7 @@ const emit = defineEmits(['back'])
 
 const route = useRoute()
 const router = useRouter()
+const { currentLanguage } = useI18n()
 
 const routeCopyKeys = {
   'forgot-password': 'forgotPassword',
@@ -36,7 +38,8 @@ const routeCopyKeys = {
   'ai-consult': 'aiConsult',
 }
 
-const routeCopy = computed(() => authCopy[routeCopyKeys[route.name]] ?? authCopy.register)
+const authPageCopy = computed(() => getAuthCopy(currentLanguage.value))
+const routeCopy = computed(() => authPageCopy.value[routeCopyKeys[route.name]] ?? authPageCopy.value.register)
 
 const content = computed(() => ({
   title: props.title || routeCopy.value.title,

@@ -24,7 +24,7 @@
   --primary-shadow: rgba(30, 41, 59, 0.14);
 
   --violet-soft: #f1edff;
-  --violet: #8b5cf6;
+  --violet: #7054b1;
   --violet-strong: #655aa6;
 
   --sky-soft: #eef8ff;
@@ -125,4 +125,69 @@
   --shadow-glow: 0 30px 80px rgba(109, 40, 217, 0.16);
   --shadow-panel: 0 14px 36px rgba(0, 0, 0, 0.3);
   --shadow-panel-strong: 0 22px 60px rgba(0, 0, 0, 0.38);
+
+  /* Accesibilidad */
+  --animation-duration: 0.3s;
+}
+
+/* Soporte para movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --animation-duration: 0.01s;
+  }
+}
+
+/* Contraste alto */
+:root[data-highcontrast='true'] {
+  --background: #ffffff;
+  --foreground: #000000;
+  --foreground-soft: #111111;
+  --foreground-muted-soft: #404040;
+  --surface-soft: #ffffff;
+  --surface-strong: #ffffff;
+  --surface-contrast: #ffffff;
+  --surface-stroke-strong: rgba(0, 0, 0, 0.98);
+  --surface-inset-highlight: rgba(255, 255, 255, 0.92);
+  --muted: #f4f4f4;
+  --muted-foreground: #111111;
+  --border: rgba(0, 0, 0, 0.98);
+  --border-focus: rgba(0, 0, 0, 1);
+  --primary: #000000;
+  --primary-foreground: #ffffff;
+  --primary-shadow: rgba(0, 0, 0, 0.18);
+  --shadow-soft: 0 0 0 2px rgba(0, 0, 0, 0.92);
+  --shadow-panel: 0 0 0 2px rgba(0, 0, 0, 0.92);
+  --shadow-panel-strong: 0 0 0 4px rgba(0, 0, 0, 1);
+  --shadow-glow: none;
+}
+
+:root[data-theme='dark'][data-highcontrast='true'] {
+  --background: #000000;
+  --foreground: #ffffff;
+  --foreground-soft: #ffffff;
+  --foreground-muted-soft: #d4d4d4;
+  --card: rgba(0, 0, 0, 0.98);
+  --card-solid: rgba(0, 0, 0, 1);
+  --card-foreground: #ffffff;
+  --surface-soft: rgba(0, 0, 0, 0.98);
+  --surface-strong: rgba(0, 0, 0, 1);
+  --surface-contrast: #000000;
+  --surface-stroke-strong: rgba(255, 255, 255, 0.95);
+  --surface-inset-highlight: rgba(255, 255, 255, 0.1);
+  --muted: rgba(0, 0, 0, 1);
+  --muted-foreground: #ffffff;
+  --border: rgba(255, 255, 255, 0.95);
+  --border-focus: rgba(255, 255, 255, 1);
+  --primary: #ffffff;
+  --primary-foreground: #000000;
+  --primary-shadow: rgba(255, 255, 255, 0.2);
+  --shadow-soft: 0 0 0 2px rgba(255, 255, 255, 0.88);
+  --shadow-glow: none;
+  --shadow-panel: 0 0 0 2px rgba(255, 255, 255, 0.88);
+  --shadow-panel-strong: 0 0 0 4px rgba(255, 255, 255, 1);
+}
+
+:root[data-reducedmotion='true'] {
+  --animation-duration: 0.01s;
+  scroll-behavior: auto;
 }

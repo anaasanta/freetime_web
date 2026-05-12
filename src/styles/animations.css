@@ -306,3 +306,16 @@
   background: color-mix(in srgb, var(--surface-contrast) 66%, transparent);
   backdrop-filter: blur(16px);
 }
+
+:root[data-reducedmotion='true'] .app-page::before,
+:root[data-reducedmotion='true'] .app-page::after,
+:root[data-reducedmotion='true'] .gradient-card::before,
+:root[data-reducedmotion='true'] .gradient-card::after {
+  animation: none !important;
+}
+
+:root[data-reducedmotion='true'] .gradient-card::before,
+:root[data-reducedmotion='true'] .gradient-card::after {
+  opacity: 0.18;
+  filter: blur(8px);
+}

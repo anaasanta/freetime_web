@@ -52,4 +52,9 @@ function handleClick(event) {
   border-color: color-mix(in srgb, var(--violet-strong) 18%, transparent);
   box-shadow: 0 8px 20px rgba(30, 41, 59, 0.08);
 }
+
+.landing-section-link:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--sky) 70%, white);
+  outline-offset: 3px;
+}
 </style>

@@ -1,59 +1,62 @@
 <script setup>
+import { computed } from 'vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
 import RotatingText from '@/components/ui/RotatingText/RotatingText.vue'
 import LandingNavbar from '@/components/landing/LandingNavbar.vue'
 import LandingCommentsMarquee from '@/components/landing/LandingCommentsMarquee.vue'
 import LandingContactSection from '@/components/landing/LandingContactSection.vue'
 import HeroLogo from '@/components/landing/Imagen2.png'
-import { landingCopy } from '@/data/uiText'
+import { getLandingCopy } from '@/data/landingCopyI18n'
+import { useI18n } from '@/stores/i18n'
+
+const { currentLanguage } = useI18n()
+const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
 </script>
 
 <template>
   <main class="app-page landing-page">
-    <!-- Navbar reutilizable -->
     <div class="page-container landing-nav-wrap">
       <LandingNavbar
-        :brand="landingCopy.nav.brand"
-        :tagline="landingCopy.nav.tagline"
-        :links="landingCopy.nav.links"
-        :primary-action="landingCopy.nav.primaryAction"
-        :primary-route="landingCopy.nav.primaryRoute"
-        :secondary-action="landingCopy.nav.secondaryAction"
-        :secondary-route="landingCopy.nav.secondaryRoute"
-        :tooltips="landingCopy.nav.tooltips"
+        :brand="displayCopy.nav.brand"
+        :tagline="displayCopy.nav.tagline"
+        :brand-route="displayCopy.nav.brandRoute"
+        :aria-label="displayCopy.nav.ariaLabel"
+        :links="displayCopy.nav.links"
+        :primary-action="displayCopy.nav.primaryAction"
+        :primary-route="displayCopy.nav.primaryRoute"
+        :secondary-action="displayCopy.nav.secondaryAction"
+        :secondary-route="displayCopy.nav.secondaryRoute"
+        :tooltips="displayCopy.nav.tooltips"
       />
     </div>
 
-    <!-- Hero principal -->
     <section class="landing-hero">
       <div class="page-container landing-shell">
         <div class="landing-copy">
           <div class="landing-chip-row">
-            <span v-for="chip in landingCopy.hero.chips" :key="chip" class="landing-chip">
+            <span v-for="chip in displayCopy.hero.chips" :key="chip" class="landing-chip">
               {{ chip }}
             </span>
           </div>
-          <h1 class="landing-title">{{ landingCopy.hero.titleFull }}</h1>
+          <h1 class="landing-title">{{ displayCopy.hero.titleFull }}</h1>
 
           <h2 class="landing-rotating-line">
-            <span class="landing-rotating-prefix">{{ landingCopy.hero.rotatingPrefix }}</span>
+            <span class="landing-rotating-prefix">{{ displayCopy.hero.rotatingPrefix }}</span>
             <RotatingText
-              :texts="landingCopy.hero.rotatingWords"
-              :rotation-interval="2300"
-              :stagger-duration="0.02"
-              split-by="characters"
-              main-class-name="landing-rotating-shell"
-              split-level-class-name="landing-rotating-word-group"
-              element-level-class-name="landing-rotating-word"
+              :texts="displayCopy.hero.rotatingWords"
+              :rotation-interval="displayCopy.hero.rotatingConfig.interval"
+              :stagger-duration="displayCopy.hero.rotatingConfig.staggerDuration"
+              :split-by="displayCopy.hero.rotatingConfig.splitBy"
+              :main-class-name="displayCopy.hero.rotatingConfig.mainClassName"
+              :split-level-class-name="displayCopy.hero.rotatingConfig.splitLevelClassName"
+              :element-level-class-name="displayCopy.hero.rotatingConfig.elementLevelClassName"
             />
           </h2>
 
-          <div class="landing-description" aria-label="Descripció de FreeTime">
-            <p>{{ landingCopy.hero.description }}</p>
-            <span class="landing-description-note">{{ landingCopy.hero.descriptionNote }}</span>
+          <div class="landing-description" :aria-label="displayCopy.accessibility.heroDescriptionLabel">
+            <p>{{ displayCopy.hero.description }}</p>
+            <span class="landing-description-note">{{ displayCopy.hero.descriptionNote }}</span>
           </div>
-
-          <!-- Buttons removed: navbar contains primary actions -->
         </div>
 
         <div class="landing-hero-art" aria-hidden="true">
@@ -62,20 +65,19 @@ import { landingCopy } from '@/data/uiText'
       </div>
     </section>
 
-    <!-- Beneficios en bloques pequeños -->
-    <section id="features" class="landing-features">
+    <section :id="displayCopy.sections.features" class="landing-features">
       <div class="page-container">
         <div class="landing-section-header">
-          <span class="landing-eyebrow">{{ landingCopy.featuresHeader.eyebrow }}</span>
-          <h2 class="section-title">{{ landingCopy.featuresHeader.title }}</h2>
+          <span class="landing-eyebrow">{{ displayCopy.featuresHeader.eyebrow }}</span>
+          <h2 class="section-title">{{ displayCopy.featuresHeader.title }}</h2>
           <p class="page-description">
-            {{ landingCopy.featuresHeader.subtitle }}
+            {{ displayCopy.featuresHeader.subtitle }}
           </p>
         </div>
 
         <div class="feature-grid">
           <AppPanel
-            v-for="feature in landingCopy.features"
+            v-for="feature in displayCopy.features"
             :key="feature.title"
             as="article"
             panel-class="feature-panel"
@@ -87,29 +89,30 @@ import { landingCopy } from '@/data/uiText'
       </div>
     </section>
 
-    <!-- Cinta de comentarios -->
-    <section id="comments" class="landing-comments">
+    <section :id="displayCopy.sections.comments" class="landing-comments">
       <div class="page-container">
         <LandingCommentsMarquee
-          :aria-label="landingCopy.commentsHeader.ariaLabel"
-          :title="landingCopy.commentsHeader.title"
-          :comments="landingCopy.comments"
+          :aria-label="displayCopy.commentsHeader.ariaLabel"
+          :title="displayCopy.commentsHeader.title"
+          :previous-label="displayCopy.commentsHeader.previousLabel"
+          :next-label="displayCopy.commentsHeader.nextLabel"
+          :speed-seconds="displayCopy.commentsHeader.speedSeconds"
+          :comments="displayCopy.comments"
         />
       </div>
     </section>
 
-    <!-- Contacte -->
-    <section id="contact" class="landing-cta">
+    <section :id="displayCopy.sections.contact" class="landing-cta">
       <div class="page-container">
         <div class="landing-section-header landing-contact-header">
-          <span class="landing-eyebrow">{{ landingCopy.closing.eyebrow }}</span>
-          <h2 class="section-title">{{ landingCopy.closing.title }}</h2>
+          <span class="landing-eyebrow">{{ displayCopy.closing.eyebrow }}</span>
+          <h2 class="section-title">{{ displayCopy.closing.title }}</h2>
           <p class="page-description">
-            {{ landingCopy.contact.subtitle }}
+            {{ displayCopy.contact.subtitle }}
           </p>
         </div>
 
-        <LandingContactSection :copy="landingCopy.contact" />
+        <LandingContactSection :copy="displayCopy.contact" />
       </div>
     </section>
   </main>
@@ -135,7 +138,7 @@ import { landingCopy } from '@/data/uiText'
 
 .landing-shell {
   display: grid;
-  grid-template-columns: minmax(760px, 1.18fr) minmax(340px, 0.62fr);
+  grid-template-columns: minmax(720px, 1fr) minmax(420px, 0.9fr);
   gap: clamp(28px, 4vw, 72px);
   align-items: center;
 }
@@ -143,6 +146,7 @@ import { landingCopy } from '@/data/uiText'
 .landing-copy {
   display: grid;
   gap: 24px;
+  min-width: 0;
   max-width: 990px;
   padding: 46px 0 34px;
 }
@@ -179,7 +183,7 @@ import { landingCopy } from '@/data/uiText'
   margin: 0;
   background: linear-gradient(90deg, var(--foreground) 0%, var(--violet-strong) 45%, var(--sky) 100%);
   color: transparent;
-  font-size: clamp(3.4rem, 8vw, 6.4rem);
+  font-size: clamp(3.2rem, 7.2vw, 6.2rem);
   line-height: 0.96;
   letter-spacing: -0.05em;
   -webkit-background-clip: text;
@@ -190,7 +194,7 @@ import { landingCopy } from '@/data/uiText'
   position: relative;
   display: grid;
   gap: 14px;
-  max-width: 98ch;
+  max-width: 104ch;
   margin-top: 12px;
   margin-left: clamp(10px, 1.1vw, 54px);
   padding: 0 0 0 28px;
@@ -246,7 +250,10 @@ import { landingCopy } from '@/data/uiText'
 .landing-rotating-line :deep(.landing-rotating-shell) {
   display: inline-flex;
   align-items: baseline;
-  min-width: 7.6ch;
+  flex: 0 0 auto;
+  min-width: 9.6ch;
+  width: max-content;
+  white-space: nowrap;
 }
 
 .landing-rotating-line :deep(.landing-rotating-word-group) {
@@ -281,7 +288,7 @@ import { landingCopy } from '@/data/uiText'
 }
 
 .landing-hero-logo {
-  width: min(100%, 560px);
+  width: min(100%, 620px);
   max-height: 62vh;
   border-radius: 50%;
   image-rendering: auto;
@@ -336,9 +343,6 @@ import { landingCopy } from '@/data/uiText'
   padding-top: 28px;
 }
 
-/* When the hero content is very large (huge headings), allow the hero
-   section to scroll instead of overlapping following sections. This
-   keeps the small cards below in place while the hero can be scrolled. */
 .landing-hero {
   min-height: 64vh;
   overflow-y: auto;
@@ -361,7 +365,7 @@ import { landingCopy } from '@/data/uiText'
   }
 
   .landing-hero-logo {
-    width: min(64vw, 360px);
+    width: min(72vw, 420px);
   }
 }
 
@@ -377,6 +381,5 @@ import { landingCopy } from '@/data/uiText'
   .feature-grid {
     grid-template-columns: 1fr;
   }
-
 }
 </style>

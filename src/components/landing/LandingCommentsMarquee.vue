@@ -1,14 +1,28 @@
 <script setup>
-import { computed } from 'vue'
+import { computed, onBeforeUnmount, ref } from 'vue'
+import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
+import { useAccessibility } from '@/stores/accessibility'
 
 const props = defineProps({
   ariaLabel: {
     type: String,
-    default: 'Comentaris destacats',
+    default: '',
   },
   title: {
     type: String,
     default: '',
+  },
+  previousLabel: {
+    type: String,
+    default: '',
+  },
+  nextLabel: {
+    type: String,
+    default: '',
+  },
+  speedSeconds: {
+    type: Number,
+    default: 42,
   },
   comments: {
     type: Array,
@@ -18,26 +32,114 @@ const props = defineProps({
 
 // Triple list allows a seamless loop without empty gaps.
 const marqueeComments = computed(() => [...props.comments, ...props.comments, ...props.comments])
+const manualOffset = ref(0)
+const isWheelScrolling = ref(false)
+const commentsRow = ref(null)
+const reducedTrack = ref(null)
+const { reducedMotion } = useAccessibility()
+const marqueeStyle = computed(() => ({
+  '--comments-speed': `${props.speedSeconds}s`,
+  '--comments-offset': `${manualOffset.value}px`,
+}))
+
+let wheelResumeTimeout = null
+
+function normalizeOffset(offset) {
+  if (!commentsRow.value || props.comments.length === 0) return offset
+
+  const cycleWidth = commentsRow.value.scrollWidth / 3
+  if (!cycleWidth) return offset
+
+  const wrappedOffset = ((offset % cycleWidth) + cycleWidth) % cycleWidth
+
+  return wrappedOffset === 0 ? 0 : wrappedOffset - cycleWidth
+}
+
+function handleWheel(event) {
+  if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return
+
+  event.preventDefault()
+  manualOffset.value = normalizeOffset(manualOffset.value - event.deltaX)
+  isWheelScrolling.value = true
+
+  if (wheelResumeTimeout) {
+    window.clearTimeout(wheelResumeTimeout)
+  }
+
+  wheelResumeTimeout = window.setTimeout(() => {
+    isWheelScrolling.value = false
+  }, 700)
+}
+
+function scrollComments(direction) {
+  if (!reducedTrack.value) return
+
+  reducedTrack.value.scrollBy({
+    left: direction * 420,
+    behavior: 'smooth',
+  })
+}
+
+onBeforeUnmount(() => {
+  if (wheelResumeTimeout) {
+    window.clearTimeout(wheelResumeTimeout)
+  }
+})
 </script>
 
 <template>
   <section class="comments-marquee" :aria-label="props.ariaLabel">
     <div class="comments-marquee-header">
       <h2 v-if="props.title" class="section-title">{{ props.title }}</h2>
+
+      <div v-if="reducedMotion && props.comments.length > 0" class="carousel-controls">
+        <button
+          class="carousel-button"
+          type="button"
+          :aria-label="props.previousLabel"
+          @click="scrollComments(-1)"
+        >
+          <ChevronLeft :size="20" />
+        </button>
+
+        <button
+          class="carousel-button"
+          type="button"
+          :aria-label="props.nextLabel"
+          @click="scrollComments(1)"
+        >
+          <ChevronRight :size="20" />
+        </button>
+      </div>
     </div>
 
-    <div class="comments-track">
-      <div class="comments-row">
+    <div v-if="reducedMotion" ref="reducedTrack" class="comments-track comments-track--static">
+      <div class="comments-row comments-row--static">
+        <article v-for="comment in props.comments" :key="comment.author" class="comment-card surface">
+          <p>{{ comment.quote }}</p>
+          <strong>{{ comment.author }}</strong>
+          <span>{{ comment.role }}</span>
+        </article>
+      </div>
+    </div>
+
+    <div v-else class="comments-track" @wheel="handleWheel">
+      <div
+        ref="commentsRow"
+        class="comments-row"
+        :class="{ 'is-wheel-scrolling': isWheelScrolling }"
+        :style="marqueeStyle"
+      >
         <article
           v-for="(comment, index) in marqueeComments"
           :key="`${comment.author}-${index}`"
           class="comment-card surface"
-          tabindex="0"
+          :aria-hidden="index >= props.comments.length"
+          :tabindex="index < props.comments.length ? 0 : -1"
         >
           <p>{{ comment.quote }}</p>
           <strong>{{ comment.author }}</strong>
           <span>{{ comment.role }}</span>
-
         </article>
       </div>
     </div>
@@ -51,13 +153,44 @@ const marqueeComments = computed(() => [...props.comments, ...props.comments, ..
 }
 
 .comments-marquee-header {
-  display: grid;
-  gap: 8px;
-  max-width: 640px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
 }
 
 .comments-marquee-header .section-title {
   color: var(--violet-strong);
+}
+
+.carousel-controls {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  flex: 0 0 auto;
+}
+
+.carousel-button {
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border: 1px solid var(--border);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface-contrast) 92%, transparent);
+  color: var(--foreground);
+  box-shadow: 0 8px 24px rgba(90, 110, 140, 0.06);
+  transition:
+    transform 0.18s ease,
+    border-color 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.carousel-button:hover {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--violet) 38%, var(--border));
+  background: color-mix(in srgb, var(--violet-soft) 42%, var(--surface-contrast));
 }
 
 .comments-track {
@@ -67,11 +200,34 @@ const marqueeComments = computed(() => [...props.comments, ...props.comments, ..
   padding: 32px 0;
 }
 
+.comments-track--static {
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-snap-type: x proximity;
+  scroll-behavior: smooth;
+  scrollbar-width: none;
+  margin-top: 4px;
+}
+
+.comments-track--static::-webkit-scrollbar {
+  display: none;
+}
+
 .comments-row {
   display: flex;
   gap: 20px;
   width: max-content;
-  animation: comment-marquee 60s linear infinite;
+  animation: comment-marquee var(--comments-speed, 42s) linear infinite;
+}
+
+.comments-row--static {
+  animation: none;
+  padding-inline: 16px;
+}
+
+.comments-track:focus-within .comments-row,
+.comments-row.is-wheel-scrolling {
+  animation-play-state: paused;
 }
 
 .comment-card {
@@ -96,6 +252,11 @@ const marqueeComments = computed(() => [...props.comments, ...props.comments, ..
 
 .comment-card span {
   color: var(--muted-foreground);
+}
+
+.comment-card:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--sky) 70%, white);
+  outline-offset: 3px;
 }
 
 .comment-tooltip {
@@ -124,19 +285,33 @@ const marqueeComments = computed(() => [...props.comments, ...props.comments, ..
   transform: translateX(-50%) translateY(0);
 }
 
-@keyframes comment-marquee {
-  from {
-    transform: translateX(0);
-  }
-  to {
-    transform: translateX(-33.3333%);
-  }
-}
-
 @media (max-width: 760px) {
+  .comments-marquee-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .carousel-controls {
+    align-self: flex-end;
+  }
+
+  .carousel-button {
+    width: 44px;
+    height: 44px;
+  }
+
   .comment-card {
     min-height: 200px;
     width: min(340px, 85vw);
+  }
+}
+
+@keyframes comment-marquee {
+  from {
+    transform: translateX(var(--comments-offset, 0px));
+  }
+  to {
+    transform: translateX(calc(-33.3333% + var(--comments-offset, 0px)));
   }
 }
 </style>

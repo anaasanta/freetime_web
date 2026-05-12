@@ -37,7 +37,7 @@ import {
 import AppBrand from '@/components/layout/AppBrand.vue'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import ThemeToggle from '@/components/theme/ThemeToggle.vue'
-import { homeCopy, landingCopy, profileCopy, themeCopy } from '@/data/uiText'
+import { homeCopy, landingCopy, profileCopy } from '@/data/uiText'
 import { logout, syncSelectedActivity, useAppSession } from '@/stores/appSession'
 
 const router = useRouter()
@@ -347,7 +347,7 @@ function scheduleFromDay(day) {
 
         <template #end>
           <div class="toolbar-actions">
-            <ThemeToggle :labels="themeCopy.toggle" />
+            <ThemeToggle />
 
             <button
               class="icon-button"

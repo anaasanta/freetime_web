@@ -36,16 +36,21 @@ import {
   LogOut,
   Settings,
   FileQuestionMark,
+  Menu,
+  Trash2,
 } from 'lucide-vue-next'
 
 import AppBrand from '@/components/layout/AppBrand.vue'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import ThemeToggle from '@/components/theme/ThemeToggle.vue'
 import ClickSpark from '@/components/ui/ClickSpark/ClickSpark.vue'
-import { activityCopy, homeCopy, landingCopy, themeCopy } from '@/data/uiText'
-import { logout, syncSelectedActivity, addSavedActivity, useAppSession } from '@/stores/appSession'
+import { activityCopy, landingCopy } from '@/data/uiText'
+import { getHomeCopy } from '@/data/homeCopyI18n'
+import { useI18n } from '@/stores/i18n'
+import { logout, syncSelectedActivity, addSavedActivity, useAppSession, removeSavedActivity } from '@/stores/appSession'
 
 const router = useRouter()
+const { currentLanguage } = useI18n()
 const {
   currentUser,
   savedActivities,
@@ -60,6 +65,9 @@ const searchText = ref('')
 const savedRow = ref(null)
 const activeAddTooltip = ref('')
 const addTooltipStyle = ref({})
+const showConfirmDeleteId = ref(null)
+
+const displayCopy = computed(() => getHomeCopy(currentLanguage.value))
 
 const searchableActivities = computed(() => {
   if (!searchText.value.trim()) return []
@@ -190,7 +198,7 @@ function updateAddTooltipPosition(event) {
     left = window.innerWidth - tooltipWidth - margin
   }
 
-  activeAddTooltip.value = homeCopy.tooltips.addSaved
+  activeAddTooltip.value = displayCopy.value.tooltips.addSaved
   addTooltipStyle.value = {
     left: `${left}px`,
     top: `${Math.max(anchorY - 58, margin)}px`,
@@ -211,6 +219,20 @@ function handleAddActivity(activityId) {
     addSavedActivity(activityId)
   }, 420)
 }
+
+function openConfirmDelete(activityId) {
+  showConfirmDeleteId.value = activityId
+}
+
+function confirmRemoveSavedActivity() {
+  if (!showConfirmDeleteId.value) return
+  removeSavedActivity(showConfirmDeleteId.value)
+  showConfirmDeleteId.value = null
+}
+
+function cancelConfirmDelete() {
+  showConfirmDeleteId.value = null
+}
 </script>
 
 <template>
@@ -230,8 +252,15 @@ function handleAddActivity(activityId) {
               <input
                 v-model="searchText"
                 type="text"
-                :placeholder="homeCopy.searchPlaceholder"
+                :placeholder="displayCopy.searchPlaceholder"
               />
+            </div>
+
+            <div class="tooltip-wrapper">
+              <button class="search-advanced-button" type="button" :aria-label="displayCopy.advancedSearch.tooltip">
+                <Menu :size="18" />
+              </button>
+              <span class="tooltip-bubble tooltip-bubble-down">{{ displayCopy.advancedSearch.tooltip }}</span>
             </div>
           </div>
 
@@ -246,31 +275,33 @@ function handleAddActivity(activityId) {
 
               <span>{{ activity.title }}</span>
 
-                <span v-if="isSavedActivity(activity.id)" class="already-saved-badge">
-                  {{ homeCopy.alreadySaved }}
-                </span>
+                <div v-if="isSavedActivity(activity.id)" class="tooltip-wrapper mini-tooltip-wrapper">
+                  <button
+                    class="mini-delete"
+                    type="button"
+                    @click.stop="openConfirmDelete(activity.id)"
+                    :aria-label="`Eliminar ${activity.title}`"
+                  >
+                    <Trash2 :size="14" />
+                  </button>
+                </div>
 
                 <div v-else class="tooltip-wrapper mini-tooltip-wrapper">
-                <button
+                  <button
                     class="mini-add"
                     type="button"
                     @click.stop="handleAddActivity(activity.id)"
-                    @mouseenter="openAddTooltip"
-                    @mousemove="updateAddTooltipPosition"
-                    @mouseleave="closeAddTooltip"
-                    @focus="openAddTooltip"
-                    @blur="closeAddTooltip"
-                >
-                  <ClickSpark
-                    spark-color="#7c3aed"
-                    :spark-size="9"
-                    :spark-radius="22"
-                    :spark-count="8"
-                    :duration="440"
                   >
-                    <Plus :size="16" />
-                  </ClickSpark>
-                </button>
+                    <ClickSpark
+                      spark-color="#7c3aed"
+                      :spark-size="9"
+                      :spark-radius="22"
+                      :spark-count="8"
+                      :duration="440"
+                    >
+                      <Plus :size="16" />
+                    </ClickSpark>
+                  </button>
                 </div>
             </div>
           </div>
@@ -279,7 +310,7 @@ function handleAddActivity(activityId) {
 
         <template #end>
     <div class="header-actions">
-      <ThemeToggle :labels="themeCopy.toggle" />
+      <ThemeToggle />
 
         <div class="tooltip-wrapper">
             <button class="profile-button" type="button" @click="router.push({ name: 'profile' })">
@@ -292,7 +323,7 @@ function handleAddActivity(activityId) {
             <UserRound v-else :size="20" />
             </button>
 
-            <span class="tooltip-bubble">{{ homeCopy.tooltips.profile }}</span>
+            <span class="tooltip-bubble">{{ displayCopy.tooltips.profile }}</span>
             </div>
 
             <div class="tooltip-wrapper">
@@ -300,14 +331,14 @@ function handleAddActivity(activityId) {
                 <LogOut :size="20" />
                 </button>
 
-                <span class="tooltip-bubble">{{ homeCopy.tooltips.logout }}</span>
+                <span class="tooltip-bubble">{{ displayCopy.tooltips.logout }}</span>
             </div>
             <div class="tooltip-wrapper">
                 <button class="settings-button" type="button" @click="router.push({ name: 'settings' })">
                 <Settings :size="20" />
                 </button>
 
-                <span class="tooltip-bubble">{{ homeCopy.tooltips.settings }}</span>
+                <span class="tooltip-bubble">{{ displayCopy.tooltips.settings }}</span>
             </div>
     </div>
         </template>
@@ -328,25 +359,25 @@ function handleAddActivity(activityId) {
               <span class="test-glow"></span>
               <span class="test-content">
                 <Sparkles class="test-icon" :size="70" />
-                <strong>{{ homeCopy.testLabel }}</strong>
+                <strong>{{ displayCopy.testLabel }}</strong>
               </span>
             </button>
 
             <span class="tooltip-bubble">
-            {{ homeCopy.testTooltip }}
+            {{ displayCopy.testTooltip }}
             </span>
         </div>
         </div>
 
       <section class="home-section">
         <div class="section-heading">
-          <h2>{{ homeCopy.savedActivitiesTitle }}</h2>
+          <h2>{{ displayCopy.savedActivitiesTitle }}</h2>
 
           <div v-if="savedActivities.length > 0" class="carousel-controls">
             <button
               class="carousel-button"
               type="button"
-              :aria-label="homeCopy.aria.previousSaved"
+              :aria-label="displayCopy.aria.previousSaved"
               @click="scrollSavedActivities(-1)"
             >
               <ChevronLeft :size="20" />
@@ -355,7 +386,7 @@ function handleAddActivity(activityId) {
             <button
               class="carousel-button"
               type="button"
-              :aria-label="homeCopy.aria.nextSaved"
+              :aria-label="displayCopy.aria.nextSaved"
               @click="scrollSavedActivities(1)"
             >
               <ChevronRight :size="20" />
@@ -372,30 +403,44 @@ function handleAddActivity(activityId) {
             @click="openActivity(activity.id)"
           >
             <span v-if="isNewSavedActivity(activity.id)" class="new-activity-badge">
-              {{ homeCopy.newBadge }}
+              {{ displayCopy.newBadge }}
             </span>
 
-            <div class="activity-icon">
-              <component :is="iconFor(activity)" :size="28" />
+            <div class="activity-card-content">
+              <div class="activity-icon">
+                <component :is="iconFor(activity)" :size="28" />
+              </div>
+
+              <div>
+                <h3>{{ activity.title }}</h3>
+                <p>{{ activity.duration }} {{ activityCopy.durationUnit }}</p>
+              </div>
             </div>
 
-            <div>
-              <h3>{{ activity.title }}</h3>
-              <p>{{ activity.duration }} {{ activityCopy.durationUnit }}</p>
+            <div class="tooltip-wrapper delete-tooltip-wrapper">
+              <button
+                class="activity-card-delete"
+                type="button"
+                :aria-label="`Eliminar ${activity.title}`"
+                @click.stop="openConfirmDelete(activity.id)"
+              >
+                <Trash2 :size="18" />
+              </button>
+              <span class="tooltip-bubble tooltip-bubble-down">{{ displayCopy.deleteActivity }}</span>
             </div>
           </article>
         </div>
 
         <div v-else class="empty-state">
-          {{ homeCopy.savedActivitiesEmpty }}
+          {{ displayCopy.savedActivitiesEmpty }}
         </div>
       </section>
 
       <section class="home-section">
         <div class="section-heading">
-          <h2>{{ homeCopy.recommendedTitle }}</h2>
+          <h2>{{ displayCopy.recommendedTitle }}</h2>
 
-          <span class="chip">{{ homeCopy.recommendedBadge }}</span>
+          <span class="chip">{{ displayCopy.recommendedBadge }}</span>
         </div>
 
         <div class="recommendation-row">
@@ -410,13 +455,8 @@ function handleAddActivity(activityId) {
         <button
             class="add-button"
             type="button"
-            :aria-label="homeCopy.aria.addActivity"
+            :aria-label="displayCopy.aria.addActivity"
             @click.stop="handleAddActivity(activity.id)"
-            @mouseenter="openAddTooltip"
-            @mousemove="updateAddTooltipPosition"
-            @mouseleave="closeAddTooltip"
-            @focus="openAddTooltip"
-            @blur="closeAddTooltip"
         >
           <ClickSpark
             spark-color="#7c3aed"
@@ -428,6 +468,7 @@ function handleAddActivity(activityId) {
             <Plus :size="18" />
           </ClickSpark>
         </button>
+        <span class="tooltip-bubble tooltip-bubble-down">{{ displayCopy.tooltips.addSaved }}</span>
         </div>
 
             <div class="activity-icon">
@@ -443,7 +484,7 @@ function handleAddActivity(activityId) {
 
       <section class="home-section">
         <div class="section-heading">
-          <h2>{{ homeCopy.startedActivitiesTitle }}</h2>
+          <h2>{{ displayCopy.startedActivitiesTitle }}</h2>
         </div>
 
         <div v-if="startedActivities.length > 0" class="activity-grid started-grid">
@@ -466,7 +507,7 @@ function handleAddActivity(activityId) {
         </div>
 
         <div v-else class="empty-state">
-          {{ homeCopy.startedActivitiesEmpty }}
+          {{ displayCopy.startedActivitiesEmpty }}
         </div>
       </section>
 
@@ -476,19 +517,19 @@ function handleAddActivity(activityId) {
         </div>
 
         <div>
-          <span>{{ homeCopy.nextActivityLabel }}</span>
+          <span>{{ displayCopy.nextActivityLabel }}</span>
 
           <h2 v-if="nextPlannedActivity">
             {{ nextPlannedTitle }}
           </h2>
 
           <h2 v-else>
-            {{ homeCopy.noNextActivity }}
+            {{ displayCopy.noNextActivity }}
           </h2>
         </div>
 
         <button class="primary-button" type="button" @click="router.push({ name: 'profile' })">
-          {{ homeCopy.viewButton }}
+          {{ displayCopy.viewButton }}
         </button>
       </section>
 
@@ -499,6 +540,18 @@ function handleAddActivity(activityId) {
       >
         {{ activeAddTooltip }}
       </span>
+
+    <div v-if="showConfirmDeleteId" class="confirm-modal">
+      <div class="confirm-dialog" role="dialog" aria-modal="true">
+        <button class="confirm-close" type="button" @click="cancelConfirmDelete">×</button>
+        <h3>{{ displayCopy.deleteConfirm.title }}</h3>
+        <p>{{ displayCopy.deleteConfirm.message }}</p>
+        <div class="confirm-actions">
+          <button class="btn-cancel" type="button" @click="cancelConfirmDelete">{{ displayCopy.deleteConfirm.cancel }}</button>
+          <button class="btn-confirm" type="button" @click="confirmRemoveSavedActivity">{{ displayCopy.deleteConfirm.confirm }}</button>
+        </div>
+      </div>
+    </div>
     </section>
   </main>
 </template>
@@ -593,6 +646,26 @@ h1 {
   color: var(--muted-foreground);
 }
 
+.search-advanced-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+  border-radius: 8px;
+  transition: all 0.18s ease;
+  position: relative;
+}
+
+.search-advanced-button:hover {
+  background: color-mix(in srgb, var(--violet-soft) 45%, transparent);
+  color: var(--foreground);
+}
+
 .search-content {
   flex: 1;
   display: grid;
@@ -673,6 +746,69 @@ h1 {
   background: var(--surface-contrast);
 }
 
+.mini-delete {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid rgba(220,70,70,0.28);
+  border-radius: 12px;
+  background: rgba(239,68,68,0.06);
+  color: rgb(220,70,70);
+}
+
+.confirm-modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: rgba(8,10,15,0.45);
+  z-index: 1200;
+}
+
+.confirm-dialog {
+  width: 360px;
+  background: var(--surface-contrast);
+  border-radius: 12px;
+  padding: 18px;
+  box-shadow: 0 18px 40px rgba(10,12,20,0.6);
+  color: var(--foreground);
+  position: relative;
+  text-align: center;
+}
+
+.confirm-close {
+  position: absolute;
+  right: 10px;
+  top: 8px;
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  font-size: 20px;
+}
+
+.confirm-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+  margin-top: 16px;
+}
+
+.btn-cancel {
+  background: transparent;
+  border: 1px solid var(--border);
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
+.btn-confirm {
+  background: rgba(220,70,70,0.12);
+  border: 1px solid rgba(220,70,70,0.3);
+  color: rgb(220,70,70);
+  padding: 8px 12px;
+  border-radius: 8px;
+}
+
 .hero-area {
   display: grid;
   place-items: center;
@@ -743,6 +879,7 @@ h1 {
 }
 
 .home-section {
+  position: relative;
   margin-top: 34px;
 }
 
@@ -756,8 +893,11 @@ h1 {
 
 .section-heading h2 {
   margin: 0;
-  color: var(--foreground);
-  font-size: 1.45rem;
+  color: var(--violet-strong);
+  font-size: clamp(1.6rem, 3vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
 }
 
 .text-button {
@@ -786,12 +926,78 @@ h1 {
   gap: 14px;
   border: 1px solid var(--border);
   border-radius: 24px;
-  padding: 16px 68px 16px 16px;
+  padding: 16px;
   background: color-mix(in srgb, var(--surface-contrast) 88%, transparent);
   box-shadow: 0 8px 24px rgba(90, 110, 140, 0.06);
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease;
+}
+
+.activity-card-content {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  min-width: 0;
+  flex: 1;
+}
+
+.activity-card-delete {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--muted);
+  color: var(--foreground);
+  cursor: pointer;
+  opacity: 0;
+  visibility: hidden;
+  transform: scale(0.8);
+  transition: all 0.18s ease;
+}
+
+.activity-card:hover .activity-card-delete,
+.activity-card:focus-within .activity-card-delete {
+  opacity: 1;
+  visibility: visible;
+  transform: scale(1);
+}
+
+.activity-card-delete:hover {
+  background: color-mix(in srgb, var(--foreground) 8%, transparent);
+  border-color: var(--border);
+}
+
+.delete-tooltip-wrapper {
+  position: relative;
+  flex: 0 0 36px;
+  margin-left: auto;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  z-index: 6;
+}
+
+.delete-tooltip-wrapper:hover,
+.delete-tooltip-wrapper:focus-within {
+  z-index: 120;
+}
+
+.delete-tooltip-wrapper .tooltip-bubble-down {
+  left: 50%;
+  right: auto;
+  top: calc(100% + 12px);
+  transform: translateX(-50%) translateY(-8px);
+  z-index: 130;
+}
+
+.delete-tooltip-wrapper:hover .tooltip-bubble-down,
+.delete-tooltip-wrapper:focus-within .tooltip-bubble-down {
+  transform: translateX(-50%) translateY(0);
 }
 
 .started-grid {
@@ -823,6 +1029,13 @@ h1 {
   box-shadow: 0 14px 32px rgba(90, 110, 140, 0.12);
 }
 
+.activity-card:hover,
+.activity-card:focus-within,
+.recommendation-card:hover,
+.recommendation-card:focus-within {
+  z-index: 90;
+}
+
 .activity-icon {
   display: grid;
   place-items: center;
@@ -851,7 +1064,7 @@ h1 {
   display: flex;
   gap: 16px;
   overflow-x: auto;
-  padding-bottom: 8px;
+  padding-bottom: 72px;
 }
 
 .recommendation-card {
@@ -873,9 +1086,7 @@ h1 {
 }
 
 .add-button {
-  position: absolute;
-  top: 12px;
-  right: 12px;
+  position: relative;
   display: grid;
   place-items: center;
   width: 36px;
@@ -884,6 +1095,35 @@ h1 {
   border-radius: 14px;
   background: var(--muted);
   color: var(--foreground);
+}
+
+.add-tooltip-wrapper {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  z-index: 6;
+}
+
+.add-tooltip-wrapper .tooltip-bubble {
+  left: 50%;
+  right: auto;
+  top: calc(100% + 12px);
+  transform: translateX(-50%) translateY(-8px);
+  z-index: 130;
+}
+
+.add-tooltip-wrapper:hover,
+.add-tooltip-wrapper:focus-within {
+  z-index: 120;
+}
+
+.add-tooltip-wrapper:hover .tooltip-bubble-down,
+.add-tooltip-wrapper:focus-within .tooltip-bubble-down {
+  transform: translateX(-50%) translateY(0);
 }
 
 .next-activity {
@@ -972,8 +1212,8 @@ h1 {
 .tooltip-bubble {
   position: absolute;
   left: 50%;
-  bottom: calc(100% + 12px);
-  transform: translateX(-50%) translateY(8px);
+  top: calc(100% + 12px);
+  transform: translateX(-50%) translateY(-8px);
   min-width: 180px;
   max-width: 280px;
   padding: 10px 12px;
@@ -996,21 +1236,34 @@ h1 {
   z-index: 30;
 }
 
-.tooltip-bubble::after {
+.tooltip-bubble::before {
   content: '';
   position: absolute;
   left: 50%;
-  top: 100%;
+  bottom: 100%;
   transform: translateX(-50%);
-  border-width: 7px;
-  border-style: solid;
-  border-color: color-mix(in srgb, var(--surface-contrast) 92%, transparent) transparent transparent transparent;
+  width: 12px;
+  height: 12px;
+  background: color-mix(in srgb, var(--surface-contrast) 92%, transparent);
+  border-top: 1px solid rgba(180, 190, 220, 0.35);
+  border-left: 1px solid rgba(180, 190, 220, 0.35);
+  border-radius: 2px;
+  transform: translateX(-50%) translateY(50%) rotate(45deg);
 }
 
-.tooltip-wrapper:hover .tooltip-bubble {
+.tooltip-wrapper:hover .tooltip-bubble,
+.tooltip-wrapper:focus-within .tooltip-bubble {
   opacity: 1;
   visibility: visible;
   transform: translateX(-50%) translateY(0);
+}
+
+.search-advanced-button .tooltip-bubble {
+  left: auto;
+  right: 0;
+  bottom: auto;
+  top: calc(100% + 8px);
+  min-width: 160px;
 }
 
 .add-tooltip-floating {
@@ -1024,8 +1277,40 @@ h1 {
   z-index: 1000;
 }
 
-.add-tooltip-floating::after {
-  left: clamp(18px, var(--tooltip-pointer-x), calc(100% - 18px));
+.add-tooltip-floating::before {
+  position: absolute;
+  bottom: 100%;
+  left: clamp(8px, var(--tooltip-pointer-x), calc(100% - 8px));
+  transform: translateX(-50%) translateY(50%) rotate(45deg);
+  width: 12px;
+  height: 12px;
+  background: color-mix(in srgb, var(--surface-contrast) 92%, transparent);
+  border-top: 1px solid rgba(180, 190, 220, 0.35);
+  border-left: 1px solid rgba(180, 190, 220, 0.35);
+  border-radius: 2px;
+}
+
+/* Tooltip pointing down */
+.tooltip-bubble-down {
+  top: calc(100% + 12px);
+  bottom: auto;
+}
+
+.tooltip-bubble-down::before {
+  bottom: auto;
+  top: -8px;
+  border-top: none;
+  border-left: none;
+  border-bottom: 1px solid rgba(180, 190, 220, 0.35);
+  border-right: 1px solid rgba(180, 190, 220, 0.35);
+  transform: translateX(-50%) translateY(-50%) rotate(45deg);
+}
+
+.tooltip-wrapper:hover .tooltip-bubble-down,
+.tooltip-wrapper:focus-within .tooltip-bubble-down {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
 }
 
 /* ===== TEST ESFERA ===== */
@@ -1092,6 +1377,11 @@ h1 {
 .add-tooltip-wrapper {
   top: 12px;
   right: 12px;
+  width: 36px;
+  height: 36px;
+  align-items: center;
+  justify-content: center;
+  z-index: 6;
 }
 
 .mini-tooltip-wrapper {
@@ -1155,8 +1445,8 @@ h1 {
 }
 
 .profile-button-avatar {
-  width: 38px;
-  height: 38px;
+  width: 100%;
+  height: 100%;
   border-radius: 999px;
   object-fit: cover;
   display: block;
@@ -1383,7 +1673,7 @@ h1 {
   overscroll-behavior-inline: contain;
   scroll-behavior: smooth;
   scroll-snap-type: x proximity;
-  padding: 2px 2px 10px;
+  padding: 2px 2px 72px;
   scrollbar-width: none;
 }
 
@@ -1395,5 +1685,12 @@ h1 {
   min-width: min(430px, calc(100vw - 48px));
   flex: 0 0 min(430px, calc(100vw - 48px));
   scroll-snap-align: start;
+}
+
+.saved-row .delete-tooltip-wrapper {
+  position: relative;
+  right: auto;
+  left: auto;
+  margin-left: auto;
 }
 </style>

@@ -1,12 +1,13 @@
 <script setup>
 import GradientCard from '@/components/ui/GradientCard.vue'
 import Screenshot from '@/components/landing/Imagen2.png'
+import { landingCopy } from '@/data/uiText'
 </script>
 
 <template>
-  <section class="preview-shell" aria-label="Vista previa de la app">
+  <section class="preview-shell" :aria-label="landingCopy.preview.ariaLabel">
     <GradientCard container-class="preview-card-shell" content-class="preview-card-content">
-      <img :src="Screenshot" alt="preview" class="preview-screenshot" />
+      <img :src="Screenshot" :alt="landingCopy.preview.imageAlt" class="preview-screenshot" />
     </GradientCard>
   </section>
 </template>
