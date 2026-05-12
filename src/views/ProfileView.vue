@@ -33,12 +33,15 @@ import {
   ChevronRight,
   Volleyball,
   Waves,
+  Edit2,
+  Plus,
 } from 'lucide-vue-next'
 import AppBrand from '@/components/layout/AppBrand.vue'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import ThemeToggle from '@/components/theme/ThemeToggle.vue'
-import { homeCopy, landingCopy, profileCopy } from '@/data/uiText'
-import { logout, syncSelectedActivity, useAppSession } from '@/stores/appSession'
+import ActivityScheduleModal from '@/components/ui/ActivityScheduleModal.vue'
+import { homeCopy, landingCopy, profileCopy, themeCopy } from '@/data/uiText'
+import { logout, syncSelectedActivity, useAppSession, addPlannedActivity, updatePlannedActivity, deletePlannedActivity } from '@/stores/appSession'
 
 const router = useRouter()
 
@@ -52,6 +55,11 @@ const {
 } = useAppSession()
 
 const avatarModules = import.meta.glob('../assets/avatars/*', {
+  eager: true,
+  import: 'default',
+})
+
+const activityImages = import.meta.glob('../assets/activities/*', {
   eager: true,
   import: 'default',
 })
@@ -73,6 +81,16 @@ function handleLogout() {
 const visibleDate = ref(new Date())
 const today = new Date()
 const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+
+// For scheduling activities
+const isSchedulingMode = ref(false)
+const selectedScheduleDay = ref(null)
+
+// For activity modal
+const isActivityModalOpen = ref(false)
+const activityModalMode = ref('add') // 'add' or 'edit'
+const activityModalDate = ref(null)
+const editingPlannedActivityId = ref(null)
 
 const visibleYear = computed(() => visibleDate.value.getFullYear())
 const visibleMonth = computed(() => visibleDate.value.getMonth())
@@ -125,6 +143,10 @@ const plannedDisplay = computed(() => {
 
       if (!activity && !item.title) return null
 
+      const imageKeyPng = `../assets/activities/${activity?.id}.png`
+      const imageKeyJpg = `../assets/activities/${activity?.id}.jpg`
+      const imageKeySvg = `../assets/activities/${activity?.id}.svg`
+
       return {
         id: item.id ?? `planned-${index}`,
         activityId: item.activityId ?? activity?.id ?? item.id,
@@ -136,6 +158,7 @@ const plannedDisplay = computed(() => {
         date: item.date,
         time: item.time ?? profileCopy.planned.fallbackTime,
         reminder: item.reminder ?? profileCopy.planned.fallbackReminder,
+        image: activityImages[imageKeyPng] || activityImages[imageKeyJpg] || activityImages[imageKeySvg] || null,
       }
     })
     .filter((item) => {
@@ -316,10 +339,10 @@ function tooltipForDay(day) {
   })
 
   day.planned.forEach((planned) => {
-    messages.push(`${profileCopy.calendar.plannedPrefix}: ${planned.title} ${profileCopy.separator} ${planned.time}`)
+    messages.push(`${planned.title} ${profileCopy.separator} ${planned.time}`)
   })
 
-  return messages.join(` ${profileCopy.separator} `)
+  return messages.join(' : ')
 }
 
 function dateForDay(day) {
@@ -329,12 +352,100 @@ function dateForDay(day) {
   return `${visibleYear.value}-${month}-${dayNumber}`
 }
 
-function scheduleFromDay(day) {
-  router.push({
-    name: 'schedule-day',
-    query: { date: dateForDay(day) },
-  })
+function selectDayForScheduling(day) {
+  if (day.empty || !day.canSchedule) return
+  selectedScheduleDay.value = day
+  isSchedulingMode.value = true
 }
+
+function exitSchedulingMode() {
+  isSchedulingMode.value = false
+  selectedScheduleDay.value = null
+}
+
+function openAddActivityModal() {
+  if (!selectedScheduleDay.value) return
+
+  const dateStr = formatDateString(visibleYear.value, visibleMonth.value, selectedScheduleDay.value.number)
+  activityModalDate.value = dateStr
+  activityModalMode.value = 'add'
+  editingPlannedActivityId.value = null
+  isActivityModalOpen.value = true
+}
+
+function openEditActivityModal(plannedActivityId) {
+  activityModalDate.value = null // Will use the existing date from the planned activity
+  activityModalMode.value = 'edit'
+  editingPlannedActivityId.value = plannedActivityId
+  isActivityModalOpen.value = true
+}
+
+function handleActivityModalConfirm(data) {
+  if (activityModalMode.value === 'add') {
+    addPlannedActivity(data.activityId, activityModalDate.value, data.time)
+  } else {
+    const existing = plannedActivities.value.find((p) => p.id === editingPlannedActivityId.value)
+    if (existing) {
+      updatePlannedActivity(
+        editingPlannedActivityId.value,
+        data.activityId,
+        existing.date, // Keep the original date when editing
+        data.time,
+      )
+    }
+  }
+
+  isActivityModalOpen.value = false
+  editingPlannedActivityId.value = null
+}
+
+function handleActivityModalDelete() {
+  if (editingPlannedActivityId.value) {
+    deletePlannedActivity(editingPlannedActivityId.value)
+  }
+
+  isActivityModalOpen.value = false
+  editingPlannedActivityId.value = null
+}
+
+function handleActivityModalCancel() {
+  isActivityModalOpen.value = false
+  editingPlannedActivityId.value = null
+}
+
+function handleProfileColumnsClick(event) {
+  // Only exit if clicking outside the right panel and in scheduling mode
+  if (isSchedulingMode.value && event.target.closest('.right-panel') === null) {
+    exitSchedulingMode()
+  }
+}
+
+// Get formatted date string for comparison
+function formatDateString(year, month, day) {
+  const m = String(month + 1).padStart(2, '0')
+  const d = String(day).padStart(2, '0')
+  return `${year}-${m}-${d}`
+}
+
+// Get activities for the selected scheduling day
+const activitiesForSchedulingDay = computed(() => {
+  if (!selectedScheduleDay.value) return []
+
+  const day = selectedScheduleDay.value
+  const dateStr = formatDateString(visibleYear.value, visibleMonth.value, day.number)
+
+  return plannedDisplay.value
+    .filter((activity) => activity.date === dateStr)
+})
+
+// Get label for selected scheduling day
+const selectedSchedulingDayLabel = computed(() => {
+  if (!selectedScheduleDay.value) return ''
+  const day = selectedScheduleDay.value.number
+  const monthName = profileCopy.calendar.months[visibleMonth.value]
+  const year = visibleYear.value
+  return `${day} de ${monthName} de ${year}`
+})
 </script>
 
 <template>
@@ -379,7 +490,7 @@ function scheduleFromDay(day) {
         </template>
       </AppNavbar>
 
-    <section class="profile-columns">
+    <section class="profile-columns" @click="handleProfileColumnsClick">
       <div class="left-column">
         <section class="glass-panel profile-panel">
           <div class="avatar-shell">
@@ -447,27 +558,19 @@ function scheduleFromDay(day) {
                   planned: day.planned.length > 0,
                   completed: day.completed.length > 0,
                   mixed: day.planned.length > 0 && day.completed.length > 0,
+                  selected: selectedScheduleDay && day.number === selectedScheduleDay.number,
                 }"
                 type="button"
                 :aria-label="tooltipForDay(day) || `${profileCopy.calendar.dayAria} ${day.number}`"
+                @click.stop="selectDayForScheduling(day)"
               >
                 {{ day.number }}
               </button>
 
-              <div v-if="!day.empty && (tooltipForDay(day) || day.canSchedule)" class="day-tooltip">
-                <span v-if="tooltipForDay(day)" class="day-tooltip-text">
+              <div v-if="!day.empty && tooltipForDay(day)" class="day-tooltip">
+                <span class="day-tooltip-text">
                   {{ tooltipForDay(day) }}
                 </span>
-
-                <button
-                  v-if="day.canSchedule"
-                  class="day-add-button"
-                  type="button"
-                  :aria-label="`${profileCopy.calendar.addActivityAria} ${day.number}`"
-                  @click.stop="scheduleFromDay(day)"
-                >
-                  {{ profileCopy.calendar.addActivity }}
-                </button>
               </div>
             </div>
           </div>
@@ -476,102 +579,97 @@ function scheduleFromDay(day) {
 
       <div class="right-column">
         <section class="glass-panel right-panel">
-          <div class="panel-block">
-            <div class="panel-header">
-              <h2>{{ profileCopy.plannedActivitiesTitle }}</h2>
-              <span class="section-counter">{{ plannedDisplay.length }} {{ profileCopy.counters.activities }}</span>
+          <!-- Normal view: Only Saved activities -->
+          <template v-if="!isSchedulingMode">
+            <div class="panel-block saved-block">
+              <div class="panel-header">
+                <h2>{{ profileCopy.savedActivitiesTitle }}</h2>
+                <span class="section-counter">{{ savedDisplay.length }} {{ profileCopy.counters.saved }}</span>
+              </div>
+
+              <div v-if="savedDisplay.length > 0" class="scroll-area">
+                <article
+                  v-for="activity in savedDisplay"
+                  :key="activity.id"
+                  class="activity-row compact"
+                  :class="`tone-${activity.tone || 'violet'}`"
+                  @click="openActivity(activity.id)"
+                >
+                  <span v-if="!isStartedActivity(activity.id)" class="new-activity-badge">
+                    {{ homeCopy.newBadge }}
+                  </span>
+
+                  <div class="activity-icon">
+                    <img v-if="activity.image" :src="activity.image" alt="" class="activity-image" />
+                    <component v-else :is="iconFor(activity.icon)" :size="28" />
+                  </div>
+
+                  <div class="activity-copy">
+                    <h3>{{ activity.title }}</h3>
+                    <p>{{ activity.shortDescription }}</p>
+                  </div>
+                </article>
+              </div>
+
+              <div v-else class="empty-box">
+                {{ profileCopy.empty.saved }}
+              </div>
+            </div>
+          </template>
+
+          <!-- Scheduling mode: Day activities only -->
+          <template v-else>
+            <div class="scheduling-header">
+              <button class="back-to-activities" type="button" @click="exitSchedulingMode">
+                <ChevronLeft :size="18" />
+                <span>Enrere</span>
+              </button>
+              <div class="scheduling-title">
+                <p class="scheduling-date">{{ selectedSchedulingDayLabel }}</p>
+              </div>
             </div>
 
-            <div v-if="plannedDisplay.length > 0" class="activity-list">
-              <article
-                v-for="activity in plannedDisplay"
-                :key="activity.id"
-                class="activity-row"
-                :class="`tone-${activity.tone || 'violet'}`"
-                @click="openActivity(activity.activityId)"
-              >
-                <div class="activity-icon">
-                  <component :is="iconFor(activity.icon)" :size="28" />
-                </div>
+            <div class="day-activities-section">
+              <h3>Activitats programades</h3>
 
-                <div class="activity-copy">
-                  <h3>{{ activity.title }}</h3>
-                  <p>{{ activity.date }} {{ profileCopy.separator }} {{ activity.time }}</p>
-                  <small>{{ activity.reminder }}</small>
-                </div>
-              </article>
+              <div v-if="activitiesForSchedulingDay.length > 0" class="activity-list">
+                <article
+                  v-for="activity in activitiesForSchedulingDay"
+                  :key="activity.id"
+                  class="activity-row scheduling"
+                  :class="`tone-${activity.tone || 'violet'}`"
+                >
+                  <div class="activity-icon">
+                    <img v-if="activity.image" :src="activity.image" alt="" class="activity-image" />
+                    <component v-else :is="iconFor(activity.icon)" :size="24" />
+                  </div>
+
+                  <div class="activity-copy">
+                    <h4>{{ activity.title }}</h4>
+                    <p>{{ activity.time }}</p>
+                  </div>
+
+                  <button class="edit-schedule-button" type="button" :aria-label="`Editar ${activity.title}`" @click="openEditActivityModal(activity.id)">
+                    <Edit2 :size="16" />
+                  </button>
+                </article>
+              </div>
+
+              <div v-else class="empty-box">
+                No hi ha activitats programades per a aquest dia
+              </div>
+
+              <button class="add-schedule-button" type="button" @click="openAddActivityModal">
+                <Plus :size="18" />
+                <span>Afegir activitat</span>
+              </button>
             </div>
-
-            <div v-else class="empty-box">
-              {{ profileCopy.empty.planned }}
-            </div>
-          </div>
-
-          <div class="panel-block saved-block">
-            <div class="panel-header">
-              <h2>{{ profileCopy.startedActivitiesTitle }}</h2>
-              <span class="section-counter">{{ startedDisplay.length }} {{ profileCopy.counters.started }}</span>
-            </div>
-
-            <div v-if="startedDisplay.length > 0" class="activity-list">
-              <article
-                v-for="activity in startedDisplay"
-                :key="activity.id"
-                class="activity-row compact"
-                :class="`tone-${activity.tone || 'violet'}`"
-                @click="openActivity(activity.id)"
-              >
-                <div class="activity-icon">
-                  <component :is="iconFor(activity.icon)" :size="28" />
-                </div>
-
-                <div class="activity-copy">
-                  <h3>{{ activity.title }}</h3>
-                  <p>{{ activity.shortDescription }}</p>
-                </div>
-              </article>
-            </div>
-
-            <div v-else class="empty-box">
-              {{ profileCopy.empty.started }}
-            </div>
-          </div>
-
-          <div class="panel-block saved-block">
-            <div class="panel-header">
-              <h2>{{ profileCopy.savedActivitiesTitle }}</h2>
-              <span class="section-counter">{{ savedDisplay.length }} {{ profileCopy.counters.saved }}</span>
-            </div>
-
-            <div v-if="savedDisplay.length > 0" class="scroll-area">
-              <article
-                v-for="activity in savedDisplay"
-                :key="activity.id"
-                class="activity-row compact"
-                :class="`tone-${activity.tone || 'violet'}`"
-                @click="openActivity(activity.id)"
-              >
-                <span v-if="!isStartedActivity(activity.id)" class="new-activity-badge">
-                  {{ homeCopy.newBadge }}
-                </span>
-
-                <div class="activity-icon">
-                  <component :is="iconFor(activity.icon)" :size="28" />
-                </div>
-
-                <div class="activity-copy">
-                  <h3>{{ activity.title }}</h3>
-                  <p>{{ activity.shortDescription }}</p>
-                </div>
-              </article>
-            </div>
-
-            <div v-else class="empty-box">
-              {{ profileCopy.empty.saved }}
-            </div>
-          </div>
+          </template>
         </section>
       </div>
+
+      <!-- Scheduling overlay - click to close -->
+
     </section>
 
     <section class="glass-panel stats-panel">
@@ -606,6 +704,17 @@ function scheduleFromDay(day) {
       </div>
     </section>
     </section>
+
+    <!-- Activity Schedule Modal -->
+    <ActivityScheduleModal
+      v-if="isActivityModalOpen"
+      :date="activityModalDate"
+      :mode="activityModalMode"
+      :planned-activity-id="editingPlannedActivityId"
+      @confirm="handleActivityModalConfirm"
+      @delete="handleActivityModalDelete"
+      @cancel="handleActivityModalCancel"
+    />
   </main>
 </template>
 
@@ -660,6 +769,7 @@ function scheduleFromDay(day) {
   gap: 24px;
   align-items: stretch;
   min-height: 650px;
+  position: relative;
 }
 
 .left-column,
@@ -864,6 +974,12 @@ function scheduleFromDay(day) {
   border-color: rgba(167, 139, 250, 0.42);
 }
 
+.day-cell.selected {
+  border-color: var(--primary);
+  background: var(--primary);
+  color: white;
+}
+
 .day-cell.completed {
   background: rgba(220, 252, 231, 0.96);
   color: #15803d;
@@ -955,6 +1071,8 @@ function scheduleFromDay(day) {
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: 22px;
   padding: 24px;
+  position: relative;
+  z-index: 1;
 }
 
 .panel-block {
@@ -1205,4 +1323,162 @@ function scheduleFromDay(day) {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
+
+/* Scheduling Mode Styles */
+.scheduling-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 24px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid var(--surface-stroke-strong);
+}
+
+.back-to-activities {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 12px;
+  border: 1px solid var(--surface-stroke-strong);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.back-to-activities:hover {
+  background: color-mix(in srgb, var(--surface-contrast) 30%, transparent);
+  border-color: var(--foreground);
+}
+
+.scheduling-title {
+  flex: 1;
+  min-width: 0;
+}
+
+.scheduling-date {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.day-activities-section {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  flex: 1;
+  overflow-y: auto;
+}
+
+.day-activities-section h3 {
+  margin: 0 0 12px;
+  color: var(--foreground);
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.activity-row.scheduling {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 14px;
+  border: 1px solid var(--surface-stroke-strong);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--surface-contrast) 40%, transparent);
+  transition: all 0.2s ease;
+}
+
+.activity-row.scheduling:hover {
+  background: color-mix(in srgb, var(--surface-contrast) 50%, transparent);
+  transform: translateY(-1px);
+}
+
+.activity-row.scheduling .activity-icon {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.activity-row.scheduling .activity-copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.activity-row.scheduling .activity-copy h4 {
+  margin: 0;
+  color: var(--foreground);
+  font-size: 0.95rem;
+  font-weight: 600;
+}
+
+.activity-row.scheduling .activity-copy p {
+  margin: 3px 0 0;
+  color: var(--muted-foreground);
+  font-size: 0.85rem;
+}
+
+.edit-schedule-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border: 1px solid var(--surface-stroke-strong);
+  border-radius: 8px;
+  background: transparent;
+  color: var(--foreground);
+  cursor: pointer;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.edit-schedule-button:hover {
+  background: color-mix(in srgb, var(--surface-contrast) 40%, transparent);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.add-schedule-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  width: 100%;
+  padding: 14px;
+  margin-top: 12px;
+  border: 1px solid var(--primary);
+  border-radius: 14px;
+  background: var(--primary);
+  color: white;
+  font-weight: 600;
+  font-size: 0.95rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.add-schedule-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(90, 110, 140, 0.15);
+}
+
+.add-schedule-button:active {
+  transform: translateY(0);
+}
+.activity-image {
+  width: 40px;
+  height: 40px;
+  object-fit: cover;
+  border-radius: 8px;
+}
+
+.activity-icon .activity-image {
+  display: inline-block;
+}
+
 </style>

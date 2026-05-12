@@ -355,6 +355,41 @@ export function confirmSchedule() {
   return true
 }
 
+export function addPlannedActivity(activityId, date, time) {
+  const newPlanned = {
+    id: `${activityId}-${Date.now()}`,
+    activityId,
+    date,
+    time,
+    reminder: '30 min abans',
+  }
+
+  plannedActivities.value.push(newPlanned)
+  addSavedActivity(activityId)
+}
+
+export function updatePlannedActivity(plannedActivityId, activityId, date, time) {
+  const index = plannedActivities.value.findIndex((p) => p.id === plannedActivityId)
+  if (index === -1) return false
+
+  plannedActivities.value[index] = {
+    ...plannedActivities.value[index],
+    activityId,
+    date,
+    time,
+  }
+
+  return true
+}
+
+export function deletePlannedActivity(plannedActivityId) {
+  const index = plannedActivities.value.findIndex((p) => p.id === plannedActivityId)
+  if (index === -1) return false
+
+  plannedActivities.value.splice(index, 1)
+  return true
+}
+
 export function useAppSession() {
   return {
     allActivities,
@@ -380,5 +415,8 @@ export function useAppSession() {
     rejectActivity,
     createScheduleDraft,
     confirmSchedule,
+    addPlannedActivity,
+    updatePlannedActivity,
+    deletePlannedActivity,
   }
 }
