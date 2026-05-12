@@ -20,6 +20,8 @@ const selectedActivityId = ref(null)
 const selectedActivitySource = ref('normal')
 const scheduleDraft = ref(null)
 const testRecommendations = ref([])
+const testAnswers = ref(null)
+const testRejectedActivityIds = ref([])
 
 const savedActivities = computed(() =>
   savedActivityIds.value
@@ -74,6 +76,8 @@ function resetSessionState() {
   selectedActivitySource.value = 'normal'
   scheduleDraft.value = null
   testRecommendations.value = []
+  testAnswers.value = null
+  testRejectedActivityIds.value = []
   loginError.value = ''
 }
 
@@ -155,6 +159,8 @@ function persistSession() {
     selectedActivitySource: selectedActivitySource.value,
     scheduleDraft: scheduleDraft.value,
     testRecommendations: testRecommendations.value,
+    testAnswers: testAnswers.value,
+    testRejectedActivityIds: testRejectedActivityIds.value,
   }
 
   window.localStorage.setItem(SESSION_STORAGE_KEY, JSON.stringify(payload))
@@ -199,6 +205,10 @@ function restoreSession() {
     testRecommendations.value = Array.isArray(session.testRecommendations)
       ? [...session.testRecommendations]
       : []
+    testAnswers.value = session.testAnswers ?? null
+    testRejectedActivityIds.value = Array.isArray(session.testRejectedActivityIds)
+      ? [...session.testRejectedActivityIds]
+      : []
   } catch {
     clearPersistedSession()
   }
@@ -222,6 +232,8 @@ export function initializeAppSession() {
       selectedActivitySource,
       scheduleDraft,
       testRecommendations,
+      testAnswers,
+      testRejectedActivityIds,
     ],
     () => {
       persistSession()
@@ -254,6 +266,8 @@ export function login(credentials) {
   selectedActivitySource.value = 'normal'
   scheduleDraft.value = null
   testRecommendations.value = []
+  testAnswers.value = null
+  testRejectedActivityIds.value = []
   loginError.value = ''
   return true
 }
@@ -313,7 +327,9 @@ export function startActivity(activityId) {
 }
 
 export function finishTest(answers) {
-  testRecommendations.value = getRecommendations(answers)
+  testAnswers.value = { ...answers }
+  testRejectedActivityIds.value = []
+  testRecommendations.value = getRecommendations({ ...answers, excludedIds: [] })
 
   const firstRecommendation = testRecommendations.value[0] ?? null
   syncSelectedActivity(firstRecommendation?.id ?? null, 'test')
@@ -321,8 +337,24 @@ export function finishTest(answers) {
   return firstRecommendation?.id ?? null
 }
 
-export function rejectActivity() {
-  const secondRecommendation = testRecommendations.value[1] ?? null
+export function rejectActivity(reason) {
+  const currentId = selectedActivityId.value
+  const rejectedActivity = allActivities.find((activity) => activity.id === currentId) ?? null
+
+  if (currentId) {
+    testRejectedActivityIds.value = [...new Set([...testRejectedActivityIds.value, currentId])]
+  }
+
+  if (!testAnswers.value) return null
+
+  testRecommendations.value = getRecommendations({
+    ...testAnswers.value,
+    excludedIds: testRejectedActivityIds.value,
+    rejectionReason: reason,
+    rejectedActivity,
+  })
+
+  const secondRecommendation = testRecommendations.value[0] ?? null
   syncSelectedActivity(secondRecommendation?.id ?? null, 'test-adjusted')
 
   return secondRecommendation?.id ?? null

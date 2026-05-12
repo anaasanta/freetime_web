@@ -1,6 +1,6 @@
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { Contrast, Languages, Minus, Moon, PersonStanding, Plus, Sun, Type, Wind } from 'lucide-vue-next'
+import { Contrast, Languages, Moon, PersonStanding, Sun, Type, Wind } from 'lucide-vue-next'
 import { useAccessibility } from '@/stores/accessibility'
 import { useI18n } from '@/stores/i18n'
 import { useTheme } from '@/stores/theme'
@@ -176,7 +176,7 @@ onBeforeUnmount(() => {
             :title="FONT_SIZES[level].label"
             @click="handleSetFontSize(level)"
           >
-            <component :is="level === 0 ? Minus : level === 2 ? Plus : Type" :size="16" />
+            <span class="accessibility-pill__letter" :class="`accessibility-pill__letter--${level}`" aria-hidden="true">T</span>
           </button>
         </div>
       </div>
@@ -433,6 +433,24 @@ onBeforeUnmount(() => {
   border-radius: 999px;
   background: var(--surface-contrast);
   color: var(--foreground);
+}
+
+.accessibility-pill__letter {
+  display: inline-block;
+  font-weight: 400;
+  line-height: 1;
+}
+
+.accessibility-pill__letter--0 {
+  font-size: 0.68rem;
+}
+
+.accessibility-pill__letter--1 {
+  font-size: 1rem;
+}
+
+.accessibility-pill__letter--2 {
+  font-size: 1.38rem;
 }
 
 .accessibility-pill--wide {
