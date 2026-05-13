@@ -26,6 +26,7 @@ import {
   Sparkles,
   Spool,
   SunMedium,
+  Star,
   Volleyball,
   Waves,
   X,
@@ -38,6 +39,7 @@ import EmptyState from '@/components/ui/EmptyState.vue'
 import { useI18n } from '@/stores/i18n'
 import {
   addSavedActivity,
+  completeActivity,
   rejectActivity,
   removeSavedActivity,
   startActivity,
@@ -48,13 +50,21 @@ import {
 const route = useRoute()
 const router = useRouter()
 const { currentLanguage } = useI18n()
-const { selectedActivity, selectedActivitySource, savedActivities } = useAppSession()
+const { selectedActivity, selectedActivitySource, savedActivities, startedActivities } = useAppSession()
 
 const showRejectModal = ref(false)
 const selectedRejectReason = ref('effort')
 const detailVisualRef = ref(null)
 const detailIconRef = ref(null)
 let resizeObserver = null
+
+// Mini-test al acabar la actividad
+const showFinishModal = ref(false)
+const ratingStars = ref(0)
+const moodStars = ref(0)
+const hoveredRating = ref(0)
+const hoveredMood = ref(0)
+const finishNote = ref('')
 const activityImageModules = import.meta.glob('../data/activity_images/*.png', {
   eager: true,
   import: 'default',
@@ -121,6 +131,16 @@ const isSaved = computed(() =>
     : false,
 )
 
+const isStarted = computed(() =>
+  selectedActivity.value
+    ? startedActivities.value.some((activity) => activity.id === selectedActivity.value.id)
+    : false,
+)
+
+const canConfirmFinish = computed(
+  () => ratingStars.value > 0 && moodStars.value > 0,
+)
+
 function iconFor(iconName) {
   if (iconName === 'book') return BookOpen
   if (iconName === 'dumbbell') return Dumbbell
@@ -162,6 +182,42 @@ function handleStart() {
   if (!selectedActivity.value) return
   startActivity(selectedActivity.value.id)
   router.push({ name: 'schedule-day' })
+}
+
+function openFinishModal() {
+  if (!selectedActivity.value) return
+  ratingStars.value = 0
+  moodStars.value = 0
+  hoveredRating.value = 0
+  hoveredMood.value = 0
+  finishNote.value = ''
+  showFinishModal.value = true
+}
+
+function closeFinishModal() {
+  showFinishModal.value = false
+}
+
+function confirmFinish() {
+  if (!selectedActivity.value) return
+  if (ratingStars.value === 0 || moodStars.value === 0) return
+
+  // Mapeamos la mejora de ánimo (1-5) a un incremento de energía aproximado
+  const moodDelta = [0, 5, 12, 22, 32, 42][moodStars.value] ?? 22
+  const energyBefore = 35
+  const energyAfter = Math.min(100, energyBefore + moodDelta)
+
+  completeActivity(selectedActivity.value.id, {
+    rating: ratingStars.value,
+    moodImprovement: moodStars.value,
+    note: finishNote.value.trim(),
+    energyBefore,
+    energyAfter,
+    date: new Date().toISOString(),
+  })
+
+  showFinishModal.value = false
+  router.push({ name: 'home' })
 }
 
 function openRejectModal() {
@@ -305,9 +361,18 @@ function skipRejectQuestion() {
         </section>
 
         <div class="actions">
-          <BaseButton @click="handleStart">
+          <button
+            v-if="isStarted"
+            class="primary-button finish-button"
+            type="button"
+            @click="openFinishModal"
+          >
+            {{ activityResultCopy.buttons.finish || 'Acabar actividad' }}
+          </button>
+
+          <button v-else class="primary-button" type="button" @click="handleStart">
             {{ activityResultCopy.buttons.start }}
-          </BaseButton>
+          </button>
 
           <button class="list-button" :class="{ saved: isSaved }" type="button" @click="handleSaveToggle">
             <Trash2 v-if="isSaved" :size="18" />
@@ -370,6 +435,121 @@ function skipRejectQuestion() {
           <BaseButton @click="confirmReject">
             {{ activityResultCopy.rejectModal.confirm }}
           </BaseButton>
+        </div>
+      </div>
+    </div>
+
+    <!-- Mini-test al acabar la actividad -->
+    <div v-if="showFinishModal" class="reject-modal finish-modal" role="presentation">
+      <div class="reject-dialog finish-dialog" role="dialog" aria-labelledby="finish-modal-title">
+        <button
+          class="reject-close"
+          type="button"
+          aria-label="Cerrar"
+          title="Cerrar"
+          @click="closeFinishModal"
+        >
+          <X :size="18" />
+        </button>
+
+        <h3 id="finish-modal-title">
+          {{ activityResultCopy.finishModal?.title || '¡Actividad completada!' }}
+        </h3>
+        <p>
+          {{ activityResultCopy.finishModal?.subtitle || 'Cuéntanos qué te ha parecido para mejorar tus recomendaciones.' }}
+        </p>
+
+        <div class="finish-question">
+          <label class="finish-label">
+            {{ activityResultCopy.finishModal?.ratingLabel || '¿Cómo valoras la actividad?' }}
+          </label>
+
+          <div
+            class="star-row"
+            role="radiogroup"
+            :aria-label="activityResultCopy.finishModal?.ratingLabel || 'Valoración de la actividad'"
+          >
+            <button
+              v-for="n in 5"
+              :key="`rating-${n}`"
+              type="button"
+              class="star-button"
+              :class="{ active: (hoveredRating || ratingStars) >= n }"
+              :aria-label="`${n} ${n === 1 ? 'estrella' : 'estrellas'}`"
+              role="radio"
+              :aria-checked="ratingStars === n"
+              @click="ratingStars = n"
+              @mouseenter="hoveredRating = n"
+              @mouseleave="hoveredRating = 0"
+              @focus="hoveredRating = n"
+              @blur="hoveredRating = 0"
+            >
+              <Star
+                :size="30"
+                :fill="(hoveredRating || ratingStars) >= n ? 'currentColor' : 'none'"
+              />
+            </button>
+          </div>
+        </div>
+
+        <div class="finish-question">
+          <label class="finish-label">
+            {{ activityResultCopy.finishModal?.moodLabel || '¿Cuánto ha mejorado tu estado de ánimo?' }}
+          </label>
+
+          <div
+            class="star-row"
+            role="radiogroup"
+            :aria-label="activityResultCopy.finishModal?.moodLabel || 'Mejora del estado de ánimo'"
+          >
+            <button
+              v-for="n in 5"
+              :key="`mood-${n}`"
+              type="button"
+              class="star-button mood"
+              :class="{ active: (hoveredMood || moodStars) >= n }"
+              :aria-label="`${n} ${n === 1 ? 'estrella' : 'estrellas'}`"
+              role="radio"
+              :aria-checked="moodStars === n"
+              @click="moodStars = n"
+              @mouseenter="hoveredMood = n"
+              @mouseleave="hoveredMood = 0"
+              @focus="hoveredMood = n"
+              @blur="hoveredMood = 0"
+            >
+              <Heart
+                :size="30"
+                :fill="(hoveredMood || moodStars) >= n ? 'currentColor' : 'none'"
+              />
+            </button>
+          </div>
+        </div>
+
+        <div class="finish-question">
+          <label class="finish-label" for="finish-note">
+            {{ activityResultCopy.finishModal?.noteLabel || 'Notas (opcional)' }}
+          </label>
+          <textarea
+            id="finish-note"
+            v-model="finishNote"
+            class="finish-textarea"
+            rows="3"
+            :placeholder="activityResultCopy.finishModal?.notePlaceholder || '¿Cómo te has sentido durante la actividad?'"
+          ></textarea>
+        </div>
+
+        <div class="reject-actions">
+          <button class="secondary-button" type="button" @click="closeFinishModal">
+            {{ activityResultCopy.finishModal?.cancel || 'Cancelar' }}
+          </button>
+          <button
+            class="primary-button"
+            type="button"
+            :disabled="!canConfirmFinish"
+            @click="confirmFinish"
+          >
+            {{ activityResultCopy.finishModal?.confirm || 'Guardar' }}
+          </button>
         </div>
       </div>
     </div>
@@ -775,6 +955,104 @@ function skipRejectQuestion() {
   .detail-hero-media,
   .detail-visual-copy {
     animation: none;
+  }
+}
+
+/* ===== Mini-test al acabar la actividad ===== */
+.finish-dialog {
+  width: min(100%, 520px);
+}
+
+.finish-question {
+  margin-top: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.finish-label {
+  display: block;
+  color: var(--foreground);
+  font-weight: 800;
+  font-size: 0.98rem;
+}
+
+.star-row {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.star-button {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.star-button:hover,
+.star-button:focus-visible {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--violet) 42%, var(--border));
+  outline: none;
+}
+
+.star-button.active {
+  background: color-mix(in srgb, var(--violet-soft) 70%, var(--card) 30%);
+  border-color: var(--violet-strong);
+  color: var(--violet-strong);
+}
+
+.star-button.mood.active {
+  background: color-mix(in srgb, #fde2e7 70%, var(--card) 30%);
+  border-color: #e3577b;
+  color: #e3577b;
+}
+
+.finish-textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 80px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: var(--card);
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+.finish-textarea:focus-visible {
+  outline: none;
+  border-color: var(--violet-strong);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--violet) 22%, transparent);
+}
+
+.primary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.finish-button {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .star-button {
+    transition: none;
+  }
+  .star-button:hover,
+  .star-button:focus-visible {
+    transform: none;
   }
 }
 </style>

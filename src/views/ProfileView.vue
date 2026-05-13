@@ -34,6 +34,9 @@ import {
   Waves,
   Edit2,
   Plus,
+  CheckCircle2,
+  Star,
+  X,
 } from 'lucide-vue-next'
 import AppBrand from '@/components/layout/AppBrand.vue'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
@@ -47,7 +50,7 @@ import SectionHeader from '@/components/ui/SectionHeader.vue'
 import { landingCopy } from '@/data/uiText'
 import { getHomeCopy, getProfileCopy } from '@/data/homeCopyI18n'
 import { getActivityByIdWithTranslations } from '@/data/activitiesCopyI18n'
-import { logout, syncSelectedActivity, useAppSession, addPlannedActivity, updatePlannedActivity, deletePlannedActivity } from '@/stores/appSession'
+import { logout, syncSelectedActivity, useAppSession, addPlannedActivity, updatePlannedActivity, deletePlannedActivity, completeActivity } from '@/stores/appSession'
 import { useI18n } from '@/stores/i18n'
 
 const router = useRouter()
@@ -101,6 +104,56 @@ const isActivityModalOpen = ref(false)
 const activityModalMode = ref('add') // 'add' or 'edit'
 const activityModalDate = ref(null)
 const editingPlannedActivityId = ref(null)
+
+// Mini-test al acabar la actividad
+const showFinishModal = ref(false)
+const finishingActivity = ref(null)
+const ratingStars = ref(0)
+const moodStars = ref(0)
+const hoveredRating = ref(0)
+const hoveredMood = ref(0)
+const finishNote = ref('')
+
+const canConfirmFinish = computed(
+  () => ratingStars.value > 0 && moodStars.value > 0,
+)
+
+function openFinishModal(activity) {
+  finishingActivity.value = activity
+  ratingStars.value = 0
+  moodStars.value = 0
+  hoveredRating.value = 0
+  hoveredMood.value = 0
+  finishNote.value = ''
+  showFinishModal.value = true
+}
+
+function closeFinishModal() {
+  showFinishModal.value = false
+  finishingActivity.value = null
+}
+
+function confirmFinishActivity() {
+  if (!finishingActivity.value) return
+  if (ratingStars.value === 0 || moodStars.value === 0) return
+
+  const moodDelta = [0, 5, 12, 22, 32, 42][moodStars.value] ?? 22
+  const energyBefore = 35
+  const energyAfter = Math.min(100, energyBefore + moodDelta)
+
+  completeActivity(finishingActivity.value.id, {
+    rating: ratingStars.value,
+    moodImprovement: moodStars.value,
+    note: finishNote.value.trim(),
+    energyBefore,
+    energyAfter,
+    date: new Date().toISOString(),
+  })
+
+  showFinishModal.value = false
+  finishingActivity.value = null
+  router.push({ name: 'home' })
+}
 
 const visibleYear = computed(() => visibleDate.value.getFullYear())
 const visibleMonth = computed(() => visibleDate.value.getMonth())
@@ -827,6 +880,17 @@ const selectedSchedulingDayLabel = computed(() => {
                     <h3>{{ activity.title }}</h3>
                     <p>{{ activity.shortDescription }}</p>
                   </div>
+
+                  <button
+                    v-if="isStartedActivity(activity.id)"
+                    type="button"
+                    class="finish-activity-button"
+                    :aria-label="`Acabar actividad: ${activity.title}`"
+                    @click.stop="openFinishModal(activity)"
+                  >
+                    <CheckCircle2 :size="16" />
+                    <span>Acabar</span>
+                  </button>
                 </article>
               </div>
 
@@ -1046,6 +1110,106 @@ const selectedSchedulingDayLabel = computed(() => {
       @delete="handleActivityModalDelete"
       @cancel="handleActivityModalCancel"
     />
+
+    <!-- Mini-test al acabar la actividad -->
+    <div v-if="showFinishModal" class="finish-modal" role="presentation">
+      <div class="finish-dialog" role="dialog" aria-labelledby="finish-modal-title-profile">
+        <button
+          class="finish-close"
+          type="button"
+          aria-label="Cerrar"
+          title="Cerrar"
+          @click="closeFinishModal"
+        >
+          <X :size="18" />
+        </button>
+
+        <h3 id="finish-modal-title-profile">¡Actividad completada!</h3>
+        <p class="finish-subtitle">
+          <span v-if="finishingActivity">{{ finishingActivity.title }} — </span>
+          Cuéntanos qué te ha parecido para mejorar tus recomendaciones.
+        </p>
+
+        <div class="finish-question">
+          <label class="finish-label">¿Cómo valoras la actividad?</label>
+
+          <div class="star-row" role="radiogroup" aria-label="Valoración de la actividad">
+            <button
+              v-for="n in 5"
+              :key="`p-rating-${n}`"
+              type="button"
+              class="star-button"
+              :class="{ active: (hoveredRating || ratingStars) >= n }"
+              :aria-label="`${n} ${n === 1 ? 'estrella' : 'estrellas'}`"
+              role="radio"
+              :aria-checked="ratingStars === n"
+              @click="ratingStars = n"
+              @mouseenter="hoveredRating = n"
+              @mouseleave="hoveredRating = 0"
+              @focus="hoveredRating = n"
+              @blur="hoveredRating = 0"
+            >
+              <Star
+                :size="30"
+                :fill="(hoveredRating || ratingStars) >= n ? 'currentColor' : 'none'"
+              />
+            </button>
+          </div>
+        </div>
+
+        <div class="finish-question">
+          <label class="finish-label">¿Cuánto ha mejorado tu estado de ánimo?</label>
+
+          <div class="star-row" role="radiogroup" aria-label="Mejora del estado de ánimo">
+            <button
+              v-for="n in 5"
+              :key="`p-mood-${n}`"
+              type="button"
+              class="star-button mood"
+              :class="{ active: (hoveredMood || moodStars) >= n }"
+              :aria-label="`${n} ${n === 1 ? 'estrella' : 'estrellas'}`"
+              role="radio"
+              :aria-checked="moodStars === n"
+              @click="moodStars = n"
+              @mouseenter="hoveredMood = n"
+              @mouseleave="hoveredMood = 0"
+              @focus="hoveredMood = n"
+              @blur="hoveredMood = 0"
+            >
+              <Heart
+                :size="30"
+                :fill="(hoveredMood || moodStars) >= n ? 'currentColor' : 'none'"
+              />
+            </button>
+          </div>
+        </div>
+
+        <div class="finish-question">
+          <label class="finish-label" for="finish-note-profile">Notas (opcional)</label>
+          <textarea
+            id="finish-note-profile"
+            v-model="finishNote"
+            class="finish-textarea"
+            rows="3"
+            placeholder="¿Cómo te has sentido durante la actividad?"
+          ></textarea>
+        </div>
+
+        <div class="finish-actions">
+          <button class="secondary-button" type="button" @click="closeFinishModal">
+            Cancelar
+          </button>
+          <button
+            class="primary-button"
+            type="button"
+            :disabled="!canConfirmFinish"
+            @click="confirmFinishActivity"
+          >
+            Guardar
+          </button>
+        </div>
+      </div>
+    </div>
   </main>
 </template>
 
@@ -2253,6 +2417,189 @@ const selectedSchedulingDayLabel = computed(() => {
 
 .activity-icon .activity-image {
   display: inline-block;
+}
+
+/* ===== Botón "Acabar" en tarjetas de actividad iniciada ===== */
+.activity-row.compact {
+  position: relative;
+}
+
+.finish-activity-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border: 1px solid color-mix(in srgb, #10b981 60%, var(--border));
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: color-mix(in srgb, #10b981 12%, var(--card));
+  color: #047857;
+  font-weight: 800;
+  font-size: 0.78rem;
+  cursor: pointer;
+  z-index: 4;
+  transition:
+    transform 0.18s ease,
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+}
+
+.finish-activity-button:hover {
+  transform: translateY(-1px);
+  background: linear-gradient(135deg, #10b981, #059669);
+  color: #fff;
+  border-color: #059669;
+}
+
+/* ===== Modal de minitest ===== */
+.finish-modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 24px;
+  background: rgba(5, 7, 13, 0.5);
+  z-index: 1300;
+}
+
+.finish-dialog {
+  position: relative;
+  width: min(100%, 520px);
+  padding: 26px 24px 22px;
+  border: 1px solid var(--surface-stroke-strong, var(--border));
+  border-radius: 28px;
+  background: var(--surface-contrast, var(--card));
+  color: var(--foreground);
+  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+.finish-dialog h3 {
+  margin: 0 0 6px;
+  font-size: 1.45rem;
+}
+
+.finish-subtitle {
+  margin: 0 0 8px;
+  color: var(--muted-foreground);
+  line-height: 1.5;
+}
+
+.finish-close {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: var(--card);
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.finish-question {
+  margin-top: 18px;
+  display: grid;
+  gap: 10px;
+}
+
+.finish-label {
+  display: block;
+  color: var(--foreground);
+  font-weight: 800;
+  font-size: 0.98rem;
+}
+
+.star-row {
+  display: inline-flex;
+  gap: 8px;
+}
+
+.star-button {
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: var(--card);
+  color: var(--muted-foreground);
+  cursor: pointer;
+  transition:
+    transform 0.18s ease,
+    background-color 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.star-button:hover,
+.star-button:focus-visible {
+  transform: translateY(-2px);
+  border-color: color-mix(in srgb, var(--violet) 42%, var(--border));
+  outline: none;
+}
+
+.star-button.active {
+  background: color-mix(in srgb, var(--violet-soft) 70%, var(--card) 30%);
+  border-color: var(--violet-strong);
+  color: var(--violet-strong);
+}
+
+.star-button.mood.active {
+  background: color-mix(in srgb, #fde2e7 70%, var(--card) 30%);
+  border-color: #e3577b;
+  color: #e3577b;
+}
+
+.finish-textarea {
+  width: 100%;
+  resize: vertical;
+  min-height: 80px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 12px 14px;
+  background: var(--card);
+  color: var(--foreground);
+  font-family: inherit;
+  font-size: 0.98rem;
+  line-height: 1.5;
+}
+
+.finish-textarea:focus-visible {
+  outline: none;
+  border-color: var(--violet-strong);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--violet) 22%, transparent);
+}
+
+.finish-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.finish-actions .primary-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .star-button,
+  .finish-activity-button {
+    transition: none;
+  }
+  .star-button:hover,
+  .star-button:focus-visible,
+  .finish-activity-button:hover {
+    transform: none;
+  }
 }
 
 </style>
