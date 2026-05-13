@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref, watch } from 'vue'
+import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
   Amphora,
@@ -31,6 +31,7 @@ import {
   X,
   Trash2,
 } from 'lucide-vue-next'
+import { getActivityByIdWithTranslations } from '@/data/activitiesCopyI18n'
 import { getActivityCopy, getActivityResultCopy } from '@/data/testCopyI18n'
 import { useI18n } from '@/stores/i18n'
 import {
@@ -49,10 +50,25 @@ const { selectedActivity, selectedActivitySource, savedActivities } = useAppSess
 
 const showRejectModal = ref(false)
 const selectedRejectReason = ref('effort')
+const detailVisualRef = ref(null)
+const detailIconRef = ref(null)
+let resizeObserver = null
+const activityImageModules = import.meta.glob('../data/activity_images/*.png', {
+  eager: true,
+  import: 'default',
+})
 
 const activityCopy = computed(() => getActivityCopy(currentLanguage.value))
 const activityResultCopy = computed(() => getActivityResultCopy(currentLanguage.value))
 const rejectionOptions = computed(() => Object.entries(activityResultCopy.value.rejectModal.options))
+const translatedActivity = computed(() => {
+  if (!selectedActivity.value) return null
+  return getActivityByIdWithTranslations(selectedActivity.value.id, currentLanguage.value) ?? selectedActivity.value
+})
+const activityImageSrc = computed(() => {
+  if (!selectedActivity.value) return null
+  return activityImageModules[`../data/activity_images/${selectedActivity.value.id}.png`] ?? null
+})
 
 function syncFromRoute() {
   const activityId = typeof route.params.id === 'string' ? route.params.id : null
@@ -61,6 +77,41 @@ function syncFromRoute() {
 }
 
 watch(() => [route.params.id, route.query.source], syncFromRoute, { immediate: true })
+
+function updateDockStartPosition() {
+  if (!detailVisualRef.value || !detailIconRef.value) return
+
+  const visualRect = detailVisualRef.value.getBoundingClientRect()
+  const iconRect = detailIconRef.value.getBoundingClientRect()
+  const visualCenterX = visualRect.left + visualRect.width / 2
+  const visualCenterY = visualRect.top + visualRect.height / 2
+  const iconCenterX = iconRect.left + iconRect.width / 2
+  const iconCenterY = iconRect.top + iconRect.height / 2
+
+  detailVisualRef.value.style.setProperty('--dock-start-x', `${visualCenterX - iconCenterX}px`)
+  detailVisualRef.value.style.setProperty('--dock-start-y', `${visualCenterY - iconCenterY}px`)
+}
+
+watch(
+  () => selectedActivity.value?.id,
+  async () => {
+    await nextTick()
+    updateDockStartPosition()
+  },
+)
+
+onMounted(() => {
+  updateDockStartPosition()
+
+  if (typeof ResizeObserver !== 'undefined') {
+    resizeObserver = new ResizeObserver(updateDockStartPosition)
+    if (detailVisualRef.value) resizeObserver.observe(detailVisualRef.value)
+  }
+})
+
+onBeforeUnmount(() => {
+  resizeObserver?.disconnect()
+})
 
 const isSaved = computed(() =>
   selectedActivity.value
@@ -141,14 +192,28 @@ function confirmReject() {
 
 <template>
   <main class="app-page detail-page">
-    <div v-if="selectedActivity" class="detail-card">
-      <section class="detail-visual" :class="`tone-${selectedActivity.tone}`">
-        <div class="detail-icon activity-icon">
+    <div v-if="selectedActivity && translatedActivity" class="detail-card">
+      <section ref="detailVisualRef" class="detail-visual" :class="`tone-${selectedActivity.tone}`">
+        <div ref="detailIconRef" :key="selectedActivity.id" class="detail-icon detail-icon-docked activity-icon">
           <component :is="iconFor(selectedActivity.icon)" :size="78" />
         </div>
 
-        <h1>{{ selectedActivity.title }}</h1>
-        <p>{{ selectedActivity.shortDescription }}</p>
+        <div class="detail-hero-media">
+          <img
+            v-if="activityImageSrc"
+            :src="activityImageSrc"
+            :alt="translatedActivity.title"
+            class="detail-activity-image"
+          />
+          <div v-else class="detail-image-fallback activity-icon">
+            <component :is="iconFor(selectedActivity.icon)" :size="72" />
+          </div>
+        </div>
+
+        <div class="detail-visual-copy">
+          <h1>{{ translatedActivity.title }}</h1>
+          <p>{{ translatedActivity.shortDescription }}</p>
+        </div>
       </section>
 
       <section class="detail-content">
@@ -173,7 +238,7 @@ function confirmReject() {
           </div>
           <div>
             <span>{{ activityResultCopy.labels.materials }}</span>
-            <strong>{{ selectedActivity.materials }}</strong>
+            <strong>{{ translatedActivity.materials }}</strong>
           </div>
           <div>
             <span>{{ activityResultCopy.labels.price }}</span>
@@ -187,13 +252,13 @@ function confirmReject() {
 
         <section class="text-section">
           <h2>{{ activityResultCopy.sections.description }}</h2>
-          <p>{{ selectedActivity.description }}</p>
+          <p>{{ translatedActivity.description }}</p>
         </section>
 
         <section class="text-section">
           <h2>{{ activityResultCopy.sections.howToStart }}</h2>
           <ol class="steps-list">
-            <li v-for="step in selectedActivity.steps" :key="step">
+            <li v-for="step in translatedActivity.steps" :key="step">
               {{ step }}
             </li>
           </ol>
@@ -201,7 +266,7 @@ function confirmReject() {
 
         <section class="benefit-box">
           <strong>{{ activityResultCopy.sections.benefit }}</strong>
-          <p>{{ selectedActivity.benefits }}</p>
+          <p>{{ translatedActivity.benefits }}</p>
         </section>
 
         <section class="ai-consult-strip">
@@ -303,27 +368,63 @@ function confirmReject() {
 
 .detail-card {
   display: grid;
-  grid-template-columns: minmax(340px, 0.95fr) minmax(560px, 1.05fr);
+  grid-template-columns: minmax(360px, 0.9fr) minmax(640px, 1.1fr);
   width: 100%;
 }
 
 .detail-visual {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
+  position: relative;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
   align-items: flex-start;
-  gap: 18px;
+  gap: clamp(18px, 3vw, 28px);
   padding: clamp(32px, 5vw, 72px);
 }
 
 .detail-icon {
   display: grid;
   place-items: center;
-  width: clamp(120px, 14vw, 190px);
-  height: clamp(120px, 14vw, 190px);
-  border-radius: 42px;
+  width: clamp(72px, 7vw, 104px);
+  height: clamp(72px, 7vw, 104px);
+  border-radius: 28px;
   box-shadow: var(--shadow-soft);
   color: var(--foreground);
+}
+
+.detail-icon-docked {
+  align-self: start;
+  animation: dock-icon 1300ms cubic-bezier(0.2, 0.8, 0.2, 1) both;
+}
+
+.detail-hero-media {
+  display: grid;
+  align-self: center;
+  width: min(100%, 520px);
+  animation: reveal-activity-image 1200ms ease 520ms both;
+}
+
+.detail-activity-image,
+.detail-image-fallback {
+  width: min(100%, 460px);
+  aspect-ratio: 1 / 1;
+  border-radius: 32px;
+  object-fit: cover;
+  object-position: center;
+  box-shadow:
+    0 28px 70px color-mix(in srgb, var(--violet) 20%, transparent),
+    inset 0 1px 0 var(--surface-inset-highlight);
+}
+
+.detail-image-fallback {
+  display: grid;
+  place-items: center;
+}
+
+.detail-visual-copy {
+  display: grid;
+  gap: 12px;
+  justify-items: start;
+  animation: reveal-activity-copy 980ms ease 760ms both;
 }
 
 .detail-visual h1 {
@@ -341,12 +442,48 @@ function confirmReject() {
   line-height: 1.7;
 }
 
+@keyframes dock-icon {
+  from {
+    opacity: 0;
+    transform: translate(var(--dock-start-x, 42px), var(--dock-start-y, 72px)) scale(1.42);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+
+@keyframes reveal-activity-image {
+  from {
+    opacity: 0;
+    transform: translateY(16px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes reveal-activity-copy {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 .detail-content {
   position: relative;
   display: grid;
-  gap: 20px;
+  gap: 28px;
   align-content: start;
-  padding: clamp(28px, 4vw, 62px);
+  padding: clamp(34px, 4.5vw, 74px);
   background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
   backdrop-filter: blur(14px);
 }
@@ -370,7 +507,7 @@ function confirmReject() {
   display: grid;
   grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: 12px;
-  padding-right: 56px;
+  padding-right: 72px;
 }
 
 .info-grid div,
@@ -386,23 +523,26 @@ function confirmReject() {
 .info-grid div {
   display: grid;
   align-content: center;
-  min-height: 118px;
-  padding: 18px 14px;
+  min-height: 128px;
+  padding: 20px 12px;
   border-radius: 22px;
   text-align: center;
 }
 
 .info-grid span {
   color: var(--muted-foreground);
-  font-size: 0.75rem;
+  font-size: clamp(0.64rem, 0.72vw, 0.72rem);
   font-weight: 900;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
+  letter-spacing: 0.08em;
 }
 
 .info-grid strong {
   margin-top: 8px;
   color: var(--foreground);
+  overflow-wrap: anywhere;
+  line-height: 1.15;
+  font-size: clamp(1rem, 1.25vw, 1.25rem);
 }
 
 .text-section h2 {
@@ -572,6 +712,10 @@ function confirmReject() {
     grid-template-columns: 1fr;
   }
 
+  .detail-visual {
+    min-height: 78vh;
+  }
+
   .info-grid {
     padding-right: 0;
   }
@@ -581,6 +725,11 @@ function confirmReject() {
   .detail-visual,
   .detail-content {
     padding: 24px;
+  }
+
+  .detail-activity-image,
+  .detail-image-fallback {
+    width: min(100%, 360px);
   }
 
   .info-grid {
@@ -596,6 +745,14 @@ function confirmReject() {
   .ai-consult-strip .secondary-button,
   .reject-actions > * {
     width: 100%;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .detail-icon-docked,
+  .detail-hero-media,
+  .detail-visual-copy {
+    animation: none;
   }
 }
 </style>

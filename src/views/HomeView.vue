@@ -45,6 +45,7 @@ import AppNavbar from '@/components/layout/AppNavbar.vue'
 import ThemeToggle from '@/components/theme/ThemeToggle.vue'
 import ClickSpark from '@/components/ui/ClickSpark/ClickSpark.vue'
 import { activityCopy, landingCopy } from '@/data/uiText'
+import { getActivityByIdWithTranslations } from '@/data/activitiesCopyI18n'
 import { getHomeCopy } from '@/data/homeCopyI18n'
 import { useI18n } from '@/stores/i18n'
 import { logout, syncSelectedActivity, addSavedActivity, useAppSession, removeSavedActivity } from '@/stores/appSession'
@@ -69,10 +70,19 @@ const showConfirmDeleteId = ref(null)
 
 const displayCopy = computed(() => getHomeCopy(currentLanguage.value))
 
+function translatedActivity(activity) {
+  return getActivityByIdWithTranslations(activity.id, currentLanguage.value) ?? activity
+}
+
+const translatedSavedActivities = computed(() => savedActivities.value.map(translatedActivity))
+const translatedStartedActivities = computed(() => startedActivities.value.map(translatedActivity))
+const translatedRecommendedActivities = computed(() => recommendedActivities.value.map(translatedActivity))
+
 const searchableActivities = computed(() => {
   if (!searchText.value.trim()) return []
 
   return allActivities
+    .map(translatedActivity)
     .filter((activity) =>
       activity.title.toLowerCase().includes(searchText.value.trim().toLowerCase()),
     )
@@ -92,7 +102,7 @@ const nextPlannedTitle = computed(() => {
 
   if (!activity) return ''
 
-  return `${activity.title} · ${nextPlannedActivity.value.day} ${nextPlannedActivity.value.time}`
+  return `${translatedActivity(activity).title} · ${nextPlannedActivity.value.day} ${nextPlannedActivity.value.time}`
 })
 
 function iconFor(activity) {
@@ -280,7 +290,7 @@ function cancelConfirmDelete() {
                     class="mini-delete"
                     type="button"
                     @click.stop="openConfirmDelete(activity.id)"
-                    :aria-label="`Eliminar ${activity.title}`"
+                    :aria-label="`${displayCopy.deleteActivity}: ${activity.title}`"
                   >
                     <Trash2 :size="14" />
                   </button>
@@ -373,7 +383,7 @@ function cancelConfirmDelete() {
         <div class="section-heading">
           <h2>{{ displayCopy.savedActivitiesTitle }}</h2>
 
-          <div v-if="savedActivities.length > 0" class="carousel-controls">
+          <div v-if="translatedSavedActivities.length > 0" class="carousel-controls">
             <button
               class="carousel-button"
               type="button"
@@ -394,9 +404,9 @@ function cancelConfirmDelete() {
           </div>
         </div>
 
-        <div v-if="savedActivities.length > 0" ref="savedRow" class="activity-grid saved-grid saved-row">
+        <div v-if="translatedSavedActivities.length > 0" ref="savedRow" class="activity-grid saved-grid saved-row">
           <article
-            v-for="activity in savedActivities"
+            v-for="activity in translatedSavedActivities"
             :key="activity.id"
             class="activity-card"
             :class="`tone-${activity.tone || 'violet'}`"
@@ -421,7 +431,7 @@ function cancelConfirmDelete() {
               <button
                 class="activity-card-delete"
                 type="button"
-                :aria-label="`Eliminar ${activity.title}`"
+                :aria-label="`${displayCopy.deleteActivity}: ${activity.title}`"
                 @click.stop="openConfirmDelete(activity.id)"
               >
                 <Trash2 :size="18" />
@@ -445,7 +455,7 @@ function cancelConfirmDelete() {
 
         <div class="recommendation-row">
           <article
-            v-for="activity in recommendedActivities"
+            v-for="activity in translatedRecommendedActivities"
             :key="activity.id"
             class="recommendation-card"
             :class="`tone-${activity.tone || 'violet'}`"
@@ -487,9 +497,9 @@ function cancelConfirmDelete() {
           <h2>{{ displayCopy.startedActivitiesTitle }}</h2>
         </div>
 
-        <div v-if="startedActivities.length > 0" class="activity-grid started-grid">
+        <div v-if="translatedStartedActivities.length > 0" class="activity-grid started-grid">
           <article
-            v-for="activity in startedActivities"
+            v-for="activity in translatedStartedActivities"
             :key="activity.id"
             class="activity-card"
             :class="`tone-${activity.tone || 'violet'}`"

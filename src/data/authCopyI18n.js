@@ -51,8 +51,8 @@ export function getAuthCopy(language) {
       },
       settings: {
         ...authCopy.settings,
-        title: 'Ajustes de perfil',
-        description: 'Pantalla para ajustar tu perfil.',
+        title: 'Ajustes',
+        description: 'Pantalla de configuración',
         note: 'No forma parte del prototipo',
         backLabel: 'Volver al perfil',
         backHomeLabel: 'Volver al inicio',
@@ -117,8 +117,8 @@ export function getAuthCopy(language) {
       },
       settings: {
         ...authCopy.settings,
-        title: 'Profile settings',
-        description: 'Screen to adjust your profile.',
+        title: 'Settings',
+        description: 'Screen of adjustments',
         note: 'Not part of the prototype',
         backLabel: 'Back to profile',
         backHomeLabel: 'Back to home',
