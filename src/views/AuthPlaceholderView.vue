@@ -2,7 +2,11 @@
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 
+import AppContainer from '@/components/ui/AppContainer.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import FormMessage from '@/components/ui/FormMessage.vue'
+import SectionHeader from '@/components/ui/SectionHeader.vue'
 import { getAuthCopy } from '@/data/authCopyI18n'
 import { useI18n } from '@/stores/i18n'
 
@@ -71,24 +75,26 @@ function goBack() {
 
 <template>
   <main class="app-page auth-placeholder-page">
-    <section class="page-container auth-placeholder-container">
+    <AppContainer as="section" class="auth-placeholder-container">
       <AppPanel panel-class="auth-placeholder-card">
         <div class="page-stack">
-          <div class="page-header">
-            <h1 class="page-title">{{ content.title }}</h1>
-            <p class="page-description">{{ content.description }}</p>
-          </div>
+          <SectionHeader
+            :title="content.title"
+            :description="content.description"
+            title-as="h1"
+            size="page"
+          />
 
-          <p v-if="content.note" class="placeholder-note">
+          <FormMessage v-if="content.note" tone="info" class="placeholder-note">
             {{ content.note }}
-          </p>
+          </FormMessage>
 
-          <button class="secondary-button placeholder-back" type="button" @click="goBack">
+          <BaseButton variant="secondary" class="placeholder-back" @click="goBack">
             {{ content.backLabel }}
-          </button>
+          </BaseButton>
         </div>
       </AppPanel>
-    </section>
+    </AppContainer>
   </main>
 </template>
 

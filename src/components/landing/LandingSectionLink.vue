@@ -50,7 +50,7 @@ function handleClick(event) {
   transform: translateY(-1px);
   color: var(--foreground);
   border-color: color-mix(in srgb, var(--violet-strong) 18%, transparent);
-  box-shadow: 0 8px 20px rgba(30, 41, 59, 0.08);
+  box-shadow: 0 8px 20px var(--shadow-soft);
 }
 
 .landing-section-link:focus-visible {

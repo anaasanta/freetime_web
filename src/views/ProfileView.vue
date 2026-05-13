@@ -39,6 +39,11 @@ import AppBrand from '@/components/layout/AppBrand.vue'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import ThemeToggle from '@/components/theme/ThemeToggle.vue'
 import ActivityScheduleModal from '@/components/ui/ActivityScheduleModal.vue'
+import AppContainer from '@/components/ui/AppContainer.vue'
+import AppTooltip from '@/components/ui/AppTooltip.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import SectionHeader from '@/components/ui/SectionHeader.vue'
 import { landingCopy } from '@/data/uiText'
 import { getHomeCopy, getProfileCopy } from '@/data/homeCopyI18n'
 import { getActivityByIdWithTranslations } from '@/data/activitiesCopyI18n'
@@ -670,20 +675,19 @@ const selectedSchedulingDayLabel = computed(() => {
 
 <template>
   <main class="app-page profile-page">
-    <section class="page-container">
+    <AppContainer as="section">
       <AppNavbar class="profile-toolbar">
         <template #start>
-          <div class="tooltip-wrapper">
+          <AppTooltip :label="profileCopy.nav.home" position="bottom">
             <AppBrand :brand="landingCopy.nav.brand" :to="{ name: 'home' }" />
-            <span class="tooltip-bubble">{{ profileCopy.nav.home }}</span>
-          </div>
+          </AppTooltip>
         </template>
 
         <template #end>
           <div class="toolbar-actions">
             <ThemeToggle />
 
-            <div class="tooltip-wrapper">
+            <AppTooltip :label="profileCopy.nav.settings" position="bottom">
               <button
                 class="icon-button"
                 type="button"
@@ -691,10 +695,9 @@ const selectedSchedulingDayLabel = computed(() => {
               >
                 <Settings :size="20" />
               </button>
-              <span class="tooltip-bubble">{{ profileCopy.nav.settings }}</span>
-            </div>
+            </AppTooltip>
 
-            <div class="tooltip-wrapper">
+            <AppTooltip :label="profileCopy.nav.logout" position="bottom">
               <button
                 class="icon-button"
                 type="button"
@@ -702,8 +705,7 @@ const selectedSchedulingDayLabel = computed(() => {
               >
                 <LogOut :size="20" />
               </button>
-              <span class="tooltip-bubble">{{ profileCopy.nav.logout }}</span>
-            </div>
+            </AppTooltip>
           </div>
         </template>
       </AppNavbar>
@@ -737,9 +739,7 @@ const selectedSchedulingDayLabel = computed(() => {
         </section>
 
         <section class="glass-panel calendar-panel">
-          <div class="panel-header">
-            <h2>{{ profileCopy.calendar.title }}</h2>
-          </div>
+          <SectionHeader :title="profileCopy.calendar.title" />
 
           <div class="calendar-controls">
             <button class="calendar-nav-button" type="button" @click="previousMonth">
@@ -800,10 +800,11 @@ const selectedSchedulingDayLabel = computed(() => {
           <!-- Normal view: Only Saved activities -->
           <template v-if="!isSchedulingMode">
             <div class="panel-block saved-block">
-              <div class="panel-header">
-                <h2>{{ profileCopy.savedActivitiesTitle }}</h2>
-                <span class="section-counter">{{ savedDisplay.length }} {{ profileCopy.counters.saved }}</span>
-              </div>
+              <SectionHeader :title="profileCopy.savedActivitiesTitle">
+                <template #actions>
+                  <span class="section-counter">{{ savedDisplay.length }} {{ profileCopy.counters.saved }}</span>
+                </template>
+              </SectionHeader>
 
               <div v-if="savedDisplay.length > 0" class="scroll-area">
                 <article
@@ -829,9 +830,9 @@ const selectedSchedulingDayLabel = computed(() => {
                 </article>
               </div>
 
-              <div v-else class="empty-box">
+              <EmptyState v-else>
                 {{ profileCopy.empty.saved }}
-              </div>
+              </EmptyState>
             </div>
           </template>
 
@@ -873,14 +874,14 @@ const selectedSchedulingDayLabel = computed(() => {
                 </article>
               </div>
 
-              <div v-else class="empty-box">
+              <EmptyState v-else>
                 {{ profileCopy.calendar.noActivitiesForDay }}
-              </div>
+              </EmptyState>
 
-              <button class="add-schedule-button" type="button" @click="openAddActivityModal">
+              <BaseButton block class="add-schedule-button" @click="openAddActivityModal">
                 <Plus :size="18" />
                 <span>{{ profileCopy.calendar.addActivityShort }}</span>
-              </button>
+              </BaseButton>
             </div>
           </template>
         </section>
@@ -891,11 +892,11 @@ const selectedSchedulingDayLabel = computed(() => {
     </section>
 
     <section class="glass-panel stats-panel feedback-panel">
-      <div class="panel-header feedback-panel-header">
-        <div class="feedback-heading-copy">
-          <h2>{{ profileCopy.stats.dashboardTitle }}</h2>
-        </div>
-      </div>
+      <SectionHeader
+        :title="profileCopy.stats.dashboardTitle"
+        class="feedback-panel-header"
+        size="section"
+      />
 
       <div v-if="feedbackActivityOptions.length > 0" class="feedback-shell">
         <aside class="feedback-side">
@@ -1031,12 +1032,9 @@ const selectedSchedulingDayLabel = computed(() => {
         </article>
       </div>
 
-      <div v-else class="feedback-empty-state">
-        <h3>{{ profileCopy.stats.emptyTitle }}</h3>
-        <p>{{ profileCopy.stats.emptyText }}</p>
-      </div>
+      <EmptyState v-else :title="profileCopy.stats.emptyTitle" :text="profileCopy.stats.emptyText" />
     </section>
-    </section>
+    </AppContainer>
 
     <!-- Activity Schedule Modal -->
     <ActivityScheduleModal
@@ -1087,11 +1085,11 @@ const selectedSchedulingDayLabel = computed(() => {
   min-width: 180px;
   max-width: 280px;
   padding: 10px 12px;
-  border: 1px solid rgba(180, 190, 220, 0.35);
+  border: 1px solid var(--border);
   border-radius: 14px;
   background: color-mix(in srgb, var(--surface-contrast) 92%, transparent);
   backdrop-filter: blur(14px);
-  box-shadow: 0 10px 30px rgba(80, 100, 140, 0.12);
+  box-shadow: var(--shadow-panel);
   color: var(--foreground);
   font-size: 0.82rem;
   line-height: 1.4;
@@ -1114,8 +1112,8 @@ const selectedSchedulingDayLabel = computed(() => {
   width: 12px;
   height: 12px;
   background: color-mix(in srgb, var(--surface-contrast) 92%, transparent);
-  border-top: 1px solid rgba(180, 190, 220, 0.35);
-  border-left: 1px solid rgba(180, 190, 220, 0.35);
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
   border-radius: 2px;
   transform: translateX(-50%) translateY(50%) rotate(45deg);
 }
@@ -1171,7 +1169,7 @@ const selectedSchedulingDayLabel = computed(() => {
   border-radius: 28px;
   background: color-mix(in srgb, var(--surface-contrast) 30%, transparent);
   backdrop-filter: blur(16px);
-  box-shadow: 0 10px 32px rgba(90, 110, 140, 0.06);
+  box-shadow: var(--shadow-panel);
 }
 
 .profile-panel {
@@ -1188,7 +1186,7 @@ const selectedSchedulingDayLabel = computed(() => {
   border-radius: 60px;
   overflow: hidden;
   background: color-mix(in srgb, var(--surface-contrast) 62%, transparent);
-  box-shadow: 0 12px 28px rgba(90, 110, 140, 0.08);
+  box-shadow: var(--shadow-panel);
 }
 
 .profile-avatar-image {
@@ -1274,7 +1272,7 @@ const selectedSchedulingDayLabel = computed(() => {
   background: color-mix(in srgb, var(--surface-contrast) 54%, transparent);
   backdrop-filter: blur(14px);
   color: var(--foreground);
-  box-shadow: 0 8px 24px rgba(90, 110, 140, 0.06);
+  box-shadow: var(--shadow-panel);
 }
 
 .calendar-nav-button {
@@ -1336,10 +1334,10 @@ const selectedSchedulingDayLabel = computed(() => {
   border-radius: 999px;
   background: color-mix(in srgb, var(--surface-contrast) 50%, transparent);
   backdrop-filter: blur(12px);
-  color: #64748b;
+  color: var(--muted-foreground);
   font-size: 1rem;
   font-weight: 900;
-  box-shadow: 0 8px 22px rgba(90, 110, 140, 0.04);
+  box-shadow: var(--shadow-soft);
   transition:
     transform 0.16s ease,
     box-shadow 0.16s ease,
@@ -1348,36 +1346,40 @@ const selectedSchedulingDayLabel = computed(() => {
 
 .day-cell:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 26px rgba(90, 110, 140, 0.1);
+  box-shadow: var(--shadow-panel);
 }
 
 .day-cell.today {
-  background: rgba(226, 232, 240, 0.92);
-  color: #334155;
-  border-color: rgba(148, 163, 184, 0.5);
+  background: color-mix(in srgb, var(--muted) 78%, var(--surface-contrast));
+  color: var(--foreground-soft);
+  border-color: color-mix(in srgb, var(--muted-foreground) 50%, var(--border));
 }
 
 .day-cell.planned {
-  background: rgba(237, 233, 254, 0.96);
-  color: #6d28d9;
-  border-color: rgba(167, 139, 250, 0.42);
+  background: color-mix(in srgb, var(--violet-soft) 88%, var(--surface-contrast));
+  color: var(--violet);
+  border-color: color-mix(in srgb, var(--violet) 42%, var(--border));
 }
 
 .day-cell.selected {
   border-color: var(--primary);
   background: var(--primary);
-  color: white;
+  color: var(--primary-foreground);
 }
 
 .day-cell.completed {
-  background: rgba(220, 252, 231, 0.96);
-  color: #15803d;
-  border-color: rgba(74, 222, 128, 0.36);
+  background: color-mix(in srgb, var(--emerald-soft) 88%, var(--surface-contrast));
+  color: color-mix(in srgb, var(--emerald) 70%, var(--foreground));
+  border-color: color-mix(in srgb, var(--emerald) 42%, var(--border));
 }
 
 .day-cell.mixed {
-  background: linear-gradient(135deg, rgba(220, 252, 231, 0.96), rgba(237, 233, 254, 0.96));
-  color: #334155;
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--emerald-soft) 88%, var(--surface-contrast)),
+    color-mix(in srgb, var(--violet-soft) 88%, var(--surface-contrast))
+  );
+  color: var(--foreground-soft);
 }
 
 .day-tooltip {
@@ -1391,11 +1393,11 @@ const selectedSchedulingDayLabel = computed(() => {
   width: max-content;
   max-width: 260px;
   padding: 10px 12px;
-  border: 1px solid rgba(180, 190, 220, 0.36);
+  border: 1px solid var(--border);
   border-radius: 14px;
   background: color-mix(in srgb, var(--surface-contrast) 94%, transparent);
   backdrop-filter: blur(14px);
-  box-shadow: 0 12px 30px rgba(80, 100, 140, 0.14);
+  box-shadow: var(--shadow-panel);
   color: var(--foreground);
   font-size: 0.82rem;
   font-weight: 800;
@@ -1419,8 +1421,8 @@ const selectedSchedulingDayLabel = computed(() => {
   width: 12px;
   height: 12px;
   background: color-mix(in srgb, var(--surface-contrast) 94%, transparent);
-  border-right: 1px solid rgba(180, 190, 220, 0.35);
-  border-bottom: 1px solid rgba(180, 190, 220, 0.35);
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
   border-radius: 2px;
   transform: translateX(-50%) translateY(-50%) rotate(45deg);
 }
@@ -1440,7 +1442,7 @@ const selectedSchedulingDayLabel = computed(() => {
   align-items: center;
   justify-content: center;
   min-height: 34px;
-  border: 1px solid rgba(167, 139, 250, 0.5);
+  border: 1px solid color-mix(in srgb, var(--violet) 50%, var(--border));
   border-radius: 999px;
   padding: 7px 12px;
   background: color-mix(in srgb, var(--violet-soft) 58%, var(--surface-contrast));
@@ -1448,12 +1450,12 @@ const selectedSchedulingDayLabel = computed(() => {
   font-size: 0.8rem;
   font-weight: 900;
   white-space: nowrap;
-  box-shadow: 0 8px 18px rgba(124, 58, 237, 0.08);
+  box-shadow: var(--shadow-soft);
 }
 
 .day-add-button:hover {
   transform: translateY(-1px);
-  border-color: rgba(124, 58, 237, 0.5);
+  border-color: color-mix(in srgb, var(--violet) 50%, var(--border));
 }
 
 .right-panel {
@@ -1530,7 +1532,7 @@ const selectedSchedulingDayLabel = computed(() => {
 
 .activity-row:hover {
   transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(90, 110, 140, 0.1);
+  box-shadow: var(--shadow-panel);
 }
 
 .activity-row.compact {
@@ -1865,15 +1867,15 @@ const selectedSchedulingDayLabel = computed(() => {
 
 .feedback-chart-path {
   fill: none;
-  stroke: color-mix(in srgb, var(--primary) 70%, white);
+  stroke: color-mix(in srgb, var(--primary) 70%, var(--surface-contrast));
   stroke-width: 1.8;
   stroke-linecap: round;
   stroke-linejoin: round;
 }
 
 .feedback-chart-dot {
-  fill: color-mix(in srgb, var(--primary) 65%, white);
-  stroke: rgba(15, 23, 42, 0.9);
+  fill: color-mix(in srgb, var(--primary) 65%, var(--surface-contrast));
+  stroke: var(--foreground);
   stroke-width: 0.7;
 }
 
@@ -1930,7 +1932,7 @@ const selectedSchedulingDayLabel = computed(() => {
 }
 
 .feedback-bar-after {
-  background: color-mix(in srgb, var(--primary) 80%, white);
+  background: color-mix(in srgb, var(--primary) 80%, var(--surface-contrast));
 }
 
 .feedback-bar-column small {
@@ -1998,27 +2000,27 @@ const selectedSchedulingDayLabel = computed(() => {
 
 .tone-violet .activity-icon,
 .tone-indigo .activity-icon {
-  background: rgba(237, 233, 254, 0.95);
+  background: color-mix(in srgb, var(--violet-soft) 88%, var(--surface-contrast));
 }
 
 .tone-rose .activity-icon,
 .tone-pink .activity-icon {
-  background: rgba(252, 231, 243, 0.95);
+  background: color-mix(in srgb, var(--pink-soft) 88%, var(--surface-contrast));
 }
 
 .tone-sky .activity-icon,
 .tone-blue .activity-icon {
-  background: rgba(219, 234, 254, 0.95);
+  background: color-mix(in srgb, var(--sky-soft) 88%, var(--surface-contrast));
 }
 
 .tone-emerald .activity-icon,
 .tone-green .activity-icon {
-  background: rgba(220, 252, 231, 0.95);
+  background: color-mix(in srgb, var(--emerald-soft) 88%, var(--surface-contrast));
 }
 
 .tone-amber .activity-icon,
 .tone-yellow .activity-icon {
-  background: rgba(254, 249, 195, 0.95);
+  background: color-mix(in srgb, var(--amber-soft) 88%, var(--surface-contrast));
 }
 
 @media (max-width: 1100px) {
@@ -2227,7 +2229,7 @@ const selectedSchedulingDayLabel = computed(() => {
   border: 1px solid var(--primary);
   border-radius: 14px;
   background: var(--primary);
-  color: white;
+  color: var(--primary-foreground);
   font-weight: 600;
   font-size: 0.95rem;
   cursor: pointer;
@@ -2236,7 +2238,7 @@ const selectedSchedulingDayLabel = computed(() => {
 
 .add-schedule-button:hover {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(90, 110, 140, 0.15);
+  box-shadow: var(--shadow-panel);
 }
 
 .add-schedule-button:active {

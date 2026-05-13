@@ -4,6 +4,9 @@ import { useRouter } from 'vue-router'
 import { Dumbbell, Moon, Palette, X, Frown, Annoyed, Laugh, Meh, Smile, TimerReset, BadgeDollarSign } from 'lucide-vue-next'
 import { testConfig } from '@/data/testConfig'
 import { getTestCopy } from '@/data/testCopyI18n'
+import AppContainer from '@/components/ui/AppContainer.vue'
+import AppTooltip from '@/components/ui/AppTooltip.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import { finishTest } from '@/stores/appSession'
 import { useI18n } from '@/stores/i18n'
 
@@ -99,15 +102,14 @@ function handleFinish() {
 
 <template>
   <main class="app-page test-page">
-    <section class="page-container">
+    <AppContainer as="section">
       <!-- Botón cerrar fijo arriba a la derecha -->
       <div class="test-top">
-        <div class="tooltip-wrapper close-tooltip-wrapper">
+        <AppTooltip :label="copy.tooltips.close" position="bottom" class="close-tooltip-wrapper">
           <button class="close-button" type="button" :aria-label="copy.closeLabel" @click="router.push({ name: 'home' })">
             <X :size="20" />
           </button>
-          <span class="tooltip-bubble tooltip-bubble-down">{{ copy.tooltips.close }}</span>
-        </div>
+        </AppTooltip>
       </div>
 
       <div class="test-card">
@@ -252,19 +254,17 @@ function handleFinish() {
         </section>
 
         <!-- Botón finalizar -->
-        <div class="tooltip-wrapper finish-tooltip-wrapper">
-          <button
-            class="primary-button finish-button"
-            type="button"
+        <AppTooltip :label="copy.tooltips.finish" position="top" align="end" class="finish-tooltip-wrapper">
+          <BaseButton
+            class="finish-button"
             :aria-label="copy.tooltips.finish"
             @click="handleFinish"
           >
             {{ copy.finishButton }}
-          </button>
-          <span class="tooltip-bubble tooltip-bubble-up">{{ copy.tooltips.finish }}</span>
-        </div>
+          </BaseButton>
+        </AppTooltip>
       </div>
-    </section>
+    </AppContainer>
   </main>
 </template>
 

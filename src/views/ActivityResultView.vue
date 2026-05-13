@@ -33,6 +33,8 @@ import {
 } from 'lucide-vue-next'
 import { getActivityByIdWithTranslations } from '@/data/activitiesCopyI18n'
 import { getActivityCopy, getActivityResultCopy } from '@/data/testCopyI18n'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
 import { useI18n } from '@/stores/i18n'
 import {
   addSavedActivity,
@@ -293,15 +295,19 @@ function skipRejectQuestion() {
             <span>{{ activityCopy.aiConsult.question }}</span>
           </div>
 
-          <button class="secondary-button ai-consult-button" type="button" @click="router.push({ name: 'ai-consult' })">
+          <BaseButton
+            variant="secondary"
+            class="ai-consult-button"
+            @click="router.push({ name: 'ai-consult' })"
+          >
             {{ activityCopy.aiConsult.button }}
-          </button>
+          </BaseButton>
         </section>
 
         <div class="actions">
-          <button class="primary-button" type="button" @click="handleStart">
+          <BaseButton @click="handleStart">
             {{ activityResultCopy.buttons.start }}
-          </button>
+          </BaseButton>
 
           <button class="list-button" :class="{ saved: isSaved }" type="button" @click="handleSaveToggle">
             <Trash2 v-if="isSaved" :size="18" />
@@ -309,28 +315,26 @@ function skipRejectQuestion() {
             {{ isSaved ? activityResultCopy.buttons.removeFromList : activityResultCopy.buttons.addToList }}
           </button>
 
-          <button
+          <BaseButton
             v-if="selectedActivitySource === 'test'"
-            class="danger-button"
-            type="button"
+            variant="danger"
             @click="openRejectModal"
           >
             {{ activityResultCopy.buttons.reject }}
-          </button>
+          </BaseButton>
 
-          <button class="secondary-button" type="button" @click="router.push({ name: 'home' })">
+          <BaseButton variant="secondary" @click="router.push({ name: 'home' })">
             {{ activityResultCopy.buttons.feedback }}
-          </button>
+          </BaseButton>
         </div>
       </section>
     </div>
 
-    <div v-else class="empty-detail">
-      <h1>{{ activityResultCopy.buttons.notFound }}</h1>
-      <button class="primary-button" type="button" @click="router.push({ name: 'home' })">
+    <EmptyState v-else class="empty-detail" :title="activityResultCopy.buttons.notFound">
+      <BaseButton @click="router.push({ name: 'home' })">
         {{ activityResultCopy.buttons.backToHome }}
-      </button>
-    </div>
+      </BaseButton>
+    </EmptyState>
 
     <div v-if="showRejectModal" class="reject-modal">
       <div class="reject-dialog" role="dialog" :aria-label="activityResultCopy.rejectModal.closeLabel">
@@ -360,12 +364,12 @@ function skipRejectQuestion() {
         </div>
 
         <div class="reject-actions">
-          <button class="secondary-button" type="button" @click="skipRejectQuestion">
+          <BaseButton variant="secondary" @click="skipRejectQuestion">
             {{ activityResultCopy.rejectModal.skipQuestion }}
-          </button>
-          <button class="primary-button" type="button" @click="confirmReject">
+          </BaseButton>
+          <BaseButton @click="confirmReject">
             {{ activityResultCopy.rejectModal.confirm }}
-          </button>
+          </BaseButton>
         </div>
       </div>
     </div>
@@ -664,7 +668,7 @@ function skipRejectQuestion() {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgba(5, 7, 13, 0.5);
+  background: var(--background);
   z-index: 1200;
 }
 
@@ -676,7 +680,7 @@ function skipRejectQuestion() {
   border-radius: 28px;
   background: var(--surface-contrast);
   color: var(--foreground);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 30px 80px color-mix(in srgb, var(--violet) 24%, transparent);
 }
 
 .reject-dialog h3 {

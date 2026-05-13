@@ -1,6 +1,8 @@
 <script setup>
 import { computed } from 'vue'
+import AppContainer from '@/components/ui/AppContainer.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
+import SectionHeader from '@/components/ui/SectionHeader.vue'
 import RotatingText from '@/components/ui/RotatingText/RotatingText.vue'
 import LandingNavbar from '@/components/landing/LandingNavbar.vue'
 import LandingCommentsMarquee from '@/components/landing/LandingCommentsMarquee.vue'
@@ -15,7 +17,7 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
 
 <template>
   <main class="app-page landing-page">
-    <div class="page-container landing-nav-wrap">
+    <AppContainer class="landing-nav-wrap">
       <LandingNavbar
         :brand="displayCopy.nav.brand"
         :tagline="displayCopy.nav.tagline"
@@ -28,10 +30,10 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
         :secondary-route="displayCopy.nav.secondaryRoute"
         :tooltips="displayCopy.nav.tooltips"
       />
-    </div>
+    </AppContainer>
 
     <section class="landing-hero">
-      <div class="page-container landing-shell">
+      <AppContainer class="landing-shell">
         <div class="landing-copy">
           <div class="landing-chip-row">
             <span v-for="chip in displayCopy.hero.chips" :key="chip" class="landing-chip">
@@ -62,18 +64,22 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
         <div class="landing-hero-art" aria-hidden="true">
           <img :src="HeroLogo" alt="" class="landing-hero-logo" />
         </div>
-      </div>
+      </AppContainer>
     </section>
 
     <section :id="displayCopy.sections.features" class="landing-features">
-      <div class="page-container">
-        <div class="landing-section-header">
+      <AppContainer>
+        <SectionHeader
+          :title="displayCopy.featuresHeader.title"
+          :description="displayCopy.featuresHeader.subtitle"
+          size="section"
+          class="landing-section-header"
+        >
+          <template #title>
           <span class="landing-eyebrow">{{ displayCopy.featuresHeader.eyebrow }}</span>
-          <h2 class="section-title">{{ displayCopy.featuresHeader.title }}</h2>
-          <p class="page-description">
-            {{ displayCopy.featuresHeader.subtitle }}
-          </p>
-        </div>
+          <span>{{ displayCopy.featuresHeader.title }}</span>
+          </template>
+        </SectionHeader>
 
         <div class="feature-grid">
           <AppPanel
@@ -86,11 +92,11 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
             <p>{{ feature.text }}</p>
           </AppPanel>
         </div>
-      </div>
+      </AppContainer>
     </section>
 
     <section :id="displayCopy.sections.comments" class="landing-comments">
-      <div class="page-container">
+      <AppContainer>
         <LandingCommentsMarquee
           :aria-label="displayCopy.commentsHeader.ariaLabel"
           :title="displayCopy.commentsHeader.title"
@@ -99,21 +105,25 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
           :speed-seconds="displayCopy.commentsHeader.speedSeconds"
           :comments="displayCopy.comments"
         />
-      </div>
+      </AppContainer>
     </section>
 
     <section :id="displayCopy.sections.contact" class="landing-cta">
-      <div class="page-container">
-        <div class="landing-section-header landing-contact-header">
+      <AppContainer>
+        <SectionHeader
+          :title="displayCopy.closing.title"
+          :description="displayCopy.contact.subtitle"
+          size="section"
+          class="landing-section-header landing-contact-header"
+        >
+          <template #title>
           <span class="landing-eyebrow">{{ displayCopy.closing.eyebrow }}</span>
-          <h2 class="section-title">{{ displayCopy.closing.title }}</h2>
-          <p class="page-description">
-            {{ displayCopy.contact.subtitle }}
-          </p>
-        </div>
+          <span>{{ displayCopy.closing.title }}</span>
+          </template>
+        </SectionHeader>
 
         <LandingContactSection :copy="displayCopy.contact" />
-      </div>
+      </AppContainer>
     </section>
   </main>
 </template>
@@ -176,7 +186,7 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
   color: var(--foreground);
   font-size: 0.9rem;
   font-weight: 600;
-  box-shadow: 0 10px 24px rgba(90, 110, 140, 0.06);
+  box-shadow: 0 10px 24px var(--shadow-soft);
 }
 
 .landing-title {

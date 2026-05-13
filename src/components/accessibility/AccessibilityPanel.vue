@@ -1,15 +1,15 @@
 <script setup>
-import { computed, onBeforeUnmount, onMounted, ref } from 'vue'
-import { Contrast, Languages, Moon, PersonStanding, Sun, Type, Wind } from 'lucide-vue-next'
-import { useAccessibility } from '@/stores/accessibility'
-import { useI18n } from '@/stores/i18n'
-import { useTheme } from '@/stores/theme'
+import { computed, onBeforeUnmount, onMounted, ref } from 'vue' // Para que el componente se pueda mover por la pantalla
+import { Contrast, Languages, Moon, PersonStanding, Sun, Type, Wind } from 'lucide-vue-next' // Iconos para el panel
+import { useAccessibility } from '@/stores/accessibility' // Para gestionar la accesibilidad
+import { useI18n } from '@/stores/i18n' // Para gestionar la internacionalización (español, catalán, inglés)
+import { useTheme } from '@/stores/theme' // Para gestionar el tema (claro/oscuro)
 
-const isOpen = ref(false)
-const isDragging = ref(false)
-const panelRoot = ref(null)
-const position = ref({ x: 24, y: 24 })
-const dragOffset = ref({ x: 0, y: 0 })
+const isOpen = ref(false) // Estado para controlar si el panel de accesibilidad está abierto o cerrado
+const isDragging = ref(false) // Estado para controlar si el usuario está arrastrando el panel para moverlo por la pantalla
+const panelRoot = ref(null) // Para detectar clicks fuera del panel y cerrarlo automáticamente
+const position = ref({ x: 24, y: 24 }) // Posición inicial del botón flotante, se puede mover y se guarda en localStorage
+const dragOffset = ref({ x: 0, y: 0 }) // Para calcular el desplazamiento del cursor respecto al botón cuando se arrastra
 
 const { currentTheme, toggleTheme } = useTheme()
 const {
@@ -28,10 +28,10 @@ const fontSizeValues = computed(() => [0, 1, 2])
 
 const themeIcon = computed(() => (currentTheme.value === 'dark' ? Moon : Sun))
 
-function clampPosition(nextPosition) {
+function clampPosition(nextPosition) { // Para evitar que el botón se mueva fuera de la pantalla
   if (typeof window === 'undefined') return nextPosition
 
-  const buttonSize = 60
+  const buttonSize = 60 
   const maxX = window.innerWidth - buttonSize
   const maxY = window.innerHeight - buttonSize
 
@@ -41,7 +41,7 @@ function clampPosition(nextPosition) {
   }
 }
 
-function loadPosition() {
+function loadPosition() { // Carga la posición guardada del botón desde localStorage 
   if (typeof window === 'undefined') return
 
   const storedPosition = window.localStorage.getItem('accessibility-position')
@@ -50,24 +50,24 @@ function loadPosition() {
   try {
     position.value = clampPosition(JSON.parse(storedPosition))
   } catch {
-    // Ignore invalid stored values.
+    // Ignorar errores de parsing y usar la posición por defecto
   }
 }
 
-function savePosition() {
+function savePosition() { // Guarda la posición actual del botón en localStorage
   if (typeof window === 'undefined') return
   window.localStorage.setItem('accessibility-position', JSON.stringify(position.value))
 }
 
-function closePanel() {
+function closePanel() { 
   isOpen.value = false
 }
 
-function togglePanel() {
+function togglePanel() { 
   isOpen.value = !isOpen.value
 }
 
-function handlePointerDown(event) {
+function handlePointerDown(event) { // Inicia el arrastre para mover el botón
   if (event.button !== 0) return
 
   isDragging.value = true
@@ -76,10 +76,10 @@ function handlePointerDown(event) {
     y: event.clientY - position.value.y,
   }
 
-  event.preventDefault()
+  event.preventDefault() // Evita que se active el click normal del botón mientras se arrastra
 }
 
-function handlePointerMove(event) {
+function handlePointerMove(event) { // Maneja el movimiento del puntero mientras se arrastra
   if (!isDragging.value) return
 
   position.value = clampPosition({
@@ -88,11 +88,13 @@ function handlePointerMove(event) {
   })
 }
 
-function handlePointerUp() {
+function handlePointerUp() { // Maneja la liberación del puntero al finalizar el arrastre
   if (!isDragging.value) return
   isDragging.value = false
   savePosition()
 }
+
+/* SETTERS DE ACCESIBILIDAD */
 
 function handleSetFontSize(level) {
   setFontSize(level)
@@ -102,7 +104,7 @@ function handleSetLanguage(lang) {
   setLanguage(lang)
 }
 
-function handleDocumentPointerDown(event) {
+function handleDocumentPointerDown(event) { // Maneja el clic en el documento fuera del panel para cerrarlo 
   if (!isOpen.value || !panelRoot.value) return
 
   if (panelRoot.value.contains(event.target)) return
@@ -110,14 +112,14 @@ function handleDocumentPointerDown(event) {
   closePanel()
 }
 
-onMounted(() => {
+onMounted(() => { // Carga la posición guardada al montar el componente y agrega los event listeners para el arrastre y clic fuera del panel
   loadPosition()
   document.addEventListener('pointermove', handlePointerMove)
   document.addEventListener('pointerup', handlePointerUp)
   document.addEventListener('pointerdown', handleDocumentPointerDown)
 })
 
-onBeforeUnmount(() => {
+onBeforeUnmount(() => { // Limpia los event listeners al desmontar el componente para evitar fugas de memoria
   document.removeEventListener('pointermove', handlePointerMove)
   document.removeEventListener('pointerup', handlePointerUp)
   document.removeEventListener('pointerdown', handleDocumentPointerDown)
@@ -259,18 +261,18 @@ onBeforeUnmount(() => {
 }
 
 .accessibility-fab__button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: inline-flex; 
+  align-items: center; 
+  justify-content: center; 
   width: 60px;
   height: 60px;
   border: 1px solid var(--border);
-  border-radius: 50%;
+  border-radius: 50%; 
   background: linear-gradient(135deg, var(--surface-contrast), var(--card-solid));
-  color: var(--foreground);
-  box-shadow: var(--shadow-panel);
+  color: var(--foreground); 
+  box-shadow: var(--shadow-panel); 
   cursor: grab;
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease; 
 }
 
 .accessibility-fab__button:hover {
@@ -320,19 +322,7 @@ onBeforeUnmount(() => {
   line-height: 1.2;
 }
 
-.accessibility-popover__close {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--muted);
-  color: var(--foreground);
-}
-
-.accessibility-row {
+.accessibility-row { 
   width: 100%;
   display: grid;
   grid-template-columns: 34px minmax(0, 1fr) auto;
@@ -367,7 +357,7 @@ onBeforeUnmount(() => {
   color: var(--violet-strong);
 }
 
-.accessibility-row__icon--motion.active {
+.accessibility-row__icon--motion.active { 
   background: color-mix(in srgb, var(--sky-soft) 42%, var(--surface-strong));
   color: var(--sky);
 }
@@ -423,7 +413,7 @@ onBeforeUnmount(() => {
   color: var(--primary);
 }
 
-.accessibility-pill {
+.accessibility-pill { 
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -464,7 +454,7 @@ onBeforeUnmount(() => {
   border-color: var(--primary);
 }
 
-.accessibility-row:hover .accessibility-row__icon {
+.accessibility-row:hover .accessibility-row__icon { 
   color: var(--foreground);
 }
 
@@ -472,7 +462,7 @@ onBeforeUnmount(() => {
   color: var(--foreground);
 }
 
-.accessibility-popover__hint {
+.accessibility-popover__hint { 
   margin: 12px 2px 0;
   font-size: 12px;
   color: var(--foreground-muted-soft);

@@ -1,6 +1,7 @@
 <script setup>
 import { ref } from 'vue'
 import { X } from 'lucide-vue-next'
+import BaseButton from '@/components/ui/BaseButton.vue'
 
 const emit = defineEmits(['confirm', 'cancel'])
 
@@ -54,17 +55,15 @@ function confirm() {
         </div>
 
         <div class="modal-actions">
-          <button class="btn-secondary" type="button" @click="emit('cancel')">
+          <BaseButton variant="secondary" @click="emit('cancel')">
             {{ config.buttons.cancel }}
-          </button>
-          <button
-            class="btn-primary"
-            type="button"
+          </BaseButton>
+          <BaseButton
             :disabled="!selected"
             @click="confirm"
           >
             {{ config.buttons.confirm }}
-          </button>
+          </BaseButton>
         </div>
 
       </div>
@@ -76,7 +75,7 @@ function confirm() {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: color-mix(in srgb, var(--background) 80%, transparent);
   backdrop-filter: blur(4px);
   display: flex;
   align-items: center;
@@ -86,13 +85,13 @@ function confirm() {
 
 .modal-card {
   position: relative;
-  background: white;
+  background: var(--surface);
   border-radius: 28px;
   padding: 36px;
   width: min(480px, calc(100vw - 40px));
   display: grid;
   gap: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+  box-shadow: 0 20px 60px var(--shadow-panel);
 }
 
 .modal-close {
@@ -156,29 +155,4 @@ function confirm() {
   margin-top: 4px;
 }
 
-.btn-secondary {
-  padding: 12px 22px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: white;
-  color: var(--foreground);
-  cursor: pointer;
-  font-weight: 600;
-}
-
-.btn-primary {
-  padding: 12px 22px;
-  border: none;
-  border-radius: 999px;
-  background: var(--violet);
-  color: white;
-  cursor: pointer;
-  font-weight: 600;
-  transition: opacity 0.15s;
-}
-
-.btn-primary:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
-}
 </style>

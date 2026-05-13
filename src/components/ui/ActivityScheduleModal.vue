@@ -32,6 +32,7 @@ import {
 import { useAppSession } from '@/stores/appSession'
 import { getProfileCopy } from '@/data/homeCopyI18n'
 import { getActivityByIdWithTranslations } from '@/data/activitiesCopyI18n'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import { useI18n } from '@/stores/i18n'
 
 function iconFor(iconName) {
@@ -157,7 +158,6 @@ function handleCancel() {
 
         <h2>{{ modalTitle }}</h2>
 
-        <!-- Search -->
         <div class="search-container">
           <Search :size="18" class="search-icon" />
           <input
@@ -168,7 +168,6 @@ function handleCancel() {
           />
         </div>
 
-        <!-- Activities List -->
         <div class="activities-list">
           <div class="activity-section">
             <h3 class="activity-section-title">{{ profileCopy.savedActivitiesTitle }}</h3>
@@ -210,7 +209,7 @@ function handleCancel() {
           </div>
         </div>
 
-        <!-- Selected Activity Details -->
+
         <div v-if="selectedActivity" class="selected-activity">
           <div class="activity-header">
             <component
@@ -227,7 +226,7 @@ function handleCancel() {
           </div>
         </div>
 
-        <!-- Time Input -->
+
         <div class="time-section">
           <div class="time-input-container">
             <label for="time-input">{{ profileCopy.planned.time }}</label>
@@ -247,32 +246,29 @@ function handleCancel() {
           </div>
         </div>
 
-        <!-- Actions -->
+
         <div class="modal-actions">
-          <button class="btn-secondary" type="button" @click="handleCancel">
+          <BaseButton variant="secondary" @click="handleCancel">
             {{ profileCopy.planned.cancel }}
-          </button>
+          </BaseButton>
 
           <div class="spacer"></div>
 
-          <button
+          <BaseButton
             v-if="mode === 'edit'"
-            type="button"
-            class="btn-delete"
+            variant="danger"
             @click="handleDelete"
           >
             <Trash2 :size="16" />
             {{ profileCopy.planned.delete }}
-          </button>
+          </BaseButton>
 
-          <button
-            type="button"
-            class="btn-primary"
+          <BaseButton
             :disabled="!isValid"
             @click="handleConfirm"
           >
             {{ mode === 'edit' ? profileCopy.planned.save : profileCopy.planned.add }}
-          </button>
+          </BaseButton>
         </div>
       </div>
     </div>
@@ -283,7 +279,7 @@ function handleCancel() {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(5, 7, 12, 0.58);
+  background: var(--color-backdrop);
   backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
@@ -302,7 +298,7 @@ function handleCancel() {
   width: min(720px, calc(100vw - 40px));
   display: grid;
   gap: 20px;
-  box-shadow: 0 28px 80px rgba(5, 8, 18, 0.35);
+  box-shadow: 0 28px 80px var(--shadow-panel);
   max-height: 86vh;
   overflow-y: auto;
   color: var(--foreground);
@@ -435,12 +431,12 @@ h2 {
 
 .activity-item:hover {
   border-color: var(--color-primary);
-  background: var(--color-primary-bg, rgba(255, 184, 0, 0.05));
+  background: var(--color-primary-bg, var(--color-primary) 10%  );
 }
 
 .activity-item.selected {
   border-color: var(--color-primary);
-  background: var(--color-primary-bg, rgba(255, 184, 0, 0.1));
+  background: var(--color-primary-bg, var(--color-primary) 10%  );
 }
 
 .activity-info {
@@ -564,57 +560,6 @@ h2 {
   flex: 1;
 }
 
-.btn-primary,
-.btn-secondary,
-.btn-delete {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 12px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-}
-
-.btn-primary {
-  background: #000000;
-  color: white;
-}
-
-.btn-primary:hover:not(:disabled) {
-  background: #333333;
-  transform: translateY(-1px);
-}
-
-.btn-primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.btn-secondary {
-  background: var(--color-bg-secondary);
-  color: var(--color-text-primary);
-  border: 1px solid var(--color-border);
-}
-
-.btn-secondary:hover {
-  background: var(--color-border);
-}
-
-.btn-delete {
-  background: rgba(220, 38, 38, 0.1);
-  color: #dc2626;
-  border: 1px solid rgba(220, 38, 38, 0.2);
-}
-
-.btn-delete:hover {
-  background: rgba(220, 38, 38, 0.2);
-}
-
 .modal-close,
 .search-icon,
 .activity-thumb-icon,
@@ -676,20 +621,4 @@ h2 {
   color: var(--violet);
 }
 
-.btn-primary {
-  background: var(--foreground);
-  color: var(--background);
-  border-radius: 999px;
-  font-weight: 800;
-}
-
-.btn-secondary {
-  background: transparent;
-  color: var(--muted-foreground);
-  border: 1px solid transparent;
-}
-
-.btn-delete {
-  border-radius: 999px;
-}
 </style>

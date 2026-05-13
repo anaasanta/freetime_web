@@ -1,9 +1,9 @@
 <script setup>
-import { computed, onBeforeUnmount, ref } from 'vue'
-import { ChevronLeft, ChevronRight } from 'lucide-vue-next'
-import { useAccessibility } from '@/stores/accessibility'
+import { computed, onBeforeUnmount, ref } from 'vue' // Para manejar el ciclo de vida y reactividad
+import { ChevronLeft, ChevronRight } from 'lucide-vue-next' // Iconos para los controles del carrusel
+import { useAccessibility } from '@/stores/accessibility' // Para acceder a las preferencias de accesibilidad del usuario
 
-const props = defineProps({
+const props = defineProps({ // Definición de las props que el componente acepta
   ariaLabel: {
     type: String,
     default: '',
@@ -30,32 +30,32 @@ const props = defineProps({
   },
 })
 
-// Triple list allows a seamless loop without empty gaps.
-const marqueeComments = computed(() => [...props.comments, ...props.comments, ...props.comments])
-const manualOffset = ref(0)
-const isWheelScrolling = ref(false)
-const commentsRow = ref(null)
-const reducedTrack = ref(null)
-const { reducedMotion } = useAccessibility()
-const marqueeStyle = computed(() => ({
+
+const marqueeComments = computed(() => [...props.comments, ...props.comments, ...props.comments]) // Duplicamos los comentarios para crear un efecto de carrusel continuo
+const manualOffset = ref(0) // Offset manual para el desplazamiento del carrusel cuando el usuario interactúa con la rueda del ratón
+const isWheelScrolling = ref(false) // Estado para indicar si el usuario está desplazándose con la rueda del ratón
+const commentsRow = ref(null) 
+const reducedTrack = ref(null) // Referencias a los elementos del carrusel para manipular su desplazamiento y estilo
+const { reducedMotion } = useAccessibility() // Accedemos a la preferencia de reducción de movimiento del usuario para adaptar el comportamiento del carrusel
+const marqueeStyle = computed(() => ({ // Estilos dinámicos para el carrusel, incluyendo la velocidad de animación y el offset manual
   '--comments-speed': `${props.speedSeconds}s`,
   '--comments-offset': `${manualOffset.value}px`,
 }))
 
 let wheelResumeTimeout = null
 
-function normalizeOffset(offset) {
+function normalizeOffset(offset) { // Normaliza el offset para que se mantenga dentro del ciclo de comentarios y permita un desplazamiento suave incluso cuando el usuario interactúa con la rueda del ratón
   if (!commentsRow.value || props.comments.length === 0) return offset
 
   const cycleWidth = commentsRow.value.scrollWidth / 3
   if (!cycleWidth) return offset
 
-  const wrappedOffset = ((offset % cycleWidth) + cycleWidth) % cycleWidth
+  const wrappedOffset = ((offset % cycleWidth) + cycleWidth) % cycleWidth // El módulo puede dar un resultado negativo, así que lo ajustamos para que siempre sea positivo
 
-  return wrappedOffset === 0 ? 0 : wrappedOffset - cycleWidth
+  return wrappedOffset === 0 ? 0 : wrappedOffset - cycleWidth // Ajustamos el offset para que se mantenga dentro del ciclo de comentarios
 }
 
-function handleWheel(event) {
+function handleWheel(event) { // Maneja el evento de la rueda del ratón para desplazar el carrusel
   if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) return
 
   event.preventDefault()
@@ -71,7 +71,7 @@ function handleWheel(event) {
   }, 700)
 }
 
-function scrollComments(direction) {
+function scrollComments(direction) { // Para mover los comentarios cuando el usuario tiene los movimientos reducidos activados
   if (!reducedTrack.value) return
 
   reducedTrack.value.scrollBy({
@@ -128,9 +128,9 @@ onBeforeUnmount(() => {
         ref="commentsRow"
         class="comments-row"
         :class="{ 'is-wheel-scrolling': isWheelScrolling }"
-        :style="marqueeStyle"
+        :style="marqueeStyle" 
       >
-        <article
+        <article 
           v-for="(comment, index) in marqueeComments"
           :key="`${comment.author}-${index}`"
           class="comment-card surface"
@@ -180,7 +180,7 @@ onBeforeUnmount(() => {
   border-radius: 18px;
   background: color-mix(in srgb, var(--surface-contrast) 92%, transparent);
   color: var(--foreground);
-  box-shadow: 0 8px 24px rgba(90, 110, 140, 0.06);
+  box-shadow: 0 8px 24px var(--shadow-panel);
   transition:
     transform 0.18s ease,
     border-color 0.18s ease,
@@ -272,7 +272,7 @@ onBeforeUnmount(() => {
   color: var(--foreground);
   font-size: 0.84rem;
   line-height: 1.45;
-  box-shadow: 0 14px 26px rgba(30, 41, 59, 0.1);
+  box-shadow: 0 14px 26px var(--shadow-panel);
   opacity: 0;
   pointer-events: none;
   transition: opacity 0.18s ease, transform 0.18s ease;

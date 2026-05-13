@@ -1,6 +1,8 @@
 <script setup>
 import AppPanel from '@/components/ui/AppPanel.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseField from '@/components/ui/BaseField.vue'
+import SectionHeader from '@/components/ui/SectionHeader.vue'
 
 defineProps({
   copy: {
@@ -13,9 +15,7 @@ defineProps({
 <template>
   <div class="contact-layout">
     <AppPanel as="div" panel-class="contact-form-panel">
-      <div class="panel-header">
-        <h3 class="contact-panel-title">{{ copy.form.title }}</h3>
-      </div>
+      <SectionHeader :title="copy.form.title" title-as="h3" />
 
       <div class="contact-form-grid">
         <BaseField
@@ -44,18 +44,17 @@ defineProps({
         </label>
       </div>
 
-      <button type="button" class="primary-button contact-submit" disabled aria-disabled="true">
+      <BaseButton class="contact-submit" disabled aria-disabled="true">
         {{ copy.form.submitLabel }}
-      </button>
+      </BaseButton>
     </AppPanel>
 
     <AppPanel panel-class="contact-info-panel">
-      <div class="panel-header">
-        <h3 class="contact-panel-title">{{ copy.info.title }}</h3>
-        <p v-if="copy.info.description" class="panel-description">
-          {{ copy.info.description }}
-        </p>
-      </div>
+      <SectionHeader
+        :title="copy.info.title"
+        :description="copy.info.description"
+        title-as="h3"
+      />
 
       <div class="contact-info-cards">
         <article v-for="item in copy.info.channels" :key="item.label" class="contact-info-card">
@@ -80,27 +79,6 @@ defineProps({
   display: grid;
   grid-template-rows: auto 1fr;
   gap: 18px;
-}
-
-.panel-header {
-  display: grid;
-  gap: 8px;
-}
-
-.contact-panel-title {
-  margin: 0;
-  color: var(--foreground);
-  font-size: 1.1rem;
-  font-weight: 800;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
-}
-
-.panel-description {
-  margin: 0;
-  color: var(--muted-foreground);
-  font-size: 0.95rem;
-  line-height: 1.6;
 }
 
 .contact-form-grid {

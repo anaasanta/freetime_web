@@ -2,6 +2,7 @@
 import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { Bell, CalendarDays, CheckCircle2, Clock3 } from 'lucide-vue-next'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import { getScheduleConfirmCopy } from '@/data/scheduleCopyI18n'
 import { confirmSchedule, useAppSession } from '@/stores/appSession'
 import { useI18n } from '@/stores/i18n'
@@ -100,9 +101,9 @@ function handleConfirm() {
             <strong>{{ visibleDraft.reminder }}</strong>
           </div>
 
-          <button class="primary-button" type="button" @click="handleConfirm">
+          <BaseButton @click="handleConfirm">
             {{ scheduleCopy.confirm }}
-          </button>
+          </BaseButton>
         </aside>
       </div>
 
@@ -134,11 +135,11 @@ function handleConfirm() {
   align-content: center;
   gap: 28px;
   padding: clamp(32px, 5vw, 72px);
-  border: 1px solid rgba(255, 255, 255, 0.74);
+  border: 1px solid var(--surface-stroke-strong);
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.28);
+  background: color-mix(in srgb, var(--surface-contrast) 28%, transparent);
   backdrop-filter: blur(16px);
-  box-shadow: 0 10px 32px rgba(90, 110, 140, 0.06);
+  box-shadow: var(--shadow-panel);
 }
 
 .confirm-main h1 {
@@ -156,7 +157,7 @@ function handleConfirm() {
   border: 1px solid var(--border);
   border-radius: 28px;
   padding: 20px;
-  background: white;
+  background: var(--surface-contrast);
 }
 
 .activity-icon {
@@ -187,10 +188,10 @@ function handleConfirm() {
 .setting-card {
   display: grid;
   gap: 8px;
-  border: 1px solid rgba(255, 255, 255, 0.76);
+  border: 1px solid var(--surface-stroke-strong);
   border-radius: 24px;
   padding: 20px;
-  background: rgba(255, 255, 255, 0.44);
+  background: color-mix(in srgb, var(--surface-contrast) 44%, transparent);
   backdrop-filter: blur(14px);
 }
 
@@ -218,11 +219,11 @@ function handleConfirm() {
   flex-direction: column;
   gap: 16px;
   padding: clamp(32px, 4vw, 52px);
-  border: 1px solid rgba(255, 255, 255, 0.74);
+  border: 1px solid var(--surface-stroke-strong);
   border-radius: 28px;
-  background: rgba(255, 255, 255, 0.32);
+  background: color-mix(in srgb, var(--surface-contrast) 32%, transparent);
   backdrop-filter: blur(16px);
-  box-shadow: 0 10px 32px rgba(90, 110, 140, 0.06);
+  box-shadow: var(--shadow-panel);
 }
 
 .summary-panel h2 {
@@ -231,10 +232,10 @@ function handleConfirm() {
 }
 
 .summary-item {
-  border: 1px solid rgba(255, 255, 255, 0.76);
+  border: 1px solid var(--surface-stroke-strong);
   border-radius: 20px;
   padding: 16px;
-  background: rgba(255, 255, 255, 0.46);
+  background: color-mix(in srgb, var(--surface-contrast) 46%, transparent);
   backdrop-filter: blur(14px);
 }
 

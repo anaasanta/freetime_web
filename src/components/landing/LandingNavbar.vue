@@ -5,21 +5,23 @@ import AppBrand from '@/components/layout/AppBrand.vue'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import LandingSectionLink from '@/components/landing/LandingSectionLink.vue'
 import ThemeToggle from '@/components/theme/ThemeToggle.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
+import AppTooltip from '@/components/ui/AppTooltip.vue'
 
 const onSectionLinkClick = (event, href) => {
   if (!href || !href.startsWith('#')) {
     return
   }
 
-  const section = document.querySelector(href)
+  const section = document.querySelector(href) // Si el enlace es una ancla, buscamos la sección correspondiente
   if (!section) {
     return
   }
 
-  event.preventDefault()
+  event.preventDefault() // Prevenir el comportamiento predeterminado del enlace para evitar un salto brusco
   section.scrollIntoView({ behavior: 'smooth', block: 'start' })
 
-  const nextUrl = `${window.location.pathname}${window.location.search}${href}`
+  const nextUrl = `${window.location.pathname}${window.location.search}${href}` // Actualizar la URL para reflejar la sección actual sin recargar la página
   window.history.replaceState(null, '', nextUrl)
 }
 
@@ -92,39 +94,41 @@ defineProps({
       <div class="landing-navbar-actions">
         <ThemeToggle />
 
-        <div class="landing-tooltip-wrap">
-          <RouterLink
-            class="secondary-button landing-navbar-button"
+        <AppTooltip
+          :label="tooltips.login"
+          position="bottom"
+          class="landing-tooltip-wrap"
+        >
+          <BaseButton
+            :as="RouterLink"
+            variant="secondary"
+            class="landing-navbar-button"
             :to="secondaryRoute"
-            aria-describedby="landing-login-tooltip"
           >
             {{ secondaryAction }}
-          </RouterLink>
+          </BaseButton>
+        </AppTooltip>
 
-          <span id="landing-login-tooltip" class="landing-tooltip-bubble" role="tooltip">
-            {{ tooltips.login }}
-          </span>
-        </div>
-
-        <div class="landing-tooltip-wrap">
-          <RouterLink
-            class="primary-button landing-navbar-button"
+        <AppTooltip
+          :label="tooltips.register"
+          position="bottom"
+          class="landing-tooltip-wrap"
+        >
+          <BaseButton
+            :as="RouterLink"
+            class="landing-navbar-button"
             :to="primaryRoute"
-            aria-describedby="landing-register-tooltip"
           >
             {{ primaryAction }}
-          </RouterLink>
-
-          <span id="landing-register-tooltip" class="landing-tooltip-bubble" role="tooltip">
-            {{ tooltips.register }}
-          </span>
-        </div>
+          </BaseButton>
+        </AppTooltip>
       </div>
     </template>
   </AppNavbar>
 </template>
 
 <style scoped>
+
 .landing-navbar {
   margin-bottom: 20px;
 }
@@ -144,8 +148,6 @@ defineProps({
 }
 
 .landing-tooltip-wrap {
-  position: relative;
-  display: inline-flex;
   justify-content: center;
 }
 
@@ -157,50 +159,6 @@ defineProps({
 .landing-navbar-button:focus-visible {
   outline: 3px solid color-mix(in srgb, var(--sky) 70%, white);
   outline-offset: 3px;
-}
-
-.landing-tooltip-bubble {
-  position: absolute;
-  top: calc(100% + 10px);
-  left: 50%;
-  width: max-content;
-  max-width: min(180px, 80vw);
-  padding: 8px 10px;
-  border: 1px solid color-mix(in srgb, var(--violet-strong) 18%, transparent);
-  border-radius: 10px;
-  background: color-mix(in srgb, var(--surface-contrast) 92%, white);
-  color: var(--foreground);
-  font-size: 0.82rem;
-  font-weight: 700;
-  line-height: 1.25;
-  text-align: center;
-  box-shadow: 0 12px 28px rgba(30, 41, 59, 0.1);
-  opacity: 0;
-  pointer-events: none;
-  transform: translateX(-50%) translateY(-4px);
-  transition:
-    opacity 0.16s ease,
-    transform 0.16s ease;
-  z-index: 30;
-}
-
-.landing-tooltip-bubble::after {
-  position: absolute;
-  top: -6px;
-  left: 50%;
-  width: 10px;
-  height: 10px;
-  border-top: 1px solid color-mix(in srgb, var(--violet-strong) 18%, transparent);
-  border-left: 1px solid color-mix(in srgb, var(--violet-strong) 18%, transparent);
-  background: color-mix(in srgb, var(--surface-contrast) 92%, white);
-  content: '';
-  transform: translateX(-50%) rotate(45deg);
-}
-
-.landing-tooltip-wrap:hover .landing-tooltip-bubble,
-.landing-tooltip-wrap:focus-within .landing-tooltip-bubble {
-  opacity: 1;
-  transform: translateX(-50%) translateY(0);
 }
 
 .landing-navbar .primary-button {

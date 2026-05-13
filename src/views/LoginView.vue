@@ -8,7 +8,9 @@ import { getAuthCopy } from '@/data/authCopyI18n'
 import AppBrand from '@/components/layout/AppBrand.vue'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import ThemeToggle from '@/components/theme/ThemeToggle.vue'
+import AppContainer from '@/components/ui/AppContainer.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import BaseField from '@/components/ui/BaseField.vue'
 import FormMessage from '@/components/ui/FormMessage.vue'
 import { useAppSession } from '@/stores/appSession'
@@ -74,7 +76,7 @@ function togglePasswordVisibility() {
 
 <template>
   <main class="app-page login-page">
-    <div class="page-container">
+    <AppContainer>
       <AppNavbar>
         <template #start>
           <AppBrand :brand="landingCopy.nav.brand" :to="{ name: 'landing' }" />
@@ -84,9 +86,9 @@ function togglePasswordVisibility() {
           <ThemeToggle />
         </template>
       </AppNavbar>
-    </div>
+    </AppContainer>
 
-    <section class="page-container login-container">
+    <AppContainer as="section" class="login-container">
       <AppPanel panel-class="login-card">
         <div class="page-header login-header">
           <h1 class="page-title">{{ loginCopy.title }}</h1>
@@ -133,33 +135,33 @@ function togglePasswordVisibility() {
             {{ loginError }}
           </FormMessage>
 
-          <button class="primary-button" type="submit">
+          <BaseButton type="submit">
             {{ loginCopy.submitLabel }}
-          </button>
+          </BaseButton>
         </form>
 
         <div class="login-links">
-          <button class="text-link-button" type="button" @click="router.push({ name: 'forgot-password' })">
+          <BaseButton variant="text" @click="router.push({ name: 'forgot-password' })">
             {{ loginCopy.links.forgotPassword }}
-          </button>
+          </BaseButton>
 
-          <button class="text-link-button" type="button" @click="router.push({ name: 'register' })">
+          <BaseButton variant="text" @click="router.push({ name: 'register' })">
             {{ loginCopy.links.register }}
-          </button>
+          </BaseButton>
         </div>
       </AppPanel>
 
       <div class="login-test-access">
-        <button class="secondary-button login-test-button" type="button" @click="fillSampleUser">
+        <BaseButton variant="secondary" class="login-test-button" @click="fillSampleUser">
           {{ loginCopy.testAccess.buttonLabel }}
-        </button>
+        </BaseButton>
 
         <p class="login-test-caption">
           <strong>{{ loginCopy.testAccess.helperLabel }}:</strong>
           {{ sampleUserSummary }}
         </p>
       </div>
-    </section>
+    </AppContainer>
   </main>
 </template>
 
@@ -219,7 +221,7 @@ function togglePasswordVisibility() {
   border-color: color-mix(in srgb, var(--violet) 22%, var(--border));
   background: linear-gradient(135deg, color-mix(in srgb, var(--violet-soft) 70%, white), color-mix(in srgb, var(--sky-soft) 60%, white));
   color: var(--foreground);
-  box-shadow: 0 8px 22px rgba(138, 117, 255, 0.12);
+  box-shadow: 0 8px 22px var(--shadow-soft);
 }
 
 .login-test-caption {

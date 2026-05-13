@@ -34,7 +34,6 @@ import {
   Waves,
   LogOut,
   Settings,
-  FileQuestionMark,
   Menu,
   Trash2,
 } from 'lucide-vue-next'
@@ -42,7 +41,12 @@ import {
 import AppBrand from '@/components/layout/AppBrand.vue'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
 import ThemeToggle from '@/components/theme/ThemeToggle.vue'
+import AppContainer from '@/components/ui/AppContainer.vue'
+import AppTooltip from '@/components/ui/AppTooltip.vue'
+import BaseButton from '@/components/ui/BaseButton.vue'
 import ClickSpark from '@/components/ui/ClickSpark/ClickSpark.vue'
+import EmptyState from '@/components/ui/EmptyState.vue'
+import SectionHeader from '@/components/ui/SectionHeader.vue'
 import { activityCopy, landingCopy } from '@/data/uiText'
 import { getActivityByIdWithTranslations } from '@/data/activitiesCopyI18n'
 import { getHomeCopy } from '@/data/homeCopyI18n'
@@ -301,7 +305,7 @@ function cancelConfirmDelete() {
 
 <template>
   <main class="app-page home-page">
-    <section class="page-container">
+    <AppContainer as="section">
       <AppNavbar class="home-header">
         <template #start>
           <AppBrand :brand="landingCopy.nav.brand" :to="{ name: 'home' }" />
@@ -320,12 +324,11 @@ function cancelConfirmDelete() {
               />
             </div>
 
-            <div class="tooltip-wrapper">
+            <AppTooltip :label="displayCopy.advancedSearch.tooltip" position="bottom">
               <button class="search-advanced-button" type="button" :aria-label="displayCopy.advancedSearch.tooltip">
                 <Menu :size="18" />
               </button>
-              <span class="tooltip-bubble tooltip-bubble-down">{{ displayCopy.advancedSearch.tooltip }}</span>
-            </div>
+            </AppTooltip>
           </div>
 
           <div v-if="searchableActivities.length > 0" class="search-results">
@@ -357,7 +360,7 @@ function cancelConfirmDelete() {
                     @click.stop="handleAddActivity(activity.id)"
                   >
                     <ClickSpark
-                      spark-color="#7c3aed"
+                      spark-color="var(--violet)"
                       :spark-size="9"
                       :spark-radius="22"
                       :spark-count="8"
@@ -376,7 +379,7 @@ function cancelConfirmDelete() {
     <div class="header-actions">
       <ThemeToggle />
 
-        <div class="tooltip-wrapper">
+        <AppTooltip :label="displayCopy.tooltips.profile" position="bottom">
             <button class="profile-button" type="button" @click="router.push({ name: 'profile' })">
             <img
                 v-if="avatarSrc"
@@ -386,30 +389,24 @@ function cancelConfirmDelete() {
             />
             <UserRound v-else :size="20" />
             </button>
+        </AppTooltip>
 
-            <span class="tooltip-bubble">{{ displayCopy.tooltips.profile }}</span>
-            </div>
-
-            <div class="tooltip-wrapper">
+            <AppTooltip :label="displayCopy.tooltips.logout" position="bottom">
                 <button class="logout-button" type="button" @click="handleLogout">
                 <LogOut :size="20" />
                 </button>
-
-                <span class="tooltip-bubble">{{ displayCopy.tooltips.logout }}</span>
-            </div>
-            <div class="tooltip-wrapper">
+            </AppTooltip>
+            <AppTooltip :label="displayCopy.tooltips.settings" position="bottom">
                 <button class="settings-button" type="button" @click="router.push({ name: 'settings', query: { from: 'home' } })">
                 <Settings :size="20" />
                 </button>
-
-                <span class="tooltip-bubble">{{ displayCopy.tooltips.settings }}</span>
-            </div>
+            </AppTooltip>
     </div>
         </template>
       </AppNavbar>
 
         <div class="hero-area">
-        <div class="tooltip-wrapper">
+        <AppTooltip :label="displayCopy.testTooltip" position="bottom">
             <button class="test-button" type="button" @click="router.push({ name: 'test' })">
               <span class="test-orbit orbit-one"></span>
               <span class="test-orbit orbit-two"></span>
@@ -426,18 +423,13 @@ function cancelConfirmDelete() {
                 <strong>{{ displayCopy.testLabel }}</strong>
               </span>
             </button>
-
-            <span class="tooltip-bubble">
-            {{ displayCopy.testTooltip }}
-            </span>
-        </div>
+        </AppTooltip>
         </div>
 
       <section class="home-section">
-        <div class="section-heading">
-          <h2>{{ displayCopy.savedActivitiesTitle }}</h2>
-
-          <div v-if="translatedSavedActivities.length > 0" class="carousel-controls">
+        <SectionHeader :title="displayCopy.savedActivitiesTitle" size="section" class="section-heading">
+          <template v-if="translatedSavedActivities.length > 0" #actions>
+            <div class="carousel-controls">
             <button
               class="carousel-button"
               type="button"
@@ -455,8 +447,9 @@ function cancelConfirmDelete() {
             >
               <ChevronRight :size="20" />
             </button>
-          </div>
-        </div>
+            </div>
+          </template>
+        </SectionHeader>
 
         <div v-if="translatedSavedActivities.length > 0" ref="savedRow" class="activity-grid saved-grid saved-row">
           <article
@@ -481,7 +474,7 @@ function cancelConfirmDelete() {
               </div>
             </div>
 
-            <div class="tooltip-wrapper delete-tooltip-wrapper">
+            <AppTooltip :label="displayCopy.deleteActivity" position="top" class="delete-tooltip-wrapper">
               <button
                 class="activity-card-delete"
                 type="button"
@@ -490,22 +483,21 @@ function cancelConfirmDelete() {
               >
                 <Trash2 :size="18" />
               </button>
-              <span class="tooltip-bubble tooltip-bubble-down">{{ displayCopy.deleteActivity }}</span>
-            </div>
+            </AppTooltip>
           </article>
         </div>
 
-        <div v-else class="empty-state">
+        <EmptyState v-else>
           {{ displayCopy.savedActivitiesEmpty }}
-        </div>
+        </EmptyState>
       </section>
 
       <section class="home-section">
-        <div class="section-heading">
-          <h2>{{ displayCopy.recommendedTitle }}</h2>
-
-          <span class="chip">{{ displayCopy.recommendedBadge }}</span>
-        </div>
+        <SectionHeader :title="displayCopy.recommendedTitle" size="section" class="section-heading">
+          <template #actions>
+            <span class="chip">{{ displayCopy.recommendedBadge }}</span>
+          </template>
+        </SectionHeader>
 
         <div class="recommendation-row">
           <article
@@ -515,25 +507,24 @@ function cancelConfirmDelete() {
             :class="`tone-${activity.tone || 'violet'}`"
             @click="openActivity(activity.id)"
           >
-        <div class="tooltip-wrapper add-tooltip-wrapper">
-        <button
-            class="add-button"
-            type="button"
-            :aria-label="displayCopy.aria.addActivity"
-            @click.stop="handleAddActivity(activity.id)"
-        >
-          <ClickSpark
-            spark-color="#7c3aed"
-            :spark-size="10"
-            :spark-radius="24"
-            :spark-count="8"
-            :duration="440"
-          >
-            <Plus :size="18" />
-          </ClickSpark>
-        </button>
-        <span class="tooltip-bubble tooltip-bubble-down">{{ displayCopy.tooltips.addSaved }}</span>
-        </div>
+            <AppTooltip :label="displayCopy.tooltips.addSaved" position="top" class="add-tooltip-wrapper">
+              <button
+                class="add-button"
+                type="button"
+                :aria-label="displayCopy.aria.addActivity"
+                @click.stop="handleAddActivity(activity.id)"
+              >
+                <ClickSpark
+                  spark-color="var(--violet)"
+                  :spark-size="10"
+                  :spark-radius="24"
+                  :spark-count="8"
+                  :duration="440"
+                >
+                  <Plus :size="18" />
+                </ClickSpark>
+              </button>
+            </AppTooltip>
 
             <div class="activity-icon">
               <component :is="iconFor(activity)" :size="28" />
@@ -547,9 +538,7 @@ function cancelConfirmDelete() {
       </section>
 
       <section class="home-section">
-        <div class="section-heading">
-          <h2>{{ displayCopy.startedActivitiesTitle }}</h2>
-        </div>
+        <SectionHeader :title="displayCopy.startedActivitiesTitle" size="section" class="section-heading" />
 
         <div v-if="translatedStartedActivities.length > 0" class="activity-grid started-grid">
           <article
@@ -570,14 +559,14 @@ function cancelConfirmDelete() {
           </article>
         </div>
 
-        <div v-else class="empty-state">
+        <EmptyState v-else>
           {{ displayCopy.startedActivitiesEmpty }}
-        </div>
+        </EmptyState>
       </section>
 
       <section class="activity-atlas home-section" :aria-label="displayCopy.activityAtlas.title">
-        <div class="section-heading activity-atlas-heading">
-          <h2>{{ displayCopy.activityAtlas.title }}</h2>
+        <SectionHeader :title="displayCopy.activityAtlas.title" size="section" class="section-heading activity-atlas-heading">
+          <template #actions>
           <div class="activity-atlas-legend" aria-hidden="true">
             <div class="atlas-legend-item">
               <span class="atlas-legend-dot saved"></span>
@@ -589,7 +578,8 @@ function cancelConfirmDelete() {
               <small>{{ displayCopy.activityAtlas.legend.recommended }}</small>
             </div>
           </div>
-        </div>
+          </template>
+        </SectionHeader>
 
         <div class="activity-atlas-visual">
           <span class="atlas-axis atlas-axis-x"></span>
@@ -631,12 +621,12 @@ function cancelConfirmDelete() {
         <h3>{{ displayCopy.deleteConfirm.title }}</h3>
         <p>{{ displayCopy.deleteConfirm.message }}</p>
         <div class="confirm-actions">
-          <button class="btn-cancel" type="button" @click="cancelConfirmDelete">{{ displayCopy.deleteConfirm.cancel }}</button>
-          <button class="btn-confirm" type="button" @click="confirmRemoveSavedActivity">{{ displayCopy.deleteConfirm.confirm }}</button>
+          <BaseButton variant="secondary" @click="cancelConfirmDelete">{{ displayCopy.deleteConfirm.cancel }}</BaseButton>
+          <BaseButton @click="confirmRemoveSavedActivity">{{ displayCopy.deleteConfirm.confirm }}</BaseButton>
         </div>
       </div>
     </div>
-    </section>
+    </AppContainer>
   </main>
 </template>
 
@@ -723,7 +713,7 @@ h1 {
   border-radius: 22px;
   padding: 10px 14px;
   background: color-mix(in srgb, var(--surface-contrast) 92%, transparent);
-  box-shadow: 0 8px 24px rgba(90, 110, 140, 0.08);
+  box-shadow: 0 8px 24px var(--shadow-soft);
 }
 
 .search-box svg {
@@ -835,10 +825,10 @@ h1 {
   place-items: center;
   width: 32px;
   height: 32px;
-  border: 1px solid rgba(220,70,70,0.28);
+  border: 1px solid var(--border);
   border-radius: 12px;
-  background: rgba(239,68,68,0.06);
-  color: rgb(220,70,70);
+  background: var(--surface-contrast);
+  color: var(--danger-foreground);
 }
 
 .confirm-modal {
@@ -846,7 +836,7 @@ h1 {
   inset: 0;
   display: grid;
   place-items: center;
-  background: rgba(8,10,15,0.45);
+  background: color-mix(in srgb, var(--background) 45%, transparent);
   z-index: 1200;
 }
 
@@ -855,7 +845,7 @@ h1 {
   background: var(--surface-contrast);
   border-radius: 12px;
   padding: 18px;
-  box-shadow: 0 18px 40px rgba(10,12,20,0.6);
+  box-shadow: var(--shadow-panel-strong);
   color: var(--foreground);
   position: relative;
   text-align: center;
@@ -876,21 +866,6 @@ h1 {
   justify-content: flex-end;
   gap: 10px;
   margin-top: 16px;
-}
-
-.btn-cancel {
-  background: transparent;
-  border: 1px solid var(--border);
-  padding: 8px 12px;
-  border-radius: 8px;
-}
-
-.btn-confirm {
-  background: rgba(220,70,70,0.12);
-  border: 1px solid rgba(220,70,70,0.3);
-  color: rgb(220,70,70);
-  padding: 8px 12px;
-  border-radius: 8px;
 }
 
 .hero-area {
@@ -965,6 +940,11 @@ h1 {
 .home-section {
   position: relative;
   margin-top: 56px;
+  z-index: 1;
+}
+
+.home-section:has(.saved-row) {
+  z-index: 20;
 }
 
 .section-heading {
@@ -1012,7 +992,7 @@ h1 {
   border-radius: 24px;
   padding: 16px;
   background: color-mix(in srgb, var(--surface-contrast) 88%, transparent);
-  box-shadow: 0 8px 24px rgba(90, 110, 140, 0.06);
+  box-shadow: var(--shadow-panel);
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease;
@@ -1068,7 +1048,7 @@ h1 {
 
 .delete-tooltip-wrapper:hover,
 .delete-tooltip-wrapper:focus-within {
-  z-index: 120;
+  z-index: 400;
 }
 
 .delete-tooltip-wrapper .tooltip-bubble-down {
@@ -1081,6 +1061,32 @@ h1 {
 
 .delete-tooltip-wrapper:hover .tooltip-bubble-down,
 .delete-tooltip-wrapper:focus-within .tooltip-bubble-down {
+  transform: translateX(-50%) translateY(0);
+}
+
+.delete-tooltip-wrapper .tooltip-bubble-up {
+  left: 50%;
+  right: auto;
+  top: auto;
+  bottom: calc(100% + 12px);
+  transform: translateX(-50%) translateY(8px);
+  z-index: 500;
+}
+
+.delete-tooltip-wrapper .tooltip-bubble-up::before {
+  top: 100%;
+  bottom: auto;
+  border-top: none;
+  border-left: none;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transform: translateX(-50%) translateY(-50%) rotate(45deg);
+}
+
+.delete-tooltip-wrapper:hover .tooltip-bubble-up,
+.delete-tooltip-wrapper:focus-within .tooltip-bubble-up {
+  opacity: 1;
+  visibility: visible;
   transform: translateX(-50%) translateY(0);
 }
 
@@ -1110,7 +1116,7 @@ h1 {
 .activity-card:hover,
 .recommendation-card:hover {
   transform: translateY(-2px);
-  box-shadow: 0 14px 32px rgba(90, 110, 140, 0.12);
+  box-shadow: var(--shadow-panel-strong);
 }
 
 .activity-card:hover,
@@ -1148,18 +1154,24 @@ h1 {
   display: flex;
   gap: 16px;
   overflow-x: auto;
-  padding: 2px 2px 18px;
+  margin-top: -62px;
+  padding: 64px 2px 18px;
 }
 
 .recommendation-card {
   position: relative;
+  display: grid;
+  justify-items: center;
+  align-content: center;
   min-width: 180px;
+  aspect-ratio: 1 / 1;
+  min-height: 180px;
   border: 1px solid var(--border);
   border-radius: 26px;
   padding: 20px 16px;
   background: color-mix(in srgb, var(--surface-contrast) 86%, transparent);
   text-align: center;
-  box-shadow: 0 8px 24px rgba(90, 110, 140, 0.06);
+  box-shadow: var(--shadow-panel);
   transition:
     transform 0.18s ease,
     box-shadow 0.18s ease;
@@ -1182,13 +1194,13 @@ h1 {
 }
 
 .add-tooltip-wrapper {
-  position: absolute;
+  position: absolute !important;
   top: 12px;
   right: 12px;
+  display: grid !important;
+  place-items: center;
   width: 36px;
   height: 36px;
-  align-items: center;
-  justify-content: center;
   z-index: 6;
 }
 
@@ -1202,11 +1214,37 @@ h1 {
 
 .add-tooltip-wrapper:hover,
 .add-tooltip-wrapper:focus-within {
-  z-index: 120;
+  z-index: 400;
 }
 
 .add-tooltip-wrapper:hover .tooltip-bubble-down,
 .add-tooltip-wrapper:focus-within .tooltip-bubble-down {
+  transform: translateX(-50%) translateY(0);
+}
+
+.add-tooltip-wrapper .tooltip-bubble-up {
+  left: 50%;
+  right: auto;
+  top: auto;
+  bottom: calc(100% + 12px);
+  transform: translateX(-50%) translateY(8px);
+  z-index: 500;
+}
+
+.add-tooltip-wrapper .tooltip-bubble-up::before {
+  top: 100%;
+  bottom: auto;
+  border-top: none;
+  border-left: none;
+  border-right: 1px solid var(--border);
+  border-bottom: 1px solid var(--border);
+  transform: translateX(-50%) translateY(-50%) rotate(45deg);
+}
+
+.add-tooltip-wrapper:hover .tooltip-bubble-up,
+.add-tooltip-wrapper:focus-within .tooltip-bubble-up {
+  opacity: 1;
+  visibility: visible;
   transform: translateX(-50%) translateY(0);
 }
 
@@ -1247,7 +1285,7 @@ h1 {
 }
 
 .atlas-legend-dot.saved {
-  background: linear-gradient(135deg, var(--violet), color-mix(in srgb, var(--violet) 52%, white));
+  background: linear-gradient(135deg, var(--violet), color-mix(in srgb, var(--violet) 52%, var(--surface-contrast)));
   box-shadow: 0 0 0 4px color-mix(in srgb, var(--violet) 18%, transparent);
 }
 
@@ -1348,7 +1386,7 @@ h1 {
   border-radius: 999px;
   padding: 7px;
   background: color-mix(in srgb, var(--surface-contrast) 88%, transparent);
-  box-shadow: 0 14px 34px rgba(60, 72, 105, 0.12);
+  box-shadow: var(--shadow-panel);
   color: var(--foreground);
   font-weight: 900;
   text-align: left;
@@ -1371,7 +1409,7 @@ h1 {
   padding-right: 16px;
   transform: translate(0, calc(-50% - 3px));
   border-color: color-mix(in srgb, var(--violet) 38%, var(--border));
-  box-shadow: 0 18px 42px rgba(60, 72, 105, 0.18);
+  box-shadow: var(--shadow-panel-strong);
 }
 
 .atlas-node.source-saved {
@@ -1380,7 +1418,7 @@ h1 {
     linear-gradient(90deg, color-mix(in srgb, var(--violet-soft) 18%, transparent), transparent 62%),
     color-mix(in srgb, var(--surface-contrast) 92%, transparent);
   box-shadow:
-    0 14px 34px rgba(60, 72, 105, 0.12),
+    var(--shadow-panel),
     0 0 0 5px color-mix(in srgb, var(--violet) 14%, transparent);
 }
 
@@ -1390,14 +1428,14 @@ h1 {
     linear-gradient(90deg, color-mix(in srgb, var(--sky-soft) 24%, transparent), transparent 62%),
     color-mix(in srgb, var(--surface-contrast) 82%, transparent);
   box-shadow:
-    0 14px 34px rgba(60, 72, 105, 0.1),
+    var(--shadow-panel),
     0 0 0 5px color-mix(in srgb, var(--sky) 12%, transparent);
 }
 
 .atlas-node.source-both {
   border: 2px solid color-mix(in srgb, var(--emerald) 50%, var(--violet));
   box-shadow:
-    0 14px 34px rgba(60, 72, 105, 0.12),
+    var(--shadow-panel),
     0 0 0 4px color-mix(in srgb, var(--emerald-soft) 36%, transparent);
 }
 
@@ -1483,11 +1521,11 @@ h1 {
   min-width: 180px;
   max-width: 280px;
   padding: 10px 12px;
-  border: 1px solid rgba(180, 190, 220, 0.35);
+  border: 1px solid var(--border);
   border-radius: 14px;
   background: color-mix(in srgb, var(--surface-contrast) 92%, transparent);
   backdrop-filter: blur(14px);
-  box-shadow: 0 10px 30px rgba(80, 100, 140, 0.12);
+  box-shadow: var(--shadow-panel);
   color: var(--foreground);
   font-size: 0.82rem;
   line-height: 1.4;
@@ -1511,8 +1549,8 @@ h1 {
   width: 12px;
   height: 12px;
   background: color-mix(in srgb, var(--surface-contrast) 92%, transparent);
-  border-top: 1px solid rgba(180, 190, 220, 0.35);
-  border-left: 1px solid rgba(180, 190, 220, 0.35);
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
   border-radius: 2px;
   transform: translateX(-50%) translateY(50%) rotate(45deg);
 }
@@ -1551,8 +1589,8 @@ h1 {
   width: 12px;
   height: 12px;
   background: color-mix(in srgb, var(--surface-contrast) 92%, transparent);
-  border-top: 1px solid rgba(180, 190, 220, 0.35);
-  border-left: 1px solid rgba(180, 190, 220, 0.35);
+  border-top: 1px solid var(--border);
+  border-left: 1px solid var(--border);
   border-radius: 2px;
 }
 
@@ -1567,8 +1605,8 @@ h1 {
   top: -8px;
   border-top: none;
   border-left: none;
-  border-bottom: 1px solid rgba(180, 190, 220, 0.35);
-  border-right: 1px solid rgba(180, 190, 220, 0.35);
+  border-bottom: 1px solid var(--border);
+  border-right: 1px solid var(--border);
   transform: translateX(-50%) translateY(-50%) rotate(45deg);
 }
 
@@ -1641,8 +1679,11 @@ h1 {
 }
 
 .add-tooltip-wrapper {
+  position: absolute !important;
   top: 12px;
   right: 12px;
+  display: grid !important;
+  place-items: center;
   width: 36px;
   height: 36px;
   align-items: center;
@@ -1666,7 +1707,7 @@ h1 {
   padding: 13px 18px;
   background: color-mix(in srgb, var(--surface-contrast) 82%, transparent);
   backdrop-filter: blur(16px);
-  box-shadow: 0 8px 24px rgba(90, 110, 140, 0.08);
+  box-shadow: var(--shadow-panel);
   color: var(--foreground);
   font-weight: 800;
 }
@@ -1918,7 +1959,7 @@ h1 {
   border-radius: 16px;
   background: color-mix(in srgb, var(--surface-contrast) 88%, transparent);
   color: var(--foreground);
-  box-shadow: 0 8px 24px rgba(90, 110, 140, 0.06);
+  box-shadow: var(--shadow-panel);
   transition:
     transform 0.18s ease,
     border-color 0.18s ease,
@@ -1939,7 +1980,8 @@ h1 {
   overscroll-behavior-inline: contain;
   scroll-behavior: smooth;
   scroll-snap-type: x proximity;
-  padding: 2px 2px 18px;
+  margin-top: -62px;
+  padding: 64px 2px 18px;
   scrollbar-width: none;
 }
 
