@@ -809,6 +809,8 @@ function handleFinish() {
 /* ── Finish button ── */
 .finish-tooltip-wrapper {
   justify-self: end;
+  width: fit-content;
+  margin-left: auto;
 }
 
 .finish-button {
@@ -816,6 +818,22 @@ function handleFinish() {
   border-radius: 999px;
   font-weight: 600;
   box-shadow: var(--shadow-panel-strong);
+}
+
+.finish-tooltip-wrapper .tooltip-bubble {
+  left: auto;
+  right: 0;
+  transform: translateY(-8px);
+}
+
+.finish-tooltip-wrapper .tooltip-bubble::before {
+  left: auto;
+  right: 18px;
+  transform: translateX(50%) translateY(50%) rotate(45deg);
+}
+
+.finish-tooltip-wrapper:hover .tooltip-bubble {
+  transform: translateY(0);
 }
 
 /* ── Responsive ── */

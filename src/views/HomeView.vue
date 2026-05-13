@@ -5,7 +5,6 @@ import {
   Sparkles,
   UserRound,
   Search,
-  CalendarDays,
   Amphora,
   Bike,
   CirclePlay,
@@ -58,7 +57,6 @@ const {
   startedActivities,
   recommendedActivities,
   allActivities,
-  plannedActivities,
 } =
   useAppSession()
 
@@ -78,6 +76,74 @@ const translatedSavedActivities = computed(() => savedActivities.value.map(trans
 const translatedStartedActivities = computed(() => startedActivities.value.map(translatedActivity))
 const translatedRecommendedActivities = computed(() => recommendedActivities.value.map(translatedActivity))
 
+const activityAtlasActivities = computed(() => {
+  const uniqueActivities = new Map()
+  const savedIds = new Set(translatedSavedActivities.value.map((activity) => activity.id))
+  const recommendedIds = new Set(translatedRecommendedActivities.value.map((activity) => activity.id))
+  const recommendedPool = translatedRecommendedActivities.value
+    .filter((activity) => !savedIds.has(activity.id))
+    .slice(0, 3)
+
+  const hasLongRecommendation = recommendedPool.some((activity) => activity.duration >= 45)
+
+  if (!hasLongRecommendation) {
+    const longRecommendation = allActivities
+      .map(translatedActivity)
+      .find(
+        (activity) =>
+          activity.duration >= 45 &&
+          !savedIds.has(activity.id) &&
+          !recommendedPool.some((item) => item.id === activity.id),
+      )
+
+    if (longRecommendation) {
+      recommendedPool.push(longRecommendation)
+    }
+  }
+
+  if (recommendedPool.length < 4) {
+    allActivities
+      .map(translatedActivity)
+      .filter((activity) => !savedIds.has(activity.id) && !recommendedIds.has(activity.id))
+      .sort((a, b) => b.duration - a.duration)
+      .slice(0, 4 - recommendedPool.length)
+      .forEach((activity) => recommendedPool.push(activity))
+  }
+
+  ;[...translatedSavedActivities.value, ...recommendedPool].forEach(
+    (activity) => {
+      if (!uniqueActivities.has(activity.id)) {
+        const source =
+          savedIds.has(activity.id) && recommendedIds.has(activity.id)
+            ? 'both'
+            : savedIds.has(activity.id)
+              ? 'saved'
+              : 'recommended'
+
+        uniqueActivities.set(activity.id, {
+          ...activity,
+          atlasSource: source,
+        })
+      }
+    },
+  )
+
+  return [...uniqueActivities.values()].slice(0, 10).map((activity, index) => {
+    const durationPercent = clamp(((activity.duration - 10) / 80) * 100, 0, 100)
+    const energyPercent = clamp(activity.energy, 0, 100)
+    const spreadX = ((index % 4) - 1.5) * 3.2
+    const spreadY = (((index + 2) % 4) - 1.5) * 2.6
+
+    return {
+      ...activity,
+      atlasStyle: {
+        '--atlas-x': `${clamp(14 + durationPercent * 0.72 + spreadX, 14, 86)}%`,
+        '--atlas-y': `${clamp(86 - energyPercent * 0.72 + spreadY, 12, 84)}%`,
+      },
+    }
+  })
+})
+
 const searchableActivities = computed(() => {
   if (!searchText.value.trim()) return []
 
@@ -89,21 +155,9 @@ const searchableActivities = computed(() => {
     .slice(0, 5)
 })
 
-const nextPlannedActivity = computed(() => {
-  return plannedActivities.value.length > 0 ? plannedActivities.value[0] : null
-})
-
-const nextPlannedTitle = computed(() => {
-  if (!nextPlannedActivity.value) return ''
-
-  const activity = allActivities.find(
-    (item) => item.id === nextPlannedActivity.value.activityId,
-  )
-
-  if (!activity) return ''
-
-  return `${translatedActivity(activity).title} · ${nextPlannedActivity.value.day} ${nextPlannedActivity.value.time}`
-})
+function clamp(value, min, max) {
+  return Math.min(Math.max(value, min), max)
+}
 
 function iconFor(activity) {
   const iconName = activity.icon
@@ -521,26 +575,46 @@ function cancelConfirmDelete() {
         </div>
       </section>
 
-      <section class="next-activity">
-        <div class="next-icon">
-          <CalendarDays :size="30" />
+      <section class="activity-atlas home-section" :aria-label="displayCopy.activityAtlas.title">
+        <div class="section-heading activity-atlas-heading">
+          <h2>{{ displayCopy.activityAtlas.title }}</h2>
+          <div class="activity-atlas-legend" aria-hidden="true">
+            <div class="atlas-legend-item">
+              <span class="atlas-legend-dot saved"></span>
+              <small>{{ displayCopy.activityAtlas.legend.saved }}</small>
+            </div>
+
+            <div class="atlas-legend-item">
+              <span class="atlas-legend-dot recommended"></span>
+              <small>{{ displayCopy.activityAtlas.legend.recommended }}</small>
+            </div>
+          </div>
         </div>
 
-        <div>
-          <span>{{ displayCopy.nextActivityLabel }}</span>
+        <div class="activity-atlas-visual">
+          <span class="atlas-axis atlas-axis-x"></span>
+          <span class="atlas-axis atlas-axis-y"></span>
+          <span class="atlas-axis-label atlas-axis-top">{{ displayCopy.activityAtlas.axis.highEnergy }}</span>
+          <span class="atlas-axis-label atlas-axis-bottom">{{ displayCopy.activityAtlas.axis.lowEnergy }}</span>
+          <span class="atlas-axis-label atlas-axis-left">{{ displayCopy.activityAtlas.axis.lessTime }}</span>
+          <span class="atlas-axis-label atlas-axis-right">{{ displayCopy.activityAtlas.axis.moreTime }}</span>
 
-          <h2 v-if="nextPlannedActivity">
-            {{ nextPlannedTitle }}
-          </h2>
-
-          <h2 v-else>
-            {{ displayCopy.noNextActivity }}
-          </h2>
+          <button
+            v-for="activity in activityAtlasActivities"
+            :key="activity.id"
+            class="atlas-node"
+            :class="[`tone-${activity.tone || 'violet'}`, `source-${activity.atlasSource}`]"
+            :style="activity.atlasStyle"
+            type="button"
+            :aria-label="activity.title"
+            @click="openActivity(activity.id)"
+          >
+            <span class="activity-icon">
+              <component :is="iconFor(activity)" :size="24" />
+            </span>
+            <span class="atlas-node-title">{{ activity.title }}</span>
+          </button>
         </div>
-
-        <button class="primary-button" type="button" @click="router.push({ name: 'profile' })">
-          {{ displayCopy.viewButton }}
-        </button>
       </section>
 
       <span
@@ -890,7 +964,7 @@ h1 {
 
 .home-section {
   position: relative;
-  margin-top: 34px;
+  margin-top: 56px;
 }
 
 .section-heading {
@@ -898,7 +972,7 @@ h1 {
   justify-content: space-between;
   align-items: center;
   gap: 16px;
-  margin-bottom: 16px;
+  margin-bottom: 18px;
 }
 
 .section-heading h2 {
@@ -1074,7 +1148,7 @@ h1 {
   display: flex;
   gap: 16px;
   overflow-x: auto;
-  padding-bottom: 72px;
+  padding: 2px 2px 18px;
 }
 
 .recommendation-card {
@@ -1136,55 +1210,229 @@ h1 {
   transform: translateX(-50%) translateY(0);
 }
 
-.next-activity {
+.activity-atlas {
+  display: block;
+  margin-top: 56px;
+  padding: 0;
+}
+
+.activity-atlas-heading {
+  padding: 0 0 18px;
+  margin-bottom: 0;
+}
+
+.activity-atlas-legend {
   display: flex;
-  align-items: center;
-  gap: 18px;
-  max-width: 760px;
-  margin: 44px auto 0;
-  border: 1px solid var(--surface-stroke-strong);
-  border-radius: 30px;
-  padding: 18px;
-  background: linear-gradient(
-    90deg,
-    color-mix(in srgb, var(--violet-soft) 84%, transparent),
-    color-mix(in srgb, var(--sky-soft) 84%, transparent),
-    color-mix(in srgb, var(--emerald-soft) 84%, transparent)
-  );
-  box-shadow: 0 8px 24px rgba(90, 110, 140, 0.08);
-}
-
-.next-icon {
-  display: grid;
-  place-items: center;
-  width: 58px;
-  height: 58px;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 10px;
   flex: 0 0 auto;
-  border-radius: 20px;
-  background: color-mix(in srgb, var(--surface-contrast) 82%, transparent);
-  color: var(--violet);
 }
 
-.next-activity div:nth-child(2) {
-  flex: 1;
+.atlas-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  padding: 8px 12px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-contrast) 78%, transparent);
 }
 
-.next-activity span {
-  color: var(--violet);
-  font-size: 0.72rem;
+.atlas-legend-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+}
+
+.atlas-legend-dot.saved {
+  background: linear-gradient(135deg, var(--violet), color-mix(in srgb, var(--violet) 52%, white));
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--violet) 18%, transparent);
+}
+
+.atlas-legend-dot.recommended {
+  background: var(--surface-contrast);
+  border: 2px dashed var(--sky);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--sky) 16%, transparent);
+}
+
+.atlas-legend-item small {
+  color: var(--muted-foreground);
+  font-size: 0.82rem;
+  font-weight: 800;
+}
+
+.activity-atlas-visual {
+  position: relative;
+  min-height: 550px;
+  border: 1px solid color-mix(in srgb, var(--surface-stroke-strong) 76%, transparent);
+  border-radius: 28px;
+  background:
+    linear-gradient(color-mix(in srgb, var(--border) 42%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--border) 42%, transparent) 1px, transparent 1px),
+    radial-gradient(circle at 76% 18%, color-mix(in srgb, var(--emerald-soft) 34%, transparent), transparent 30%),
+    radial-gradient(circle at 18% 82%, color-mix(in srgb, var(--violet-soft) 42%, transparent), transparent 34%),
+    color-mix(in srgb, var(--surface-contrast) 46%, transparent);
+  background-size: 86px 86px, 86px 86px, auto, auto, auto;
+  overflow: hidden;
+}
+
+.atlas-axis,
+.atlas-axis-label,
+.atlas-node {
+  position: absolute;
+}
+
+.atlas-axis {
+  pointer-events: none;
+  background: color-mix(in srgb, var(--foreground) 18%, transparent);
+}
+
+.atlas-axis-x {
+  left: 6%;
+  right: 6%;
+  bottom: 12%;
+  height: 1px;
+}
+
+.atlas-axis-y {
+  left: 10%;
+  top: 8%;
+  bottom: 12%;
+  width: 1px;
+}
+
+.atlas-axis-label {
+  color: var(--muted-foreground);
+  font-size: 0.74rem;
   font-weight: 900;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.next-activity h2 {
-  margin: 4px 0 0;
-  color: var(--foreground);
-  font-size: 1.2rem;
+.atlas-axis-top {
+  left: 3%;
+  top: 7%;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
 }
 
-.next-activity .primary-button {
-  margin: 0;
+.atlas-axis-bottom {
+  left: 3%;
+  bottom: 12%;
+  writing-mode: vertical-rl;
+  transform: rotate(180deg);
+}
+
+.atlas-axis-left {
+  left: 10%;
+  bottom: 5%;
+}
+
+.atlas-axis-right {
+  right: 6%;
+  bottom: 5%;
+}
+
+.atlas-node {
+  display: inline-flex;
+  align-items: center;
+  gap: 0;
+  left: var(--atlas-x);
+  top: var(--atlas-y);
+  width: 64px;
+  max-width: 260px;
+  min-height: 64px;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  padding: 7px;
+  background: color-mix(in srgb, var(--surface-contrast) 88%, transparent);
+  box-shadow: 0 14px 34px rgba(60, 72, 105, 0.12);
+  color: var(--foreground);
+  font-weight: 900;
+  text-align: left;
+  overflow: hidden;
+  transform: translate(0, -50%);
+  transition:
+    width 0.24s ease,
+    padding 0.24s ease,
+    gap 0.24s ease,
+    transform 0.18s ease,
+    box-shadow 0.18s ease,
+    border-color 0.18s ease;
+}
+
+.atlas-node:hover,
+.atlas-node:focus-visible {
+  z-index: 15;
+  width: 248px;
+  gap: 10px;
+  padding-right: 16px;
+  transform: translate(0, calc(-50% - 3px));
+  border-color: color-mix(in srgb, var(--violet) 38%, var(--border));
+  box-shadow: 0 18px 42px rgba(60, 72, 105, 0.18);
+}
+
+.atlas-node.source-saved {
+  border: 2px solid color-mix(in srgb, var(--violet) 70%, var(--border));
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--violet-soft) 18%, transparent), transparent 62%),
+    color-mix(in srgb, var(--surface-contrast) 92%, transparent);
+  box-shadow:
+    0 14px 34px rgba(60, 72, 105, 0.12),
+    0 0 0 5px color-mix(in srgb, var(--violet) 14%, transparent);
+}
+
+.atlas-node.source-recommended {
+  border: 2px dashed color-mix(in srgb, var(--sky) 72%, var(--border));
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--sky-soft) 24%, transparent), transparent 62%),
+    color-mix(in srgb, var(--surface-contrast) 82%, transparent);
+  box-shadow:
+    0 14px 34px rgba(60, 72, 105, 0.1),
+    0 0 0 5px color-mix(in srgb, var(--sky) 12%, transparent);
+}
+
+.atlas-node.source-both {
+  border: 2px solid color-mix(in srgb, var(--emerald) 50%, var(--violet));
+  box-shadow:
+    0 14px 34px rgba(60, 72, 105, 0.12),
+    0 0 0 4px color-mix(in srgb, var(--emerald-soft) 36%, transparent);
+}
+
+.atlas-node-title {
+  display: block;
+  flex: 1;
+  max-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+  transition:
+    max-width 0.24s ease,
+    opacity 0.18s ease;
+}
+
+.atlas-node:hover .atlas-node-title,
+.atlas-node:focus-visible .atlas-node-title {
+  max-width: 170px;
+  opacity: 1;
+}
+
+.atlas-node .activity-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: 18px;
+}
+
+.atlas-node.source-saved .activity-icon {
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--violet) 26%, transparent);
+}
+
+.atlas-node.source-recommended .activity-icon {
+  border: 1px dashed color-mix(in srgb, var(--sky) 72%, transparent);
 }
 
 @media (max-width: 820px) {
@@ -1201,13 +1449,21 @@ h1 {
     grid-template-columns: 1fr;
   }
 
-  .next-activity {
-    align-items: stretch;
+  .activity-atlas {
+    padding: 0;
+  }
+
+  .activity-atlas-heading {
+    align-items: flex-start;
     flex-direction: column;
   }
 
-  .next-activity .primary-button {
-    width: 100%;
+  .activity-atlas-visual {
+    min-height: 620px;
+  }
+
+  .atlas-node {
+    max-width: min(260px, 82vw);
   }
 }
 
@@ -1683,7 +1939,7 @@ h1 {
   overscroll-behavior-inline: contain;
   scroll-behavior: smooth;
   scroll-snap-type: x proximity;
-  padding: 2px 2px 72px;
+  padding: 2px 2px 18px;
   scrollbar-width: none;
 }
 

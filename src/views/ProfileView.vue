@@ -1,10 +1,9 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   Amphora,
   Bike,
-  House,
   Settings,
   LogOut,
   UserRound,
@@ -42,6 +41,7 @@ import ThemeToggle from '@/components/theme/ThemeToggle.vue'
 import ActivityScheduleModal from '@/components/ui/ActivityScheduleModal.vue'
 import { landingCopy } from '@/data/uiText'
 import { getHomeCopy, getProfileCopy } from '@/data/homeCopyI18n'
+import { getActivityByIdWithTranslations } from '@/data/activitiesCopyI18n'
 import { logout, syncSelectedActivity, useAppSession, addPlannedActivity, updatePlannedActivity, deletePlannedActivity } from '@/stores/appSession'
 import { useI18n } from '@/stores/i18n'
 
@@ -119,8 +119,8 @@ const profileTags = computed(() => {
 const savedDisplay = computed(() => {
   return savedActivities.value
     .map((item) => {
-      if (item?.title) return item
-      return allActivities.find((activity) => activity.id === item)
+      const activity = item?.title ? item : allActivities.find((activityItem) => activityItem.id === item)
+      return activity ? getActivityByIdWithTranslations(activity.id, currentLanguage.value) ?? activity : null
     })
     .filter(Boolean)
 })
@@ -128,8 +128,8 @@ const savedDisplay = computed(() => {
 const startedDisplay = computed(() => {
   return startedActivities.value
     .map((item) => {
-      if (item?.title) return item
-      return allActivities.find((activity) => activity.id === item)
+      const activity = item?.title ? item : allActivities.find((activityItem) => activityItem.id === item)
+      return activity ? getActivityByIdWithTranslations(activity.id, currentLanguage.value) ?? activity : null
     })
     .filter(Boolean)
 })
@@ -152,14 +152,18 @@ const plannedDisplay = computed(() => {
       const imageKeyJpg = `../assets/activities/${activity?.id}.jpg`
       const imageKeySvg = `../assets/activities/${activity?.id}.svg`
 
+      const translatedActivity = activity
+        ? getActivityByIdWithTranslations(activity.id, currentLanguage.value) ?? activity
+        : null
+
       return {
         id: item.id ?? `planned-${index}`,
         activityId: item.activityId ?? activity?.id ?? item.id,
-        title: item.title ?? activity?.title ?? profileCopy.value.planned.fallbackTitle,
+        title: item.title ?? translatedActivity?.title ?? profileCopy.value.planned.fallbackTitle,
         shortDescription:
-          item.shortDescription ?? activity?.shortDescription ?? profileCopy.value.planned.fallbackDescription,
-        icon: item.icon ?? activity?.icon ?? 'sparkles',
-        tone: item.tone ?? activity?.tone ?? 'violet',
+          item.shortDescription ?? translatedActivity?.shortDescription ?? profileCopy.value.planned.fallbackDescription,
+        icon: item.icon ?? translatedActivity?.icon ?? 'sparkles',
+        tone: item.tone ?? translatedActivity?.tone ?? 'violet',
         date: item.date,
         time: item.time ?? profileCopy.value.planned.fallbackTime,
         reminder: item.reminder ?? profileCopy.value.planned.fallbackReminder,
@@ -217,6 +221,217 @@ const energyStats = computed(() => {
 
   return profileCopy.value.stats.fallback
 })
+
+function formatFeedbackDate(dateString, language = currentLanguage.value) {
+  if (!dateString) return ''
+
+  const parsed = parseDate(dateString)
+
+  if (!parsed) return dateString
+
+  const date = new Date(parsed.year, parsed.month, parsed.day)
+
+  return new Intl.DateTimeFormat(language, {
+    day: 'numeric',
+    month: 'short',
+  }).format(date)
+}
+
+const feedbackSessions = computed(() => {
+  return completedDisplay.value
+    .map((item, index) => {
+      const translatedActivity = getActivityByIdWithTranslations(item.activityId, currentLanguage.value) || item.activity
+      const energyBefore = item.energyBefore ?? 0
+      const energyAfter = item.energyAfter ?? 0
+
+      return {
+        ...item,
+        title: translatedActivity?.title ?? item.title,
+        shortDescription: translatedActivity?.shortDescription ?? item.shortDescription,
+        icon: translatedActivity?.icon ?? item.icon,
+        tone: translatedActivity?.tone ?? item.tone,
+        energyBefore,
+        energyAfter,
+        dateLabel: formatFeedbackDate(item.date),
+        sortKey: `${item.date}-${String(index).padStart(2, '0')}`,
+      }
+    })
+    .sort((left, right) => right.sortKey.localeCompare(left.sortKey))
+})
+
+const feedbackActivityOptions = computed(() => {
+  const groups = new Map()
+
+  feedbackSessions.value.forEach((session) => {
+    const currentGroup = groups.get(session.activityId)
+
+    if (!currentGroup) {
+      groups.set(session.activityId, {
+        activityId: session.activityId,
+        title: session.title,
+        shortDescription: session.shortDescription,
+        icon: session.icon,
+        tone: session.tone,
+        sessions: 1,
+        lastDate: session.date,
+      })
+      return
+    }
+
+    currentGroup.sessions += 1
+    currentGroup.lastDate = currentGroup.lastDate > session.date ? currentGroup.lastDate : session.date
+  })
+
+  return [...groups.values()].sort((left, right) => {
+    if (right.sessions !== left.sessions) return right.sessions - left.sessions
+
+    return right.lastDate.localeCompare(left.lastDate)
+  })
+})
+
+const selectedFeedbackActivityId = ref('')
+
+watch(
+  feedbackActivityOptions,
+  (options) => {
+    if (!options.length) {
+      selectedFeedbackActivityId.value = ''
+      return
+    }
+
+    const stillExists = options.some((option) => option.activityId === selectedFeedbackActivityId.value)
+
+    if (!stillExists) {
+      selectedFeedbackActivityId.value = options[0].activityId
+    }
+  },
+  { immediate: true },
+)
+
+const selectedFeedbackActivity = computed(() => {
+  return feedbackActivityOptions.value.find((activity) => activity.activityId === selectedFeedbackActivityId.value) || null
+})
+
+const selectedFeedbackSessions = computed(() => {
+  if (!selectedFeedbackActivityId.value) return []
+
+  return feedbackSessions.value.filter((session) => session.activityId === selectedFeedbackActivityId.value)
+})
+
+const selectedFeedbackSessionId = ref('')
+
+watch(
+  selectedFeedbackSessions,
+  (sessions) => {
+    if (!sessions.length) {
+      selectedFeedbackSessionId.value = ''
+      return
+    }
+
+    const stillExists = sessions.some((session) => session.id === selectedFeedbackSessionId.value)
+
+    if (!stillExists) {
+      selectedFeedbackSessionId.value = sessions[0].id
+    }
+  },
+  { immediate: true },
+)
+
+const selectedFeedbackSession = computed(() => {
+  return (
+    selectedFeedbackSessions.value.find((session) => session.id === selectedFeedbackSessionId.value) ||
+    selectedFeedbackSessions.value[0] ||
+    null
+  )
+})
+
+const selectedFeedbackSummary = computed(() => {
+  const sessions = selectedFeedbackSessions.value
+
+  if (!sessions.length) return null
+
+  const totalBefore = sumMetric(sessions, 'energyBefore')
+  const totalAfter = sumMetric(sessions, 'energyAfter')
+  const totalRating = sumMetric(sessions, 'rating')
+
+  return {
+    before: Math.round(totalBefore / sessions.length),
+    after: Math.round(totalAfter / sessions.length),
+    delta: Math.round((totalAfter - totalBefore) / sessions.length),
+    rating: (totalRating / sessions.length).toFixed(1),
+    sessionCount: sessions.length,
+  }
+})
+
+const selectedChartSessions = computed(() => {
+  return [...selectedFeedbackSessions.value].sort((left, right) => left.sortKey.localeCompare(right.sortKey))
+})
+
+const feedbackLineSeries = computed(() => {
+  const sessions = selectedChartSessions.value
+  const denominator = Math.max(1, sessions.length - 1)
+  const metrics = [
+    { key: 'energy', label: profileCopy.value.stats.metrics.energy, field: 'energyAfter' },
+    { key: 'mind', label: profileCopy.value.stats.metrics.mind, field: 'mentalAfter' },
+    { key: 'body', label: profileCopy.value.stats.metrics.body, field: 'physicalAfter' },
+  ]
+
+  return metrics.map((metric) => {
+    const points = sessions.map((session, index) => {
+      const value = Math.max(0, Math.min(100, Number(session[metric.field] ?? 0)))
+
+      return {
+        id: `${metric.key}-${session.id}`,
+        sessionId: session.id,
+        x: sessions.length > 1 ? (index / denominator) * 100 : 50,
+        y: 100 - value,
+        value,
+        dateLabel: session.dateLabel,
+        note: session.note,
+        moodBefore: session.moodBefore,
+        moodAfter: session.moodAfter,
+      }
+    })
+
+    return {
+      ...metric,
+      points,
+      path: points
+        .map((point, index) => `${index === 0 ? 'M' : 'L'} ${point.x.toFixed(1)} ${point.y.toFixed(1)}`)
+        .join(' '),
+    }
+  })
+})
+
+const selectedFeedbackDimensions = computed(() => [])
+const mainFeedbackChart = computed(() => [])
+const mainFeedbackLinePath = computed(() => '')
+
+const bestFeedbackActivity = computed(() => {
+  if (!feedbackActivityOptions.value.length) return null
+
+  return [...feedbackActivityOptions.value]
+    .map((activity) => {
+      const sessions = feedbackSessions.value.filter((session) => session.activityId === activity.activityId)
+      const delta = averageMetric(sessions, 'energyAfter') - averageMetric(sessions, 'energyBefore')
+
+      return { ...activity, delta }
+    })
+    .sort((left, right) => right.delta - left.delta)[0]
+})
+
+const latestFeedbackSession = computed(() => {
+  return feedbackSessions.value[0] ?? null
+})
+
+function sumMetric(items, key) {
+  return items.reduce((total, item) => total + Number(item[key] ?? 0), 0)
+}
+
+function averageMetric(items, key) {
+  if (!items.length) return 0
+  return Math.round(sumMetric(items, key) / items.length)
+}
 
 function iconFor(iconName) {
   if (iconName === 'book') return BookOpen
@@ -458,39 +673,37 @@ const selectedSchedulingDayLabel = computed(() => {
     <section class="page-container">
       <AppNavbar class="profile-toolbar">
         <template #start>
-          <AppBrand :brand="landingCopy.nav.brand" :to="{ name: 'home' }" />
+          <div class="tooltip-wrapper">
+            <AppBrand :brand="landingCopy.nav.brand" :to="{ name: 'home' }" />
+            <span class="tooltip-bubble">{{ profileCopy.nav.home }}</span>
+          </div>
         </template>
 
         <template #end>
           <div class="toolbar-actions">
             <ThemeToggle />
 
-            <button
-              class="icon-button"
-              type="button"
-              :title="profileCopy.nav.home"
-              @click="router.push({ name: 'home' })"
-            >
-              <House :size="22" />
-            </button>
+            <div class="tooltip-wrapper">
+              <button
+                class="icon-button"
+                type="button"
+                @click="router.push({ name: 'settings', query: { from: 'profile' } })"
+              >
+                <Settings :size="20" />
+              </button>
+              <span class="tooltip-bubble">{{ profileCopy.nav.settings }}</span>
+            </div>
 
-            <button
-              class="icon-button"
-              type="button"
-              :title="profileCopy.nav.settings"
-              @click="router.push({ name: 'settings', query: { from: 'profile' } })"
-            >
-              <Settings :size="20" />
-            </button>
-
-            <button
-              class="icon-button"
-              type="button"
-              :title="profileCopy.nav.logout"
-              @click="handleLogout"
-            >
-              <LogOut :size="20" />
-            </button>
+            <div class="tooltip-wrapper">
+              <button
+                class="icon-button"
+                type="button"
+                @click="handleLogout"
+              >
+                <LogOut :size="20" />
+              </button>
+              <span class="tooltip-bubble">{{ profileCopy.nav.logout }}</span>
+            </div>
           </div>
         </template>
       </AppNavbar>
@@ -677,35 +890,150 @@ const selectedSchedulingDayLabel = computed(() => {
 
     </section>
 
-    <section class="glass-panel stats-panel">
-      <div class="panel-header">
-        <h2>{{ profileCopy.statsTitle }}</h2>
-        <span class="section-counter">{{ profileCopy.counters.latestActivities }}</span>
-      </div>
-
-      <div class="stats-chart">
-        <div v-for="item in energyStats" :key="item.label" class="stat-group">
-          <div class="stat-bars">
-            <div
-              class="bar bar-before"
-              :style="{ height: `${item.before}%` }"
-            />
-            <div
-              class="bar bar-after"
-              :style="{ height: `${item.after}%` }"
-            />
-          </div>
-
-          <span class="stat-label">{{ item.label }}</span>
+    <section class="glass-panel stats-panel feedback-panel">
+      <div class="panel-header feedback-panel-header">
+        <div class="feedback-heading-copy">
+          <h2>{{ profileCopy.stats.dashboardTitle }}</h2>
         </div>
       </div>
 
-      <div class="insight-box">
-        <CalendarDays :size="18" />
-        <p>
-          <strong>{{ profileCopy.stats.insightLabel }}:</strong>
-          {{ profileCopy.stats.insightText }}
-        </p>
+      <div v-if="feedbackActivityOptions.length > 0" class="feedback-shell">
+        <aside class="feedback-side">
+        <div class="feedback-selector-column" :aria-label="profileCopy.stats.selectorLabel">
+          <button
+            v-for="activity in feedbackActivityOptions"
+            :key="activity.activityId"
+            class="feedback-tab"
+            :class="{ active: activity.activityId === selectedFeedbackActivityId }"
+            type="button"
+            @click="selectedFeedbackActivityId = activity.activityId"
+          >
+            <span class="feedback-tab-icon" :class="`tone-${activity.tone || 'violet'}`">
+              <component :is="iconFor(activity.icon)" :size="18" />
+            </span>
+            <span>{{ activity.title }}</span>
+            <small>{{ activity.sessions }} {{ profileCopy.stats.metrics.sessions }}</small>
+          </button>
+        </div>
+
+        </aside>
+
+        <article class="feedback-main-chart">
+          <div class="feedback-chart-head">
+            <div>
+              <h3>{{ selectedFeedbackActivity?.title }}</h3>
+            </div>
+          </div>
+
+          <div class="feedback-line-legend" aria-hidden="true">
+            <span v-for="series in feedbackLineSeries" :key="series.key" :class="`line-${series.key}`">
+              {{ series.label }}
+            </span>
+          </div>
+
+          <div class="feedback-line-chart">
+            <svg viewBox="0 0 100 100" preserveAspectRatio="none" aria-label="Feedback chart">
+              <line x1="0" y1="25" x2="100" y2="25" class="chart-grid-line" />
+              <line x1="0" y1="50" x2="100" y2="50" class="chart-grid-line" />
+              <line x1="0" y1="75" x2="100" y2="75" class="chart-grid-line" />
+
+              <g v-for="series in feedbackLineSeries" :key="series.key" :class="`feedback-series line-${series.key}`">
+                <path :d="series.path" class="feedback-line-path" />
+                <circle
+                  v-for="point in series.points"
+                  :key="point.id"
+                  :cx="point.x"
+                  :cy="point.y"
+                  r="2.7"
+                  class="feedback-line-dot"
+                />
+              </g>
+            </svg>
+
+            <template v-for="series in feedbackLineSeries" :key="`${series.key}-tooltips`">
+              <button
+                v-for="point in series.points"
+                :key="`${point.id}-tooltip`"
+                class="feedback-line-hotspot"
+                :class="`line-${series.key}`"
+                type="button"
+                :style="{ left: `${point.x}%`, top: `${point.y}%` }"
+                :aria-label="`${series.label}: ${point.value}`"
+              >
+                <span class="feedback-line-tooltip">
+                  <strong>{{ series.label }} · {{ point.value }}</strong>
+                  <small>{{ point.dateLabel }}</small>
+                  <small v-if="point.moodBefore">{{ point.moodBefore }} → {{ point.moodAfter }}</small>
+                </span>
+              </button>
+            </template>
+          </div>
+
+          <div v-if="false" class="feedback-dimension-grid">
+            <div
+              v-for="dimension in selectedFeedbackDimensions"
+              :key="dimension.key"
+              class="feedback-dimension"
+            >
+              <div class="feedback-dimension-head">
+                <span>{{ dimension.label }}</span>
+                <strong>+{{ dimension.delta }}</strong>
+              </div>
+              <div class="feedback-dimension-track">
+                <span class="dimension-before" :style="{ width: `${dimension.before}%` }"></span>
+                <span class="dimension-after" :style="{ width: `${dimension.after}%` }"></span>
+              </div>
+              <small>{{ dimension.before }} → {{ dimension.after }}</small>
+            </div>
+          </div>
+
+          <div v-if="false" class="feedback-chart-area">
+            <svg class="feedback-chart-line" viewBox="0 0 100 100" preserveAspectRatio="none" aria-hidden="true">
+              <path v-if="mainFeedbackLinePath" :d="mainFeedbackLinePath" class="feedback-chart-path" />
+              <circle
+                v-for="point in mainFeedbackChart"
+                :key="point.id"
+                :cx="point.x"
+                :cy="point.y"
+                r="2.8"
+                class="feedback-chart-dot"
+                :class="{ active: point.id === selectedFeedbackSessionId }"
+              />
+            </svg>
+
+            <div class="feedback-bar-strip">
+              <button
+                v-for="point in mainFeedbackChart"
+                :key="`${point.id}-bar`"
+                class="feedback-bar-column"
+                :class="{ active: point.id === selectedFeedbackSessionId }"
+                type="button"
+                :title="`${point.dateLabel} · ${point.before} → ${point.after}`"
+                @click="selectedFeedbackSessionId = point.id"
+              >
+                <span class="feedback-bar-track">
+                  <span class="feedback-bar feedback-bar-before" :style="{ height: `${point.before}%` }"></span>
+                  <span class="feedback-bar feedback-bar-after" :style="{ height: `${point.after}%` }"></span>
+                </span>
+                <small>{{ point.dateLabel }}</small>
+              </button>
+            </div>
+          </div>
+
+          <aside v-if="false && selectedFeedbackSession" class="feedback-session-card">
+            <div>
+              <span>{{ selectedFeedbackSession.dateLabel }}</span>
+              <h4>{{ selectedFeedbackSession.moodBefore }} → {{ selectedFeedbackSession.moodAfter }}</h4>
+              <p>{{ selectedFeedbackSession.note }}</p>
+            </div>
+            <strong>{{ selectedFeedbackSession.rating }} / 5</strong>
+          </aside>
+        </article>
+      </div>
+
+      <div v-else class="feedback-empty-state">
+        <h3>{{ profileCopy.stats.emptyTitle }}</h3>
+        <p>{{ profileCopy.stats.emptyText }}</p>
       </div>
     </section>
     </section>
@@ -744,6 +1072,59 @@ const selectedSchedulingDayLabel = computed(() => {
   display: flex;
   align-items: center;
   gap: 10px;
+}
+
+.tooltip-wrapper {
+  position: relative;
+  display: inline-flex;
+}
+
+.tooltip-bubble {
+  position: absolute;
+  left: 50%;
+  top: calc(100% + 12px);
+  transform: translateX(-50%) translateY(-8px);
+  min-width: 180px;
+  max-width: 280px;
+  padding: 10px 12px;
+  border: 1px solid rgba(180, 190, 220, 0.35);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-contrast) 92%, transparent);
+  backdrop-filter: blur(14px);
+  box-shadow: 0 10px 30px rgba(80, 100, 140, 0.12);
+  color: var(--foreground);
+  font-size: 0.82rem;
+  line-height: 1.4;
+  text-align: center;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition:
+    opacity 0.22s ease,
+    transform 0.22s ease,
+    visibility 0.22s ease;
+  z-index: 80;
+}
+
+.tooltip-bubble::before {
+  content: '';
+  position: absolute;
+  left: 50%;
+  bottom: 100%;
+  width: 12px;
+  height: 12px;
+  background: color-mix(in srgb, var(--surface-contrast) 92%, transparent);
+  border-top: 1px solid rgba(180, 190, 220, 0.35);
+  border-left: 1px solid rgba(180, 190, 220, 0.35);
+  border-radius: 2px;
+  transform: translateX(-50%) translateY(50%) rotate(45deg);
+}
+
+.tooltip-wrapper:hover .tooltip-bubble,
+.tooltip-wrapper:focus-within .tooltip-bubble {
+  opacity: 1;
+  visibility: visible;
+  transform: translateX(-50%) translateY(0);
 }
 
 .icon-button {
@@ -866,8 +1247,11 @@ const selectedSchedulingDayLabel = computed(() => {
 
 .panel-header h2 {
   margin: 0;
-  color: var(--foreground);
-  font-size: 1.75rem;
+  color: var(--violet-strong);
+  font-size: clamp(1.6rem, 3vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1.08;
 }
 
 .section-counter {
@@ -1027,15 +1411,18 @@ const selectedSchedulingDayLabel = computed(() => {
     visibility 0.18s ease;
 }
 
-.day-tooltip::after {
+.day-tooltip::before {
   content: '';
   position: absolute;
   left: 50%;
   top: 100%;
-  transform: translateX(-50%);
-  border-width: 7px;
-  border-style: solid;
-  border-color: color-mix(in srgb, var(--surface-contrast) 94%, transparent) transparent transparent transparent;
+  width: 12px;
+  height: 12px;
+  background: color-mix(in srgb, var(--surface-contrast) 94%, transparent);
+  border-right: 1px solid rgba(180, 190, 220, 0.35);
+  border-bottom: 1px solid rgba(180, 190, 220, 0.35);
+  border-radius: 2px;
+  transform: translateX(-50%) translateY(-50%) rotate(45deg);
 }
 
 .day-wrapper:hover .day-tooltip {
@@ -1195,59 +1582,418 @@ const selectedSchedulingDayLabel = computed(() => {
   padding: 24px;
 }
 
-.stats-chart {
+.feedback-panel {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 20px;
-  align-items: end;
-  min-height: 220px;
+  gap: 18px;
 }
 
-.stat-group {
+.feedback-panel-header {
+  align-items: flex-start;
+}
+
+.feedback-heading-copy {
   display: grid;
-  justify-items: center;
-  gap: 10px;
+  gap: 4px;
 }
 
-.stat-bars {
-  display: flex;
-  align-items: end;
-  gap: 10px;
-  height: 150px;
+.feedback-heading-copy h2,
+.feedback-chart-head h3,
+.feedback-empty-state h3,
+.feedback-main-chart p {
+  margin: 0;
 }
 
-.bar {
-  width: 22px;
-  border-radius: 999px 999px 0 0;
-}
-
-.bar-before {
-  background: rgba(148, 163, 184, 0.45);
-}
-
-.bar-after {
-  background: rgba(110, 231, 183, 0.92);
-}
-
-.stat-label {
+.feedback-heading-copy p,
+.feedback-main-chart p,
+.feedback-empty-state p {
   color: var(--muted-foreground);
+}
+
+.feedback-shell {
+  display: grid;
+  grid-template-columns: minmax(230px, 0.32fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: stretch;
+}
+
+.feedback-side {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+}
+
+.feedback-selector-column {
+  display: grid;
+  gap: 10px;
+}
+
+.feedback-tab {
+  display: grid;
+  grid-template-columns: 42px minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--surface-stroke-strong);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface-contrast) 38%, transparent);
+  color: var(--muted-foreground);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    transform 0.16s ease,
+    border-color 0.16s ease,
+    background-color 0.16s ease,
+    color 0.16s ease;
+}
+
+.feedback-tab-icon {
+  display: grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  grid-row: span 2;
+  border-radius: 16px;
+}
+
+.feedback-tab:hover,
+.feedback-tab.active {
+  transform: translateY(-1px);
+  border-color: color-mix(in srgb, var(--violet) 45%, var(--surface-stroke-strong));
+  background: color-mix(in srgb, var(--violet-soft) 24%, var(--surface-contrast));
+  color: var(--foreground);
+}
+
+.feedback-tab span,
+.feedback-tab small {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   font-weight: 800;
 }
 
-.insight-box {
+.feedback-main-chart {
+  display: grid;
+  gap: 16px;
+  min-height: 420px;
+  padding: 22px;
+  border: 1px solid var(--surface-stroke-strong);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at top left, color-mix(in srgb, var(--violet-soft) 30%, transparent), transparent 32%),
+    radial-gradient(circle at bottom right, color-mix(in srgb, var(--emerald-soft) 26%, transparent), transparent 32%),
+    linear-gradient(180deg, color-mix(in srgb, var(--surface-contrast) 58%, transparent), transparent);
+}
+
+.feedback-line-legend {
   display: flex;
-  align-items: center;
+  flex-wrap: wrap;
   gap: 10px;
-  margin-top: 22px;
-  padding: 16px 18px;
-  border-radius: 20px;
-  background: rgba(236, 253, 245, 0.74);
+}
+
+.feedback-line-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 30px;
+  padding: 6px 10px;
+  border: 1px solid var(--surface-stroke-strong);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-contrast) 42%, transparent);
+  color: var(--foreground);
+  font-size: 0.78rem;
+  font-weight: 900;
+}
+
+.feedback-line-legend span::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border-radius: 999px;
+  background: var(--series-color);
+}
+
+.feedback-line-chart {
+  position: relative;
+  min-height: 300px;
+  padding: 18px 10px 8px;
+  border: 1px solid var(--surface-stroke-strong);
+  border-radius: 24px;
+  background:
+    linear-gradient(color-mix(in srgb, var(--border) 32%, transparent) 1px, transparent 1px),
+    linear-gradient(90deg, color-mix(in srgb, var(--border) 32%, transparent) 1px, transparent 1px),
+    color-mix(in srgb, var(--surface-contrast) 30%, transparent);
+  background-size: 100% 25%, 12.5% 100%, auto;
+}
+
+.feedback-line-chart svg {
+  width: 100%;
+  height: 300px;
+  overflow: visible;
+}
+
+.chart-grid-line {
+  stroke: color-mix(in srgb, var(--muted-foreground) 20%, transparent);
+  stroke-width: 0.5;
+}
+
+.feedback-line-path {
+  fill: none;
+  stroke: var(--series-color);
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+  filter: drop-shadow(0 10px 18px color-mix(in srgb, var(--series-color) 28%, transparent));
+}
+
+.feedback-line-dot {
+  fill: var(--surface-contrast);
+  stroke: var(--series-color);
+  stroke-width: 1.6;
+  cursor: help;
+}
+
+.feedback-line-dot:hover {
+  fill: var(--series-color);
+}
+
+.feedback-line-hotspot {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  transform: translate(-50%, -50%);
+  cursor: help;
+}
+
+.feedback-line-hotspot::before {
+  content: '';
+  position: absolute;
+  inset: 7px;
+  border-radius: inherit;
+  background: var(--series-color);
+  opacity: 0;
+  transition: opacity 0.16s ease;
+}
+
+.feedback-line-hotspot:hover::before,
+.feedback-line-hotspot:focus-visible::before {
+  opacity: 1;
+}
+
+.feedback-line-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 10px);
+  display: grid;
+  gap: 4px;
+  min-width: 170px;
+  padding: 10px 12px;
+  border: 1px solid var(--surface-stroke-strong);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-contrast) 94%, transparent);
+  box-shadow: 0 16px 36px color-mix(in srgb, var(--series-color) 18%, transparent);
+  color: var(--foreground);
+  text-align: left;
+  opacity: 0;
+  pointer-events: none;
+  transform: translateX(-50%) translateY(6px);
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
+  z-index: 4;
+}
+
+.feedback-line-tooltip strong {
+  font-size: 0.86rem;
+}
+
+.feedback-line-tooltip small {
+  color: var(--muted-foreground);
+  font-size: 0.76rem;
+  font-weight: 800;
+}
+
+.feedback-line-hotspot:hover .feedback-line-tooltip,
+.feedback-line-hotspot:focus-visible .feedback-line-tooltip {
+  opacity: 1;
+  transform: translateX(-50%) translateY(0);
+}
+
+.line-energy {
+  --series-color: var(--violet);
+}
+
+.line-mind {
+  --series-color: var(--sky);
+}
+
+.line-body {
+  --series-color: var(--emerald);
+}
+
+.feedback-chart-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 14px;
+}
+
+.feedback-chart-head span {
+  flex: none;
+  min-width: 64px;
+  text-align: right;
+  font-size: 0.95rem;
+  font-weight: 900;
+  color: var(--foreground);
+}
+
+.feedback-chart-area {
+  position: relative;
+}
+
+.feedback-chart-line {
+  position: absolute;
+  inset: 0 0 48px;
+  width: 100%;
+  height: calc(100% - 48px);
+  pointer-events: none;
+}
+
+.feedback-chart-path {
+  fill: none;
+  stroke: color-mix(in srgb, var(--primary) 70%, white);
+  stroke-width: 1.8;
+  stroke-linecap: round;
+  stroke-linejoin: round;
+}
+
+.feedback-chart-dot {
+  fill: color-mix(in srgb, var(--primary) 65%, white);
+  stroke: rgba(15, 23, 42, 0.9);
+  stroke-width: 0.7;
+}
+
+.feedback-chart-dot.active {
+  fill: var(--primary);
+}
+
+.feedback-bar-strip {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  min-height: 240px;
+  overflow-x: auto;
+  padding-top: 18px;
+}
+
+.feedback-bar-column {
+  flex: 1 0 56px;
+  display: grid;
+  justify-items: center;
+  gap: 8px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--muted-foreground);
+  cursor: pointer;
+}
+
+.feedback-bar-column.active {
+  color: var(--foreground);
+}
+
+.feedback-bar-track {
+  display: flex;
+  align-items: flex-end;
+  gap: 4px;
+  width: 100%;
+  height: 180px;
+  padding: 10px 8px 8px;
+  border: 1px solid var(--surface-stroke-strong);
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--surface-contrast) 54%, transparent);
+}
+
+.feedback-bar {
+  flex: 1;
+  border-radius: 999px 999px 8px 8px;
+}
+
+.feedback-bar-before {
+  background: color-mix(in srgb, var(--muted-foreground) 70%, transparent);
+}
+
+.feedback-bar-after {
+  background: color-mix(in srgb, var(--primary) 80%, white);
+}
+
+.feedback-bar-column small {
+  font-size: 0.72rem;
+  font-weight: 800;
+}
+
+.feedback-metrics-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.focus-chip {
+  display: inline-flex;
+  align-items: center;
+  min-height: 34px;
+  padding: 7px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-contrast) 46%, transparent);
+  color: var(--foreground);
+  font-size: 0.82rem;
+  font-weight: 900;
+}
+
+.feedback-session-card {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--surface-stroke-strong);
+  border-radius: 22px;
+  background:
+    radial-gradient(circle at 0% 0%, color-mix(in srgb, var(--violet-soft) 44%, transparent), transparent 42%),
+    color-mix(in srgb, var(--surface-contrast) 44%, transparent);
+}
+
+.feedback-session-card h4 {
+  margin: 6px 0 6px;
+  color: var(--foreground);
+  font-size: 1rem;
+}
+
+.feedback-session-card p {
+  margin: 0;
   color: var(--muted-foreground);
 }
 
-.insight-box p {
-  margin: 0;
-  line-height: 1.5;
+.feedback-session-card > strong {
+  flex: 0 0 auto;
+  padding: 8px 12px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--emerald-soft) 62%, var(--surface-contrast));
+  color: color-mix(in srgb, var(--emerald) 70%, var(--foreground));
+}
+
+.feedback-empty-state {
+  display: grid;
+  gap: 8px;
+  padding: 20px;
+  border-radius: 24px;
+  background: color-mix(in srgb, var(--surface-contrast) 40%, transparent);
 }
 
 .tone-violet .activity-icon,
@@ -1293,9 +2039,17 @@ const selectedSchedulingDayLabel = computed(() => {
     max-height: 420px;
   }
 
-  .stats-chart {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    row-gap: 24px;
+  .feedback-main-chart {
+    padding: 18px;
+  }
+
+  .feedback-overview-grid,
+  .feedback-dimension-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .feedback-bar-strip {
+    min-height: 210px;
   }
 }
 
@@ -1324,8 +2078,21 @@ const selectedSchedulingDayLabel = computed(() => {
     height: 42px;
   }
 
-  .stats-chart {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+  .feedback-selector-row {
+    gap: 8px;
+  }
+
+  .feedback-tab {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .feedback-bar-strip {
+    min-height: 188px;
+  }
+
+  .feedback-bar-column {
+    flex-basis: 50px;
   }
 }
 

@@ -31,6 +31,7 @@ import {
 } from 'lucide-vue-next'
 import { useAppSession } from '@/stores/appSession'
 import { getProfileCopy } from '@/data/homeCopyI18n'
+import { getActivityByIdWithTranslations } from '@/data/activitiesCopyI18n'
 import { useI18n } from '@/stores/i18n'
 
 function iconFor(iconName) {
@@ -83,6 +84,10 @@ const { allActivities, plannedActivities, savedActivities } = useAppSession()
 const { currentLanguage } = useI18n()
 const profileCopy = computed(() => getProfileCopy(currentLanguage.value))
 
+function translatedActivity(activity) {
+  return getActivityByIdWithTranslations(activity.id, currentLanguage.value) ?? activity
+}
+
 // State
 const searchQuery = ref('')
 const selectedActivityId = ref(null)
@@ -100,7 +105,7 @@ if (props.mode === 'edit' && props.plannedActivityId) {
 // Computed
 const filteredActivities = computed(() => {
   const query = searchQuery.value.toLowerCase()
-  return allActivities.filter(
+  return allActivities.map(translatedActivity).filter(
     (activity) =>
       activity.title.toLowerCase().includes(query) ||
       activity.shortDescription?.toLowerCase().includes(query),
@@ -114,7 +119,8 @@ const myActivities = computed(() =>
 )
 
 const selectedActivity = computed(() =>
-  allActivities.find((a) => a.id === selectedActivityId.value),
+  filteredActivities.value.find((a) => a.id === selectedActivityId.value) ||
+  allActivities.map(translatedActivity).find((a) => a.id === selectedActivityId.value),
 )
 
 const isValid = computed(() => selectedActivityId.value && selectedTime.value)
@@ -277,8 +283,8 @@ function handleCancel() {
 .modal-backdrop {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(4px);
+  background: rgba(5, 7, 12, 0.58);
+  backdrop-filter: blur(10px);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -287,15 +293,19 @@ function handleCancel() {
 
 .modal-card {
   position: relative;
-  background: white;
+  background:
+    radial-gradient(circle at 12% 10%, color-mix(in srgb, var(--violet-soft) 28%, transparent), transparent 34%),
+    color-mix(in srgb, var(--surface-contrast) 96%, var(--background));
+  border: 1px solid var(--surface-stroke-strong);
   border-radius: 28px;
   padding: 36px;
-  width: min(520px, calc(100vw - 40px));
+  width: min(720px, calc(100vw - 40px));
   display: grid;
   gap: 20px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
-  max-height: 80vh;
+  box-shadow: 0 28px 80px rgba(5, 8, 18, 0.35);
+  max-height: 86vh;
   overflow-y: auto;
+  color: var(--foreground);
 }
 
 .modal-close {
@@ -318,10 +328,11 @@ function handleCancel() {
 }
 
 h2 {
-  font-size: 24px;
-  font-weight: 600;
+  color: var(--violet-strong);
+  font-size: clamp(1.6rem, 3vw, 2rem);
+  font-weight: 800;
+  letter-spacing: -0.03em;
   margin: 0;
-  color: var(--color-text-primary);
 }
 
 .search-container {
@@ -602,5 +613,83 @@ h2 {
 
 .btn-delete:hover {
   background: rgba(220, 38, 38, 0.2);
+}
+
+.modal-close,
+.search-icon,
+.activity-thumb-icon,
+.duration-label {
+  color: var(--muted-foreground);
+}
+
+.modal-close:hover,
+.activity-title,
+.activity-header h3,
+.time-input-container label,
+.duration-value {
+  color: var(--foreground);
+}
+
+.search-input,
+.time-input {
+  border-color: var(--surface-stroke-strong);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface-strong) 76%, transparent);
+  color: var(--foreground);
+}
+
+.search-input:focus,
+.time-input:focus {
+  border-color: var(--violet);
+}
+
+.activity-section-title,
+.activity-duration,
+.activity-description {
+  color: var(--muted-foreground);
+}
+
+.activity-item,
+.no-activities,
+.duration-display {
+  border-color: var(--surface-stroke-strong);
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--surface-contrast) 58%, transparent);
+}
+
+.activity-item:hover,
+.activity-item.selected {
+  border-color: color-mix(in srgb, var(--violet) 48%, var(--surface-stroke-strong));
+  background: color-mix(in srgb, var(--violet-soft) 36%, var(--surface-contrast));
+}
+
+.selected-activity {
+  border: 1px solid var(--surface-stroke-strong);
+  border-left: 0;
+  border-radius: 22px;
+  background: color-mix(in srgb, var(--surface-strong) 48%, transparent);
+}
+
+.activity-thumb-large-icon {
+  border-radius: 20px;
+  background: color-mix(in srgb, var(--violet-soft) 44%, var(--surface-contrast));
+  color: var(--violet);
+}
+
+.btn-primary {
+  background: var(--foreground);
+  color: var(--background);
+  border-radius: 999px;
+  font-weight: 800;
+}
+
+.btn-secondary {
+  background: transparent;
+  color: var(--muted-foreground);
+  border: 1px solid transparent;
+}
+
+.btn-delete {
+  border-radius: 999px;
 }
 </style>

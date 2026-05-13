@@ -188,6 +188,24 @@ function confirmReject() {
     query: { source: 'test-adjusted' },
   })
 }
+
+function skipRejectQuestion() {
+  if (!selectedActivity.value) return
+
+  const nextId = rejectActivity(null)
+  showRejectModal.value = false
+
+  if (!nextId) {
+    router.replace({ name: 'home' })
+    return
+  }
+
+  router.replace({
+    name: 'activity',
+    params: { id: nextId },
+    query: { source: 'test-adjusted' },
+  })
+}
 </script>
 
 <template>
@@ -342,8 +360,8 @@ function confirmReject() {
         </div>
 
         <div class="reject-actions">
-          <button class="secondary-button" type="button" @click="closeRejectModal">
-            {{ activityResultCopy.rejectModal.cancel }}
+          <button class="secondary-button" type="button" @click="skipRejectQuestion">
+            {{ activityResultCopy.rejectModal.skipQuestion }}
           </button>
           <button class="primary-button" type="button" @click="confirmReject">
             {{ activityResultCopy.rejectModal.confirm }}

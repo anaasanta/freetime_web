@@ -55,7 +55,7 @@ export function getTestCopy(language) {
         subtitle: 'Elige el motivo para afinar la siguiente propuesta.',
         closeLabel: 'Cerrar ventana',
         confirm: 'Recalcular',
-        cancel: 'Cancelar',
+        skipQuestion: 'Saltar pregunta',
         options: [
           { id: 'effort', label: 'Demasiado esfuerzo' },
           { id: 'time', label: 'No encaja con mi tiempo' },
@@ -126,7 +126,7 @@ export function getTestCopy(language) {
         subtitle: 'Pick a reason to fine-tune the next suggestion.',
         closeLabel: 'Close dialog',
         confirm: 'Recalculate',
-        cancel: 'Cancel',
+        skipQuestion: 'Skip question',
         options: [
           { id: 'effort', label: 'Too much effort' },
           { id: 'time', label: 'Not enough time' },
@@ -196,7 +196,7 @@ export function getTestCopy(language) {
       subtitle: 'Escull el motiu per afinar la següent proposta.',
       closeLabel: 'Tancar finestra',
       confirm: 'Recalcular',
-      cancel: 'Cancel·lar',
+      skipQuestion: 'Saltar pregunta',
       options: [
         { id: 'effort', label: 'Massa esforç' },
         { id: 'time', label: 'No em quadra amb el temps' },
@@ -244,7 +244,7 @@ export function getActivityResultCopy(language) {
         title: '¿Por qué no te interesa?',
         subtitle: 'Elige un motivo para recalcular otra propuesta.',
         confirm: 'Recalcular',
-        cancel: 'Cancelar',
+        skipQuestion: 'Saltar pregunta',
         closeLabel: 'Cerrar ventana',
         options: {
           effort: 'Demasiado esfuerzo',
@@ -287,7 +287,7 @@ export function getActivityResultCopy(language) {
         title: 'Why are you not interested?',
         subtitle: 'Choose a reason to recalculate another suggestion.',
         confirm: 'Recalculate',
-        cancel: 'Cancel',
+        skipQuestion: 'Skip question',
         closeLabel: 'Close dialog',
         options: {
           effort: 'Too much effort',
@@ -329,7 +329,7 @@ export function getActivityResultCopy(language) {
       title: 'Per què no t\'interessa?',
       subtitle: 'Escull un motiu per recalcular una altra proposta.',
       confirm: 'Recalcular',
-      cancel: 'Cancel·lar',
+      skipQuestion: 'Saltar pregunta',
       closeLabel: 'Tancar finestra',
       options: {
         effort: 'Massa esforç',
