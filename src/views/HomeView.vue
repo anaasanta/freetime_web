@@ -59,6 +59,7 @@ const {
   currentUser,
   savedActivities,
   startedActivities,
+  completedActivityIds,
   recommendedActivities,
   allActivities,
 } =
@@ -202,8 +203,12 @@ function isStartedActivity(activityId) {
   return startedActivities.value.some((activity) => activity.id === activityId)
 }
 
+function isCompletedActivity(activityId) {
+  return completedActivityIds.value.includes(activityId)
+}
+
 function isNewSavedActivity(activityId) {
-  return isSavedActivity(activityId) && !isStartedActivity(activityId)
+  return isSavedActivity(activityId) && !isStartedActivity(activityId) && !isCompletedActivity(activityId)
 }
 
 const avatarModules = import.meta.glob('../assets/avatars/*', {

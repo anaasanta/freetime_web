@@ -58,7 +58,6 @@ const detailVisualRef = ref(null)
 const detailIconRef = ref(null)
 let resizeObserver = null
 
-// Mini-test al acabar la actividad
 const showFinishModal = ref(false)
 const ratingStars = ref(0)
 const moodStars = ref(0)
@@ -202,7 +201,6 @@ function confirmFinish() {
   if (!selectedActivity.value) return
   if (ratingStars.value === 0 || moodStars.value === 0) return
 
-  // Mapeamos la mejora de ánimo (1-5) a un incremento de energía aproximado
   const moodDelta = [0, 5, 12, 22, 32, 42][moodStars.value] ?? 22
   const energyBefore = 35
   const energyAfter = Math.min(100, energyBefore + moodDelta)
@@ -218,6 +216,14 @@ function confirmFinish() {
 
   showFinishModal.value = false
   router.push({ name: 'home' })
+}
+
+function finishScaleLabel(value) {
+  const unit = value === 1
+    ? activityResultCopy.value.finishModal.starSingular
+    : activityResultCopy.value.finishModal.starPlural
+
+  return `${value} ${unit}`
 }
 
 function openRejectModal() {
@@ -367,7 +373,7 @@ function skipRejectQuestion() {
             type="button"
             @click="openFinishModal"
           >
-            {{ activityResultCopy.buttons.finish || 'Acabar actividad' }}
+            {{ activityResultCopy.buttons.finish }}
           </button>
 
           <button v-else class="primary-button" type="button" @click="handleStart">
@@ -439,35 +445,34 @@ function skipRejectQuestion() {
       </div>
     </div>
 
-    <!-- Mini-test al acabar la actividad -->
     <div v-if="showFinishModal" class="reject-modal finish-modal" role="presentation">
       <div class="reject-dialog finish-dialog" role="dialog" aria-labelledby="finish-modal-title">
         <button
           class="reject-close"
           type="button"
-          aria-label="Cerrar"
-          title="Cerrar"
+          :aria-label="activityResultCopy.finishModal.closeLabel"
+          :title="activityResultCopy.finishModal.closeLabel"
           @click="closeFinishModal"
         >
           <X :size="18" />
         </button>
 
         <h3 id="finish-modal-title">
-          {{ activityResultCopy.finishModal?.title || '¡Actividad completada!' }}
+          {{ activityResultCopy.finishModal.title }}
         </h3>
         <p>
-          {{ activityResultCopy.finishModal?.subtitle || 'Cuéntanos qué te ha parecido para mejorar tus recomendaciones.' }}
+          {{ activityResultCopy.finishModal.subtitle }}
         </p>
 
         <div class="finish-question">
           <label class="finish-label">
-            {{ activityResultCopy.finishModal?.ratingLabel || '¿Cómo valoras la actividad?' }}
+            {{ activityResultCopy.finishModal.ratingLabel }}
           </label>
 
           <div
             class="star-row"
             role="radiogroup"
-            :aria-label="activityResultCopy.finishModal?.ratingLabel || 'Valoración de la actividad'"
+            :aria-label="activityResultCopy.finishModal.ratingAria"
           >
             <button
               v-for="n in 5"
@@ -475,7 +480,7 @@ function skipRejectQuestion() {
               type="button"
               class="star-button"
               :class="{ active: (hoveredRating || ratingStars) >= n }"
-              :aria-label="`${n} ${n === 1 ? 'estrella' : 'estrellas'}`"
+              :aria-label="finishScaleLabel(n)"
               role="radio"
               :aria-checked="ratingStars === n"
               @click="ratingStars = n"
@@ -494,13 +499,13 @@ function skipRejectQuestion() {
 
         <div class="finish-question">
           <label class="finish-label">
-            {{ activityResultCopy.finishModal?.moodLabel || '¿Cuánto ha mejorado tu estado de ánimo?' }}
+            {{ activityResultCopy.finishModal.moodLabel }}
           </label>
 
           <div
             class="star-row"
             role="radiogroup"
-            :aria-label="activityResultCopy.finishModal?.moodLabel || 'Mejora del estado de ánimo'"
+            :aria-label="activityResultCopy.finishModal.moodAria"
           >
             <button
               v-for="n in 5"
@@ -508,7 +513,7 @@ function skipRejectQuestion() {
               type="button"
               class="star-button mood"
               :class="{ active: (hoveredMood || moodStars) >= n }"
-              :aria-label="`${n} ${n === 1 ? 'estrella' : 'estrellas'}`"
+              :aria-label="finishScaleLabel(n)"
               role="radio"
               :aria-checked="moodStars === n"
               @click="moodStars = n"
@@ -527,20 +532,20 @@ function skipRejectQuestion() {
 
         <div class="finish-question">
           <label class="finish-label" for="finish-note">
-            {{ activityResultCopy.finishModal?.noteLabel || 'Notas (opcional)' }}
+            {{ activityResultCopy.finishModal.noteLabel }}
           </label>
           <textarea
             id="finish-note"
             v-model="finishNote"
             class="finish-textarea"
             rows="3"
-            :placeholder="activityResultCopy.finishModal?.notePlaceholder || '¿Cómo te has sentido durante la actividad?'"
+            :placeholder="activityResultCopy.finishModal.notePlaceholder"
           ></textarea>
         </div>
 
         <div class="reject-actions">
           <button class="secondary-button" type="button" @click="closeFinishModal">
-            {{ activityResultCopy.finishModal?.cancel || 'Cancelar' }}
+            {{ activityResultCopy.finishModal.cancel }}
           </button>
           <button
             class="primary-button"
@@ -548,7 +553,7 @@ function skipRejectQuestion() {
             :disabled="!canConfirmFinish"
             @click="confirmFinish"
           >
-            {{ activityResultCopy.finishModal?.confirm || 'Guardar' }}
+            {{ activityResultCopy.finishModal.confirm }}
           </button>
         </div>
       </div>
@@ -958,7 +963,6 @@ function skipRejectQuestion() {
   }
 }
 
-/* ===== Mini-test al acabar la actividad ===== */
 .finish-dialog {
   width: min(100%, 520px);
 }
@@ -1012,9 +1016,9 @@ function skipRejectQuestion() {
 }
 
 .star-button.mood.active {
-  background: color-mix(in srgb, #fde2e7 70%, var(--card) 30%);
-  border-color: #e3577b;
-  color: #e3577b;
+  background: color-mix(in srgb, var(--rose-soft) 70%, var(--card) 30%);
+  border-color: var(--rose);
+  color: var(--rose);
 }
 
 .finish-textarea {
@@ -1043,7 +1047,11 @@ function skipRejectQuestion() {
 }
 
 .finish-button {
-  background: linear-gradient(135deg, #10b981, #059669);
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--emerald) 84%, var(--surface-contrast)),
+    var(--emerald)
+  );
 }
 
 @media (prefers-reduced-motion: reduce) {

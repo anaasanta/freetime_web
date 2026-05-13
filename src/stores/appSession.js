@@ -58,6 +58,10 @@ const completedActivitiesDisplay = computed(() =>
     .filter(Boolean),
 )
 
+const completedActivityIds = computed(() => [
+  ...new Set(completedActivities.value.map((activity) => activity.activityId)),
+])
+
 function normalizePlannedActivities(items) {
   return items.map((item) => ({
     ...item,
@@ -450,6 +454,7 @@ export function useAppSession() {
     startedActivities,
     recommendedActivities,
     completedActivitiesDisplay,
+    completedActivityIds,
     plannedActivities,
     selectedActivity,
     selectedActivityId,

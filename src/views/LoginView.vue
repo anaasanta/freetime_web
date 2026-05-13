@@ -237,11 +237,13 @@ function togglePasswordVisibility() {
 }
 
 .password-field {
-  gap: 0;
+  gap: 8px;
 }
 
 .password-input-wrap {
   position: relative;
+  display: block;
+  width: 100%;
 }
 
 .password-input {

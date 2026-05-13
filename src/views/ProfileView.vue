@@ -62,6 +62,7 @@ const {
   currentUser,
   savedActivities,
   startedActivities,
+  completedActivityIds,
   completedActivitiesDisplay,
   plannedActivities,
   allActivities,
@@ -196,6 +197,10 @@ function isStartedActivity(activityId) {
   return startedDisplay.value.some((activity) => activity.id === activityId)
 }
 
+function isTriedActivity(activityId) {
+  return isStartedActivity(activityId) || completedActivityIds.value.includes(activityId)
+}
+
 const plannedDisplay = computed(() => {
   return plannedActivities.value
     .map((item, index) => {
@@ -260,6 +265,12 @@ const completedDisplay = computed(() => {
         date: item.date,
         energyBefore: item.energyBefore ?? 35,
         energyAfter: item.energyAfter ?? 62,
+        mentalBefore: item.mentalBefore ?? null,
+        mentalAfter: item.mentalAfter ?? null,
+        physicalBefore: item.physicalBefore ?? null,
+        physicalAfter: item.physicalAfter ?? null,
+        rating: item.rating ?? null,
+        liked: item.liked ?? false,
         note: item.note ?? '',
         activity,
       }
@@ -428,10 +439,13 @@ const selectedChartSessions = computed(() => {
 const feedbackLineSeries = computed(() => {
   const sessions = selectedChartSessions.value
   const denominator = Math.max(1, sessions.length - 1)
+  const horizontalPadding = 7
+  const verticalPadding = 10
+  const drawableWidth = 100 - horizontalPadding * 2
+  const drawableHeight = 100 - verticalPadding * 2
   const metrics = [
-    { key: 'energy', label: profileCopy.value.stats.metrics.energy, field: 'energyAfter' },
-    { key: 'mind', label: profileCopy.value.stats.metrics.mind, field: 'mentalAfter' },
-    { key: 'body', label: profileCopy.value.stats.metrics.body, field: 'physicalAfter' },
+    { key: 'energy-before', label: profileCopy.value.stats.metrics.energyBefore, field: 'energyBefore' },
+    { key: 'energy-after', label: profileCopy.value.stats.metrics.energyAfter, field: 'energyAfter' },
   ]
 
   return metrics.map((metric) => {
@@ -441,8 +455,8 @@ const feedbackLineSeries = computed(() => {
       return {
         id: `${metric.key}-${session.id}`,
         sessionId: session.id,
-        x: sessions.length > 1 ? (index / denominator) * 100 : 50,
-        y: 100 - value,
+        x: sessions.length > 1 ? horizontalPadding + (index / denominator) * drawableWidth : 50,
+        y: verticalPadding + (100 - value) * (drawableHeight / 100),
         value,
         dateLabel: session.dateLabel,
         note: session.note,
@@ -867,7 +881,7 @@ const selectedSchedulingDayLabel = computed(() => {
                   :class="`tone-${activity.tone || 'violet'}`"
                   @click="openActivity(activity.id)"
                 >
-                  <span v-if="!isStartedActivity(activity.id)" class="new-activity-badge">
+                  <span v-if="!isTriedActivity(activity.id)" class="new-activity-badge">
                     {{ homeCopy.newBadge }}
                   </span>
 
@@ -1639,6 +1653,9 @@ const selectedSchedulingDayLabel = computed(() => {
 }
 
 .saved-block {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
   height: 100%;
   min-height: 0;
 }
@@ -1778,7 +1795,7 @@ const selectedSchedulingDayLabel = computed(() => {
 .feedback-shell {
   display: grid;
   grid-template-columns: minmax(230px, 0.32fr) minmax(0, 1fr);
-  gap: 18px;
+  gap: 24px;
   align-items: stretch;
 }
 
@@ -1790,14 +1807,14 @@ const selectedSchedulingDayLabel = computed(() => {
 
 .feedback-selector-column {
   display: grid;
-  gap: 10px;
+  gap: 14px;
 }
 
 .feedback-tab {
   display: grid;
   grid-template-columns: 42px minmax(0, 1fr);
   align-items: center;
-  gap: 10px;
+  gap: 14px;
   width: 100%;
   padding: 10px;
   border: 1px solid var(--surface-stroke-strong);
@@ -1882,8 +1899,8 @@ const selectedSchedulingDayLabel = computed(() => {
 
 .feedback-line-chart {
   position: relative;
-  min-height: 300px;
-  padding: 18px 10px 8px;
+  min-height: 280px;
+  padding: 0;
   border: 1px solid var(--surface-stroke-strong);
   border-radius: 24px;
   background:
@@ -1895,8 +1912,8 @@ const selectedSchedulingDayLabel = computed(() => {
 
 .feedback-line-chart svg {
   width: 100%;
-  height: 300px;
-  overflow: visible;
+  height: 280px;
+  overflow: hidden;
 }
 
 .chart-grid-line {
@@ -1907,27 +1924,21 @@ const selectedSchedulingDayLabel = computed(() => {
 .feedback-line-path {
   fill: none;
   stroke: var(--series-color);
-  stroke-width: 2.4;
+  stroke-width: 1.15;
   stroke-linecap: round;
   stroke-linejoin: round;
-  filter: drop-shadow(0 10px 18px color-mix(in srgb, var(--series-color) 28%, transparent));
+  vector-effect: non-scaling-stroke;
+  filter: drop-shadow(0 5px 10px color-mix(in srgb, var(--series-color) 18%, transparent));
 }
 
 .feedback-line-dot {
-  fill: var(--surface-contrast);
-  stroke: var(--series-color);
-  stroke-width: 1.6;
-  cursor: help;
-}
-
-.feedback-line-dot:hover {
-  fill: var(--series-color);
+  display: none;
 }
 
 .feedback-line-hotspot {
   position: absolute;
-  width: 22px;
-  height: 22px;
+  width: 18px;
+  height: 18px;
   border: 0;
   border-radius: 999px;
   background: transparent;
@@ -1938,16 +1949,20 @@ const selectedSchedulingDayLabel = computed(() => {
 .feedback-line-hotspot::before {
   content: '';
   position: absolute;
-  inset: 7px;
+  inset: 6px;
   border-radius: inherit;
   background: var(--series-color);
-  opacity: 0;
-  transition: opacity 0.16s ease;
+  box-shadow: 0 0 0 2px var(--surface-contrast);
+  opacity: 0.9;
+  transition:
+    opacity 0.16s ease,
+    transform 0.16s ease;
 }
 
 .feedback-line-hotspot:hover::before,
 .feedback-line-hotspot:focus-visible::before {
   opacity: 1;
+  transform: scale(1.55);
 }
 
 .feedback-line-tooltip {
@@ -1989,15 +2004,11 @@ const selectedSchedulingDayLabel = computed(() => {
   transform: translateX(-50%) translateY(0);
 }
 
-.line-energy {
+.line-energy-before {
   --series-color: var(--violet);
 }
 
-.line-mind {
-  --series-color: var(--sky);
-}
-
-.line-body {
+.line-energy-after {
   --series-color: var(--emerald);
 }
 
@@ -2015,6 +2026,10 @@ const selectedSchedulingDayLabel = computed(() => {
   font-size: 0.95rem;
   font-weight: 900;
   color: var(--foreground);
+}
+
+.feedback-chart-head h3 {
+  margin: 0 0 8px 0;
 }
 
 .feedback-chart-area {

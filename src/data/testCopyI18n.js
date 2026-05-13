@@ -233,6 +233,7 @@ export function getActivityResultCopy(language) {
       },
       buttons: {
         start: 'Empezar actividad',
+        finish: 'Acabar actividad',
         addToList: 'Añadir a mi lista',
         removeFromList: 'Eliminar de mi lista',
         reject: 'No me interesa',
@@ -251,6 +252,21 @@ export function getActivityResultCopy(language) {
           time: 'No tengo suficiente tiempo',
           budget: 'Demasiado caro',
         },
+      },
+      finishModal: {
+        title: 'Actividad completada',
+        subtitle: 'Cuéntanos qué te ha parecido para mejorar tus recomendaciones.',
+        ratingLabel: '¿Cómo valoras la actividad?',
+        ratingAria: 'Valoración de la actividad',
+        moodLabel: '¿Cuánto ha mejorado tu estado de ánimo?',
+        moodAria: 'Mejora del estado de ánimo',
+        noteLabel: 'Notas (opcional)',
+        notePlaceholder: '¿Cómo te has sentido durante la actividad?',
+        closeLabel: 'Cerrar ventana',
+        cancel: 'Cancelar',
+        confirm: 'Guardar',
+        starSingular: 'estrella',
+        starPlural: 'estrellas',
       },
     }
   }
@@ -276,6 +292,7 @@ export function getActivityResultCopy(language) {
       },
       buttons: {
         start: 'Start activity',
+        finish: 'Finish activity',
         addToList: 'Add to my list',
         removeFromList: 'Remove from my list',
         reject: 'Not interested',
@@ -294,6 +311,21 @@ export function getActivityResultCopy(language) {
           time: 'Not enough time',
           budget: 'Too expensive',
         },
+      },
+      finishModal: {
+        title: 'Activity completed',
+        subtitle: 'Tell us how it went so we can improve your recommendations.',
+        ratingLabel: 'How would you rate the activity?',
+        ratingAria: 'Activity rating',
+        moodLabel: 'How much did your mood improve?',
+        moodAria: 'Mood improvement',
+        noteLabel: 'Notes (optional)',
+        notePlaceholder: 'How did you feel during the activity?',
+        closeLabel: 'Close dialog',
+        cancel: 'Cancel',
+        confirm: 'Save',
+        starSingular: 'star',
+        starPlural: 'stars',
       },
     }
   }
@@ -318,6 +350,7 @@ export function getActivityResultCopy(language) {
     },
     buttons: {
       start: 'Començar activitat',
+      finish: 'Acabar activitat',
       addToList: 'Afegir a la meva llista',
       removeFromList: 'Eliminar de la meva llista',
       reject: 'No m\'interessa',
@@ -336,6 +369,21 @@ export function getActivityResultCopy(language) {
         time: 'No tinc prou temps',
         budget: 'Massa car',
       },
+    },
+    finishModal: {
+      title: 'Activitat completada',
+      subtitle: 'Explica’ns què t’ha semblat per millorar les teves recomanacions.',
+      ratingLabel: 'Com valores l’activitat?',
+      ratingAria: 'Valoració de l’activitat',
+      moodLabel: 'Quant ha millorat el teu estat d’ànim?',
+      moodAria: 'Millora de l’estat d’ànim',
+      noteLabel: 'Notes (opcional)',
+      notePlaceholder: 'Com t’has sentit durant l’activitat?',
+      closeLabel: 'Tancar finestra',
+      cancel: 'Cancel·lar',
+      confirm: 'Desar',
+      starSingular: 'estrella',
+      starPlural: 'estrelles',
     },
   }
 }
