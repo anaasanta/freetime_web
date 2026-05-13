@@ -422,6 +422,25 @@ export function deletePlannedActivity(plannedActivityId) {
   return true
 }
 
+export function completeActivity(activityId, data) {
+  // 1) Añadir registro a completedActivities (usando el ref correcto)
+  completedActivities.value.push({
+    id: `completed-${activityId}-${Date.now()}`,
+    activityId,
+    rating: data.rating,
+    moodImprovement: data.moodImprovement,
+    note: data.note ?? '',
+    energyBefore: data.energyBefore,
+    energyAfter: data.energyAfter,
+    date: data.date ?? formatDate(new Date()),
+  })
+
+  // 2) Quitarla de las iniciadas
+  startedActivityIds.value = startedActivityIds.value.filter(
+    (id) => id !== activityId,
+  )
+}
+
 export function useAppSession() {
   return {
     allActivities,
@@ -450,5 +469,6 @@ export function useAppSession() {
     addPlannedActivity,
     updatePlannedActivity,
     deletePlannedActivity,
+    completeActivity,
   }
 }
