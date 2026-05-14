@@ -353,6 +353,8 @@ export const profileCopy = {
   separator: '·',
   avatarAlt: 'Foto de perfil',
   fallbackTag: 'Nou perfil',
+  recommendedTitle: 'Recomanades',
+  otherActivitiesTitle: 'Altres',
   plannedActivitiesTitle: 'Activitats programades',
   startedActivitiesTitle: 'Activitats començades',
   savedActivitiesTitle: 'Les meves activitats',
