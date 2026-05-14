@@ -82,7 +82,7 @@ const props = defineProps({
 
 const emit = defineEmits(['confirm', 'cancel', 'delete'])
 
-const { allActivities, plannedActivities, savedActivities } = useAppSession()
+const { allActivities, plannedActivities, savedActivities, recommendedActivities } = useAppSession()
 const { currentLanguage } = useI18n()
 const profileCopy = computed(() => getProfileCopy(currentLanguage.value))
 
@@ -136,20 +136,60 @@ if (props.mode === 'edit' && props.plannedActivityId) {
 }
 
 // Computed
+const translatedActivities = computed(() => allActivities.map(translatedActivity))
+
 const filteredActivities = computed(() => {
   const query = searchQuery.value.toLowerCase()
-  return allActivities.map(translatedActivity).filter(
+  return translatedActivities.value.filter(
     (activity) =>
       activity.title.toLowerCase().includes(query) ||
       activity.shortDescription?.toLowerCase().includes(query),
   )
 })
 
-const myActivities = computed(() =>
-  filteredActivities.value.filter((activity) =>
-    savedActivities.value.some((savedActivity) => savedActivity.id === activity.id),
-  ),
-)
+const activitySections = computed(() => {
+  const savedIds = new Set(savedActivities.value.map((activity) => activity.id))
+  const recommendedIds = new Set(recommendedActivities.value.map((activity) => activity.id))
+
+  const saved = []
+  const recommended = []
+  const others = []
+
+  for (const activity of filteredActivities.value) {
+    if (savedIds.has(activity.id)) {
+      saved.push(activity)
+      continue
+    }
+
+    if (recommendedIds.has(activity.id)) {
+      recommended.push(activity)
+      continue
+    }
+
+    others.push(activity)
+  }
+
+  return [
+    {
+      key: 'saved',
+      title: profileCopy.value.savedActivitiesTitle,
+      emptyLabel: profileCopy.value.empty.saved,
+      items: saved,
+    },
+    {
+      key: 'recommended',
+      title: profileCopy.value.recommendedTitle,
+      emptyLabel: profileCopy.value.planned.noActivities,
+      items: recommended,
+    },
+    {
+      key: 'other',
+      title: profileCopy.value.otherActivitiesTitle,
+      emptyLabel: profileCopy.value.planned.noActivities,
+      items: others,
+    },
+  ]
+})
 
 const selectedActivity = computed(() =>
   filteredActivities.value.find((a) => a.id === selectedActivityId.value) ||
@@ -213,20 +253,20 @@ function handleCancel() {
         </div>
 
         <div class="activities-list">
-          <div class="activity-section">
-            <h3 class="activity-section-title">{{ profileCopy.savedActivitiesTitle }}</h3>
+          <div v-for="section in activitySections" :key="section.key" class="activity-section">
+            <h3 class="activity-section-title">{{ section.title }}</h3>
 
             <button
-              v-if="myActivities.length === 0"
+              v-if="section.items.length === 0"
               disabled
               class="no-activities btn"
               type="button"
             >
-              {{ profileCopy.empty.saved }}
+              {{ section.emptyLabel }}
             </button>
 
             <button
-              v-for="activity in myActivities"
+              v-for="activity in section.items"
               :key="activity.id"
               type="button"
               class="activity-item btn"
