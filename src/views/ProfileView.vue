@@ -187,6 +187,41 @@ function isTriedActivity(activityId) {
   return isStartedActivity(activityId) || completedActivityIds.value.includes(activityId)
 }
 
+function normalizeReminder(reminder) {
+  if (!reminder) return '30-min'
+
+  const normalized = String(reminder).toLowerCase().trim()
+
+  if (['30-min', '30 min abans', '30 min antes', '30 min before', '30 minutes before'].includes(normalized)) {
+    return '30-min'
+  }
+
+  if (['1-hour', '1 hora abans', '1 hora antes', '1 hour before'].includes(normalized)) {
+    return '1-hour'
+  }
+
+  if (['1-day', '1 dia abans', '1 día antes', '1 day before'].includes(normalized)) {
+    return '1-day'
+  }
+
+  if (['custom', 'altre', 'otro', 'other'].includes(normalized)) {
+    return 'custom'
+  }
+
+  if (['none', 'no rebre notificacio', 'no rebre notificació', 'no recibir notificacion', 'no recibir notificación', 'no notification'].includes(normalized)) {
+    return 'none'
+  }
+
+  return reminder
+}
+
+function plannedReminderLabel(reminder) {
+  const reminderId = normalizeReminder(reminder)
+  const option = profileCopy.value.planned.notificationOptions?.find((item) => item.id === reminderId)
+
+  return option?.label ?? reminder ?? profileCopy.value.planned.fallbackReminder
+}
+
 const plannedDisplay = computed(() => {
   return plannedActivities.value
     .map((item, index) => {
@@ -215,7 +250,7 @@ const plannedDisplay = computed(() => {
         tone: item.tone ?? translatedActivity?.tone ?? 'violet',
         date: item.date,
         time: item.time ?? profileCopy.value.planned.fallbackTime,
-        reminder: item.reminder ?? profileCopy.value.planned.fallbackReminder,
+        reminder: plannedReminderLabel(item.reminder),
         image: activityImages[imageKeyPng] || activityImages[imageKeyJpg] || activityImages[imageKeySvg] || null,
       }
     })
@@ -231,7 +266,7 @@ const plannedDisplay = computed(() => {
     .filter(Boolean)
 })
 
-const completedDisplay = computed(() => {
+const completedDisplay = computed(() => { 
   return completedActivitiesDisplay.value
     .map((item, index) => {
       const activity =
@@ -660,7 +695,7 @@ function openEditActivityModal(plannedActivityId) {
 
 function handleActivityModalConfirm(data) {
   if (activityModalMode.value === 'add') {
-    addPlannedActivity(data.activityId, activityModalDate.value, data.time)
+    addPlannedActivity(data.activityId, activityModalDate.value, data.time, data.reminder)
   } else {
     const existing = plannedActivities.value.find((p) => p.id === editingPlannedActivityId.value)
     if (existing) {
@@ -669,6 +704,7 @@ function handleActivityModalConfirm(data) {
         data.activityId,
         existing.date, // Keep the original date when editing
         data.time,
+        data.reminder,
       )
     }
   }

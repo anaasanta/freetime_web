@@ -62,11 +62,40 @@ const completedActivityIds = computed(() => [
   ...new Set(completedActivities.value.map((activity) => activity.activityId)),
 ])
 
+function normalizeReminder(reminder) {
+  if (!reminder) return '30-min'
+
+  const normalized = String(reminder).toLowerCase().trim()
+
+  if (['30-min', '30 min abans', '30 min antes', '30 min before', '30 minutes before'].includes(normalized)) {
+    return '30-min'
+  }
+
+  if (['1-hour', '1 hora abans', '1 hora antes', '1 hour before'].includes(normalized)) {
+    return '1-hour'
+  }
+
+  if (['1-day', '1 dia abans', '1 día antes', '1 day before'].includes(normalized)) {
+    return '1-day'
+  }
+
+  if (['custom', 'altre', 'otro', 'other'].includes(normalized)) {
+    return 'custom'
+  }
+
+  if (['none', 'no rebre notificacio', 'no rebre notificació', 'no recibir notificacion', 'no recibir notificación', 'no notification'].includes(normalized)) {
+    return 'none'
+  }
+
+  return reminder
+}
+
 function normalizePlannedActivities(items) {
   return items.map((item) => ({
     ...item,
     day: item.day ?? item.date,
     date: item.date ?? item.day,
+    reminder: normalizeReminder(item.reminder),
   }))
 }
 
@@ -370,7 +399,7 @@ export function createScheduleDraft(activityId, day, time, reminder) {
     day,
     date: day,
     time,
-    reminder,
+    reminder: normalizeReminder(reminder),
   }
 }
 
@@ -391,20 +420,20 @@ export function confirmSchedule() {
   return true
 }
 
-export function addPlannedActivity(activityId, date, time) {
+export function addPlannedActivity(activityId, date, time, reminder = '30-min') {
   const newPlanned = {
     id: `${activityId}-${Date.now()}`,
     activityId,
     date,
     time,
-    reminder: '30 min abans',
+    reminder: normalizeReminder(reminder),
   }
 
   plannedActivities.value.push(newPlanned)
   addSavedActivity(activityId)
 }
 
-export function updatePlannedActivity(plannedActivityId, activityId, date, time) {
+export function updatePlannedActivity(plannedActivityId, activityId, date, time, reminder = '30-min') {
   const index = plannedActivities.value.findIndex((p) => p.id === plannedActivityId)
   if (index === -1) return false
 
@@ -413,6 +442,7 @@ export function updatePlannedActivity(plannedActivityId, activityId, date, time)
     activityId,
     date,
     time,
+    reminder: normalizeReminder(reminder),
   }
 
   return true

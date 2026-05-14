@@ -28,6 +28,7 @@ import {
   X,
   Search,
   Trash2,
+  ChevronDown,
 } from 'lucide-vue-next'
 import { useAppSession } from '@/stores/appSession'
 import { getProfileCopy } from '@/data/homeCopyI18n'
@@ -93,6 +94,36 @@ function translatedActivity(activity) {
 const searchQuery = ref('')
 const selectedActivityId = ref(null)
 const selectedTime = ref('21:00')
+const selectedReminder = ref('30-min')
+const isReminderOpen = ref(false)
+
+function normalizeReminder(reminder) {
+  if (!reminder) return '30-min'
+
+  const normalized = String(reminder).toLowerCase().trim()
+
+  if (['30-min', '30 min abans', '30 min antes', '30 min before', '30 minutes before'].includes(normalized)) {
+    return '30-min'
+  }
+
+  if (['1-hour', '1 hora abans', '1 hora antes', '1 hour before'].includes(normalized)) {
+    return '1-hour'
+  }
+
+  if (['1-day', '1 dia abans', '1 día antes', '1 day before'].includes(normalized)) {
+    return '1-day'
+  }
+
+  if (['custom', 'altre', 'otro', 'other'].includes(normalized)) {
+    return 'custom'
+  }
+
+  if (['none', 'no rebre notificacio', 'no rebre notificació', 'no recibir notificacion', 'no recibir notificación', 'no notification'].includes(normalized)) {
+    return 'none'
+  }
+
+  return reminder
+}
 
 // For edit mode, initialize with existing data
 if (props.mode === 'edit' && props.plannedActivityId) {
@@ -100,6 +131,7 @@ if (props.mode === 'edit' && props.plannedActivityId) {
   if (existing) {
     selectedActivityId.value = existing.activityId
     selectedTime.value = existing.time || '21:00'
+    selectedReminder.value = normalizeReminder(existing.reminder)
   }
 }
 
@@ -124,6 +156,12 @@ const selectedActivity = computed(() =>
   allActivities.map(translatedActivity).find((a) => a.id === selectedActivityId.value),
 )
 
+const reminderOptions = computed(() => profileCopy.value.planned.notificationOptions ?? [])
+
+const selectedReminderOption = computed(() =>
+  reminderOptions.value.find((option) => option.id === selectedReminder.value) ?? reminderOptions.value[0],
+)
+
 const isValid = computed(() => selectedActivityId.value && selectedTime.value)
 
 const modalTitle = computed(() =>
@@ -135,7 +173,13 @@ function handleConfirm() {
   emit('confirm', {
     activityId: selectedActivityId.value,
     time: selectedTime.value,
+    reminder: selectedReminder.value,
   })
+}
+
+function selectReminder(reminderId) {
+  selectedReminder.value = reminderId
+  isReminderOpen.value = false
 }
 
 function handleDelete() {
@@ -243,6 +287,44 @@ function handleCancel() {
             <span class="duration-value">
               {{ selectedActivity.duration }} {{ profileCopy.planned.minutes }}
             </span>
+          </div>
+
+          <div class="notification-select-container">
+            <label id="notification-select-label">{{ profileCopy.planned.notification }}</label>
+
+            <div class="notification-select">
+              <button
+                type="button"
+                class="notification-trigger btn form-control"
+                aria-haspopup="listbox"
+                :aria-expanded="isReminderOpen"
+                aria-labelledby="notification-select-label"
+                @click="isReminderOpen = !isReminderOpen"
+              >
+                <span>{{ selectedReminderOption?.label ?? profileCopy.planned.notificationPlaceholder }}</span>
+                <ChevronDown :size="18" class="notification-chevron" :class="{ open: isReminderOpen }" />
+              </button>
+
+              <div
+                v-if="isReminderOpen"
+                class="notification-options"
+                role="listbox"
+                aria-labelledby="notification-select-label"
+              >
+                <button
+                  v-for="option in reminderOptions"
+                  :key="option.id"
+                  type="button"
+                  class="notification-option btn"
+                  :class="{ selected: selectedReminder === option.id }"
+                  role="option"
+                  :aria-selected="selectedReminder === option.id"
+                  @click="selectReminder(option.id)"
+                >
+                  {{ option.label }}
+                </button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -501,7 +583,8 @@ h2 {
   gap: 8px;
 }
 
-.time-input-container label {
+.time-input-container label,
+.notification-select-container label {
   font-size: 14px;
   font-weight: 500;
   color: var(--color-text-primary);
@@ -522,9 +605,94 @@ h2 {
 
 .time-section {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 16px;
   align-items: flex-end;
+}
+
+.notification-select-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  position: relative;
+}
+
+.notification-select {
+  position: relative;
+}
+
+.notification-trigger {
+  width: 100%;
+  min-height: 46px;
+  padding: 10px 12px;
+  border: 1px solid var(--surface-stroke-strong);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface-strong) 76%, transparent);
+  color: var(--foreground);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  text-align: left;
+  font-size: 14px;
+}
+
+.notification-trigger:hover,
+.notification-trigger:focus {
+  border-color: var(--violet);
+  color: var(--foreground);
+}
+
+.notification-trigger span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.notification-chevron {
+  flex-shrink: 0;
+  color: var(--muted-foreground);
+  transition: transform 0.2s ease;
+}
+
+.notification-chevron.open {
+  transform: rotate(180deg);
+}
+
+.notification-options {
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(100% + 8px);
+  z-index: 3;
+  max-height: 150px;
+  overflow-y: auto;
+  display: grid;
+  gap: 6px;
+  padding: 8px;
+  border: 1px solid var(--surface-stroke-strong);
+  border-radius: 18px;
+  background: color-mix(in srgb, var(--surface-contrast) 98%, var(--background));
+  box-shadow: 0 18px 42px var(--shadow-panel);
+}
+
+.notification-option {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 14px;
+  background: transparent;
+  color: var(--foreground);
+  font-size: 13px;
+  font-weight: 700;
+  text-align: left;
+}
+
+.notification-option:hover,
+.notification-option.selected {
+  border-color: color-mix(in srgb, var(--violet) 45%, var(--surface-stroke-strong));
+  background: color-mix(in srgb, var(--violet-soft) 34%, transparent);
+  color: var(--foreground);
 }
 
 .duration-display {
@@ -621,6 +789,12 @@ h2 {
   border-radius: 20px;
   background: color-mix(in srgb, var(--violet-soft) 44%, var(--surface-contrast));
   color: var(--violet);
+}
+
+@media (max-width: 760px) {
+  .time-section {
+    grid-template-columns: 1fr;
+  }
 }
 
 </style>

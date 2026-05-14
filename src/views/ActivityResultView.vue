@@ -64,7 +64,7 @@ const activityImageModules = import.meta.glob('../data/activity_images/*.png', {
   import: 'default',
 })
 
-const activityCopy = computed(() => getActivityCopy(currentLanguage.value))
+const activityCopy = computed(() => getActivityCopy(currentLanguage.value)) 
 const activityResultCopy = computed(() => getActivityResultCopy(currentLanguage.value))
 const rejectionOptions = computed(() => Object.entries(activityResultCopy.value.rejectModal.options))
 const translatedActivity = computed(() => {
@@ -183,7 +183,7 @@ function closeFinishModal() {
   showFinishModal.value = false
 }
 
-function confirmFinish(feedback) {
+function confirmFinish(feedback) { // Los valores de energyBefore y energyAfter son simulados para este ejemplo, ya que no forma parte del prototipo final pero queríamos añadirlo en el diseño 
   if (!selectedActivity.value) return
 
   const moodDelta = [0, 5, 12, 22, 32, 42][feedback.moodImprovement] ?? 22
@@ -502,7 +502,7 @@ function skipRejectQuestion() {
   animation: reveal-activity-copy 980ms ease 760ms both;
 }
 
-.detail-visual h1 {
+.detail-visual h1 { 
   margin: 0;
   color: var(--foreground);
   font-size: clamp(2.4rem, 5vw, 4.6rem);
