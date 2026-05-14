@@ -243,7 +243,7 @@ const avatarSrc = computed(() => {
 function openActivity(activityId, source = 'normal') {
   syncSelectedActivity(activityId, source)
 
-  const query = source === 'normal' ? {} : { source }
+  const query = source === 'normal' ? { from: 'home' } : { source, from: 'home' }
 
   router.push({
     name: 'activity',
@@ -473,11 +473,7 @@ function closeGuestAuthPrompt() {
         </section>
 
         <section class="home-section">
-          <SectionHeader :title="displayCopy.recommendedTitle" size="section" class="section-heading">
-            <template #actions>
-              <span class="chip">{{ displayCopy.recommendedBadge }}</span>
-            </template>
-          </SectionHeader>
+          <SectionHeader :title="displayCopy.recommendedTitle" size="section" class="section-heading" />
           <EmptyState>{{ displayCopy.guest.locked }}</EmptyState>
         </section>
 
@@ -602,11 +598,7 @@ function closeGuestAuthPrompt() {
       </section>
 
       <section class="home-section">
-        <SectionHeader :title="displayCopy.recommendedTitle" size="section" class="section-heading">
-          <template #actions>
-            <span class="chip">{{ displayCopy.recommendedBadge }}</span>
-          </template>
-        </SectionHeader>
+        <SectionHeader :title="displayCopy.recommendedTitle" size="section" class="section-heading" />
 
         <div class="recommendation-row">
           <article

@@ -68,6 +68,7 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
           <RouterLink class="landing-hero-orb" :to="displayCopy.nav.discoverRoute" :aria-label="displayCopy.hero.discoverCard">
             <span class="landing-hero-orb-face landing-hero-orb-front">
               <img :src="HeroLogo" alt="" class="landing-hero-logo" />
+              <span class="landing-flip-hint">{{ displayCopy.hero.flipHint }}</span>
             </span>
             <span class="landing-hero-orb-face landing-hero-orb-back">
               <span class="orb-glow"></span>
@@ -340,6 +341,36 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
 
 .landing-hero-orb-front {
   transform: rotateY(0deg);
+}
+
+.landing-flip-hint {
+  position: absolute;
+  right: -8%;
+  top: 12%;
+  z-index: 2;
+  padding: 12px 18px;
+  border: 1px solid var(--surface-stroke-strong);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-contrast) 92%, transparent);
+  color: var(--violet-strong);
+  box-shadow: var(--shadow-panel);
+  font-size: 1.05rem;
+  font-weight: 900;
+  line-height: 1;
+  transform: rotate(5deg);
+}
+
+.landing-flip-hint::after {
+  position: absolute;
+  right: 24px;
+  bottom: -6px;
+  width: 12px;
+  height: 12px;
+  border-right: 1px solid var(--surface-stroke-strong);
+  border-bottom: 1px solid var(--surface-stroke-strong);
+  background: inherit;
+  content: '';
+  transform: rotate(45deg);
 }
 
 .landing-hero-orb-back {

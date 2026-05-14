@@ -95,7 +95,7 @@ function handleFinish() {
   router.push({
     name: 'activity',
     params: { id: selectedId },
-    query: { source: 'test' },
+    query: { source: 'test', from: 'test' },
   })
 }
 </script>

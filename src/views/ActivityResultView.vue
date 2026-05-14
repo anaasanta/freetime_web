@@ -221,6 +221,16 @@ function closeFinishModal() {
   showFinishModal.value = false
 }
 
+function closeDetail() {
+  const from = typeof route.query.from === 'string' ? route.query.from : ''
+  if (from === 'profile') {
+    router.push({ name: 'profile' })
+    return
+  }
+
+  router.push({ name: 'home' })
+}
+
 function confirmFinish(feedback) { // Los valores de energyBefore y energyAfter son simulados para este ejemplo, ya que no forma parte del prototipo final pero queríamos añadirlo en el diseño 
   if (!selectedActivity.value) return
 
@@ -323,7 +333,7 @@ function skipRejectQuestion() {
           type="button"
           :aria-label="activityCopy.closeLabel"
           :title="activityCopy.closeLabel"
-          @click="router.push({ name: 'home' })"
+          @click="closeDetail"
         >
           <X :size="22" />
         </button>

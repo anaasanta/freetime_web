@@ -96,6 +96,9 @@ const selectedActivityId = ref(null)
 const selectedTime = ref('21:00')
 const selectedReminder = ref('30-min')
 const isReminderOpen = ref(false)
+//AÑADIDO: pestañas para que la usuaria vea de forma explícita que puede alternar entre sus actividades, recomendadas y todas.
+const activeActivitySection = ref('saved')
+//FIN
 
 function normalizeReminder(reminder) {
   if (!reminder) return '30-min'
@@ -115,7 +118,7 @@ function normalizeReminder(reminder) {
   }
 
   if (['custom', 'altre', 'otro', 'other'].includes(normalized)) {
-    return 'custom'
+    return '30-min'
   }
 
   if (['none', 'no rebre notificacio', 'no rebre notificació', 'no recibir notificacion', 'no recibir notificación', 'no notification'].includes(normalized)) {
@@ -172,24 +175,32 @@ const activitySections = computed(() => {
   return [
     {
       key: 'saved',
-      title: profileCopy.value.savedActivitiesTitle,
+      title: profileCopy.value.planned.filters?.saved ?? profileCopy.value.savedActivitiesTitle,
       emptyLabel: profileCopy.value.empty.saved,
       items: saved,
     },
     {
       key: 'recommended',
-      title: profileCopy.value.recommendedTitle,
+      title: profileCopy.value.planned.filters?.recommended ?? profileCopy.value.recommendedTitle,
       emptyLabel: profileCopy.value.planned.noActivities,
       items: recommended,
     },
     {
       key: 'other',
-      title: profileCopy.value.otherActivitiesTitle,
+      title: profileCopy.value.planned.filters?.other ?? profileCopy.value.otherActivitiesTitle,
       emptyLabel: profileCopy.value.planned.noActivities,
-      items: others,
+      //AÑADIDO: en la pestaña "Todas" se muestran todas las actividades filtradas, no solo las que no son guardadas/recomendadas.
+      items: filteredActivities.value,
+      //FIN
     },
   ]
 })
+
+//AÑADIDO: mostramos solo la pestaña activa para reducir scroll y evitar que parezca que las listas están escondidas.
+const visibleActivitySections = computed(() =>
+  activitySections.value.filter((section) => section.key === activeActivitySection.value),
+)
+//FIN
 
 const selectedActivity = computed(() =>
   filteredActivities.value.find((a) => a.id === selectedActivityId.value) ||
@@ -252,8 +263,25 @@ function handleCancel() {
           />
         </div>
 
+        <!-- //AÑADIDO: selector visible de categoría de actividad. -->
+        <div class="activity-section-tabs" role="tablist" :aria-label="profileCopy.planned.search">
+          <button
+            v-for="section in activitySections"
+            :key="section.key"
+            type="button"
+            class="activity-section-tab btn"
+            :class="{ active: activeActivitySection === section.key }"
+            role="tab"
+            :aria-selected="activeActivitySection === section.key"
+            @click="activeActivitySection = section.key"
+          >
+            <span>{{ section.title }}</span>
+          </button>
+        </div>
+        <!-- //FIN -->
+
         <div class="activities-list">
-          <div v-for="section in activitySections" :key="section.key" class="activity-section">
+          <div v-for="section in visibleActivitySections" :key="section.key" class="activity-section">
             <h3 class="activity-section-title">{{ section.title }}</h3>
 
             <button
@@ -322,13 +350,6 @@ function handleCancel() {
             />
           </div>
 
-          <div v-if="selectedActivity" class="duration-display">
-            <span class="duration-label">{{ profileCopy.planned.duration }}</span>
-            <span class="duration-value">
-              {{ selectedActivity.duration }} {{ profileCopy.planned.minutes }}
-            </span>
-          </div>
-
           <div class="notification-select-container">
             <label id="notification-select-label">{{ profileCopy.planned.notification }}</label>
 
@@ -365,6 +386,13 @@ function handleCancel() {
                 </button>
               </div>
             </div>
+          </div>
+
+          <div v-if="selectedActivity" class="duration-display">
+            <span class="duration-label">{{ profileCopy.planned.duration }}</span>
+            <span class="duration-value">
+              {{ selectedActivity.duration }} {{ profileCopy.planned.minutes }}
+            </span>
           </div>
         </div>
 
@@ -421,7 +449,7 @@ function handleCancel() {
   padding: 36px;
   width: min(720px, calc(100vw - 40px));
   display: grid;
-  gap: 20px;
+  gap: 10px;
   box-shadow: 0 28px 80px var(--shadow-panel);
   max-height: 86vh;
   overflow-y: auto;
@@ -455,11 +483,43 @@ h2 {
   margin: 0;
 }
 
+/* //AÑADIDO: pestañas compactas para elegir entre actividades propias, recomendadas o todas. */
+.activity-section-tabs {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: -2px;
+}
+
+.activity-section-tab {
+  display: grid;
+  place-items: center;
+  min-height: 38px;
+  padding: 8px 10px;
+  border: 1px solid var(--surface-stroke-strong);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-contrast) 54%, transparent);
+  color: var(--muted-foreground);
+  font-size: 0.78rem;
+  font-weight: 850;
+  line-height: 1.15;
+  text-align: center;
+}
+
+.activity-section-tab.active,
+.activity-section-tab:hover {
+  border-color: color-mix(in srgb, var(--violet) 52%, var(--surface-stroke-strong));
+  background: color-mix(in srgb, var(--violet-soft) 36%, var(--surface-contrast));
+  color: var(--foreground);
+}
+/* //FIN */
+
 .search-container {
   position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
+  margin-top: 2px;
 }
 
 .search-icon {
@@ -486,8 +546,9 @@ h2 {
 .activities-list {
   display: grid;
   gap: 8px;
-  max-height: 300px;
+  max-height: 230px;
   overflow-y: auto;
+  margin-top: 0;
 }
 
 .activity-section {
@@ -496,7 +557,7 @@ h2 {
 }
 
 .activity-section-title {
-  margin: 8px 0 0;
+  margin: 4px 0 0;
   font-size: 13px;
   font-weight: 600;
   color: var(--color-text-secondary);
@@ -832,6 +893,10 @@ h2 {
 }
 
 @media (max-width: 760px) {
+  .activity-section-tabs {
+    grid-template-columns: 1fr;
+  }
+
   .time-section {
     grid-template-columns: 1fr;
   }

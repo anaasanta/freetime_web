@@ -31,7 +31,8 @@ export function getLandingCopy(language) {
           'Cuando tienes tiempo libre y cero ideas, FreeTime te propone planes que sí apetecen: hobbies cortos, momentos tranquilos o actividades para activarte según cómo te sientas hoy.',
         descriptionNote:
           'Prueba, guarda y descubre qué encaja contigo sin convertir el descanso en otra tarea.',
-        discoverCard: 'Descubre tu actividad',
+        discoverCard: '¡Descubre tu actividad!',
+        flipHint: '¡Gírame!',
         primaryAction: 'Regístrate',
         secondaryAction: 'Ver inicio de sesión',
         stats: [
@@ -177,7 +178,8 @@ export function getLandingCopy(language) {
           'When you have free time and zero ideas, FreeTime suggests plans that actually feel good: short hobbies, calm moments, or activities that fit how you feel today.',
         descriptionNote:
           'Try, save, and discover what fits you without turning rest into another task.',
-        discoverCard: 'Discover your activity',
+        discoverCard: 'Discover your activity!',
+        flipHint: 'Flip me!',
         primaryAction: 'Sign up',
         secondaryAction: 'View login',
         stats: [

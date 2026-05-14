@@ -84,7 +84,7 @@ function openActivity(activityId, source = 'normal') {
   router.push({
     name: 'activity',
     params: { id: activityId },
-    query: source === 'normal' ? {} : { source },
+    query: source === 'normal' ? { from: 'profile' } : { source, from: 'profile' },
   })
 }
 
@@ -2342,21 +2342,25 @@ const selectedSchedulingDayLabel = computed(() => {
   min-width: 46px;
   height: 46px;
   padding: 0;
-  border: 1px solid transparent;
+  border: 1px solid color-mix(in srgb, var(--violet) 38%, var(--surface-stroke-strong));
   border-radius: 999px;
-  background: color-mix(in srgb, var(--violet-soft) 42%, var(--surface-contrast));
-  color: #1f2937;
+  background:
+    radial-gradient(circle at 35% 25%, color-mix(in srgb, var(--surface-contrast) 18%, transparent), transparent 42%),
+    color-mix(in srgb, var(--violet) 28%, var(--surface-contrast));
+  color: color-mix(in srgb, var(--violet) 42%, white);
   opacity: 1;
   cursor: pointer;
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--violet) 18%, transparent);
   transition: all 0.2s ease;
   flex-shrink: 0;
 }
 
 .edit-schedule-button.btn:hover,
 .edit-schedule-button.btn:focus-visible {
-  background: color-mix(in srgb, var(--violet-soft) 62%, var(--surface-contrast));
-  border-color: color-mix(in srgb, var(--violet) 28%, transparent);
-  color: #111827;
+  background: color-mix(in srgb, var(--violet) 42%, var(--surface-contrast));
+  border-color: color-mix(in srgb, var(--violet) 68%, white);
+  color: white;
+  box-shadow: 0 16px 34px color-mix(in srgb, var(--violet) 28%, transparent);
   outline: none;
 }
 
