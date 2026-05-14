@@ -16,11 +16,14 @@ export const landingCopy = {
       { label: 'Comentaris', href: '#comments' },
       { label: 'Contactans', href: '#contact' },
     ],
+    discoverAction: 'Descobreix activitats',
+    discoverRoute: { name: 'home' },
     primaryAction: 'Registra`t',
     primaryRoute: { name: 'register' },
     secondaryAction: 'Iniciar sessio',
     secondaryRoute: { name: 'login' },
     tooltips: {
+      discover: 'Explorar sense iniciar sessio',
       login: 'Entrar al compte',
       register: 'Crear compte',
     },
@@ -42,6 +45,7 @@ export const landingCopy = {
       'Quan tens temps lliure i zero idees, FreeTime et dona plans que sí venen de gust: hobbies curts, moments tranquils o activitats per activar-te segons com et sents avui.',
     descriptionNote:
       'Prova, guarda i descobreix què t’encaixa sense convertir el descans en una altra tasca.',
+    discoverCard: 'Descobreix la teva activitat',
     primaryAction: 'Registra`t',
     primaryRoute: { name: 'register' },
     secondaryAction: 'Veure inici de sessio',
@@ -272,13 +276,12 @@ export const authCopy = {
     backLabel: 'Tornar a l’inici de sessió',
   },
   settings: {
-    title: 'Configuracio',
-    description:
-      'Aquesta pantalla encara no esta implementada dins del prototip, pero aqui aniria la configuracio del compte i de les preferencies.',
-    note:
-      'Mes endavant hi podras editar notificacions, preferencies d`activitats, accessibilitat i dades personals.',
-    backLabel: 'Tornar al perfil',
-    backHomeLabel: 'Tornar a Home',
+    title: 'Configuració',
+    description: '',
+    note: '',
+    backLabel: 'Tornar',
+    backHomeLabel: 'Tornar',
+    backTooltip: 'Tornar enrere',
   },
   aiConsult: {
     title: 'Consulta FreeTimeIA',
@@ -287,6 +290,7 @@ export const authCopy = {
     note:
       'Aqui aniria una conversa amb la IA per resoldre dubtes sobre activitats, materials o adaptacions.',
     backLabel: 'Tornar a Home',
+    backActivityLabel: 'Tornar a l`activitat',
   },
 }
 
@@ -328,6 +332,7 @@ export const homeCopy = {
     addSaved: 'Afegir a les meves activitats',
     deleteTooltip: 'Eliminar de les meves activitats',
     profile: 'Veure el teu perfil i les activitats guardades',
+    login: 'Iniciar sessio per guardar i gestionar activitats',
     logout: 'Tancar sessió',
     settings: 'Configuració',
   },

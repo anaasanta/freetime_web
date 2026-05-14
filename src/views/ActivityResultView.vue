@@ -33,6 +33,7 @@ import {
 } from 'lucide-vue-next'
 import { getActivityByIdWithTranslations } from '@/data/activitiesCopyI18n'
 import { getActivityCopy, getActivityResultCopy } from '@/data/testCopyI18n'
+import AuthPromptModal from '@/components/ui/AuthPromptModal.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import FeedbackModal from '@/components/ui/FeedbackModal.vue'
@@ -50,9 +51,10 @@ import {
 const route = useRoute()
 const router = useRouter()
 const { currentLanguage } = useI18n()
-const { selectedActivity, selectedActivitySource, savedActivities, startedActivities } = useAppSession()
+const { currentUser, selectedActivity, selectedActivitySource, savedActivities, startedActivities } = useAppSession()
 
 const showRejectModal = ref(false)
+const showAuthPrompt = ref(false)
 const selectedRejectReason = ref('effort')
 const detailVisualRef = ref(null)
 const detailIconRef = ref(null)
@@ -66,6 +68,11 @@ const activityImageModules = import.meta.glob('../data/activity_images/*.png', {
 
 const activityCopy = computed(() => getActivityCopy(currentLanguage.value)) 
 const activityResultCopy = computed(() => getActivityResultCopy(currentLanguage.value))
+const isGuest = computed(() => !currentUser.value)
+const loginRoute = computed(() => ({
+  name: 'login',
+  query: { redirect: router.currentRoute.value.fullPath },
+}))
 const rejectionOptions = computed(() => Object.entries(activityResultCopy.value.rejectModal.options))
 const translatedActivity = computed(() => {
   if (!selectedActivity.value) return null
@@ -131,6 +138,8 @@ const isStarted = computed(() =>
     : false,
 )
 
+const canRejectActivity = computed(() => ['test', 'test-adjusted'].includes(selectedActivitySource.value) && !isStarted.value)
+
 function iconFor(iconName) {
   if (iconName === 'book') return BookOpen
   if (iconName === 'dumbbell') return Dumbbell
@@ -160,6 +169,10 @@ function iconFor(iconName) {
 
 function handleSaveToggle() {
   if (!selectedActivity.value) return
+  if (isGuest.value) {
+    showAuthPrompt.value = true
+    return
+  }
 
   if (isSaved.value) {
     removeSavedActivity(selectedActivity.value.id)
@@ -170,12 +183,37 @@ function handleSaveToggle() {
 
 function handleStart() {
   if (!selectedActivity.value) return
+  if (isGuest.value) {
+    showAuthPrompt.value = true
+    return
+  }
+
   startActivity(selectedActivity.value.id)
-  router.push({ name: 'schedule-day' })
+}
+
+function openAiConsult() {
+  if (!selectedActivity.value) return
+  if (isGuest.value) {
+    showAuthPrompt.value = true
+    return
+  }
+
+  router.push({
+    name: 'ai-consult',
+    query: {
+      activityId: selectedActivity.value.id,
+      source: selectedActivitySource.value,
+    },
+  })
 }
 
 function openFinishModal() {
   if (!selectedActivity.value) return
+  if (isGuest.value) {
+    showAuthPrompt.value = true
+    return
+  }
+
   showFinishModal.value = true
 }
 
@@ -210,6 +248,10 @@ function openRejectModal() {
 
 function closeRejectModal() {
   showRejectModal.value = false
+}
+
+function closeAuthPrompt() {
+  showAuthPrompt.value = false
 }
 
 function confirmReject() {
@@ -337,7 +379,7 @@ function skipRejectQuestion() {
           <BaseButton
             variant="secondary"
             class="ai-consult-button"
-            @click="router.push({ name: 'ai-consult' })"
+            @click="openAiConsult"
           >
             {{ activityCopy.aiConsult.button }}
           </BaseButton>
@@ -364,7 +406,7 @@ function skipRejectQuestion() {
           </button>
 
           <BaseButton
-            v-if="selectedActivitySource === 'test'"
+            v-if="canRejectActivity"
             variant="danger"
             @click="openRejectModal"
           >
@@ -418,6 +460,13 @@ function skipRejectQuestion() {
         </div>
       </div>
     </div>
+
+    <AuthPromptModal
+      v-if="showAuthPrompt"
+      :copy="activityResultCopy.authRequired"
+      :login-route="loginRoute"
+      @close="closeAuthPrompt"
+    />
 
     <FeedbackModal
       v-if="showFinishModal"

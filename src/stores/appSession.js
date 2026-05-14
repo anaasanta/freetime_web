@@ -7,6 +7,7 @@ import { appMessages } from '@/data/uiText'
 
 const SESSION_STORAGE_KEY = 'freetime-session'
 const USER_STATE_STORAGE_KEY = 'freetime-user-state'
+const LAURA_ALLOWED_ACTIVITY_IDS = new Set(['yoga', 'breathing', 'walk'])
 
 const currentUser = ref(null)
 const loginError = ref('')
@@ -99,6 +100,22 @@ function normalizePlannedActivities(items) {
   }))
 }
 
+function normalizeUserActivityState(user, state) {
+  if (user.id !== 'laura') return state
+
+  return {
+    ...state,
+    savedActivityIds: state.savedActivityIds.filter((id) => LAURA_ALLOWED_ACTIVITY_IDS.has(id)),
+    startedActivityIds: state.startedActivityIds.filter((id) => LAURA_ALLOWED_ACTIVITY_IDS.has(id)),
+    completedActivities: state.completedActivities.filter((activity) =>
+      LAURA_ALLOWED_ACTIVITY_IDS.has(activity.activityId),
+    ),
+    plannedActivities: state.plannedActivities.filter((activity) =>
+      LAURA_ALLOWED_ACTIVITY_IDS.has(activity.activityId),
+    ),
+  }
+}
+
 function resetSessionState() {
   currentUser.value = null
   savedActivityIds.value = []
@@ -158,7 +175,7 @@ function getUserState(user) {
     : [...user.completedActivities]
   const completedActivityIds = baseCompletedActivities.map((activity) => activity.activityId)
 
-  return {
+  return normalizeUserActivityState(user, {
     savedActivityIds: Array.isArray(persisted?.savedActivityIds)
       ? [...persisted.savedActivityIds]
       : [...user.savedActivityIds],
@@ -169,7 +186,7 @@ function getUserState(user) {
     plannedActivities: Array.isArray(persisted?.plannedActivities)
       ? normalizePlannedActivities(persisted.plannedActivities)
       : normalizePlannedActivities(user.plannedActivities),
-  }
+  })
 }
 
 function persistSession() {
@@ -217,21 +234,28 @@ function restoreSession() {
 
     const persistedUserState = getUserState(foundUser)
 
+    const sessionUserState = normalizeUserActivityState(foundUser, {
+      savedActivityIds: Array.isArray(session.savedActivityIds)
+        ? [...session.savedActivityIds]
+        : persistedUserState.savedActivityIds,
+      startedActivityIds: Array.isArray(session.startedActivityIds)
+        ? [...session.startedActivityIds]
+        : Array.isArray(session.completedActivities)
+          ? [...new Set(session.completedActivities.map((activity) => activity.activityId))]
+          : persistedUserState.startedActivityIds,
+      completedActivities: Array.isArray(session.completedActivities)
+        ? [...session.completedActivities]
+        : persistedUserState.completedActivities,
+      plannedActivities: Array.isArray(session.plannedActivities)
+        ? normalizePlannedActivities(session.plannedActivities)
+        : persistedUserState.plannedActivities,
+    })
+
     currentUser.value = foundUser
-    savedActivityIds.value = Array.isArray(session.savedActivityIds)
-      ? [...session.savedActivityIds]
-      : persistedUserState.savedActivityIds
-    startedActivityIds.value = Array.isArray(session.startedActivityIds)
-      ? [...session.startedActivityIds]
-      : Array.isArray(session.completedActivities)
-        ? [...new Set(session.completedActivities.map((activity) => activity.activityId))]
-        : persistedUserState.startedActivityIds
-    completedActivities.value = Array.isArray(session.completedActivities)
-      ? [...session.completedActivities]
-      : persistedUserState.completedActivities
-    plannedActivities.value = Array.isArray(session.plannedActivities)
-      ? normalizePlannedActivities(session.plannedActivities)
-      : persistedUserState.plannedActivities
+    savedActivityIds.value = sessionUserState.savedActivityIds
+    startedActivityIds.value = sessionUserState.startedActivityIds
+    completedActivities.value = sessionUserState.completedActivities
+    plannedActivities.value = sessionUserState.plannedActivities
     selectedActivityId.value = session.selectedActivityId ?? null
     selectedActivitySource.value = session.selectedActivitySource ?? 'normal'
     scheduleDraft.value = session.scheduleDraft ?? null
@@ -380,14 +404,23 @@ export function rejectActivity(reason) {
 
   if (!testAnswers.value) return null
 
-  testRecommendations.value = getRecommendations({
+  const adjustedRecommendations = getRecommendations({
     ...testAnswers.value,
     excludedIds: testRejectedActivityIds.value,
     rejectionReason: reason,
     rejectedActivity,
   })
+  const fallbackRecommendations =
+    adjustedRecommendations.length > 0
+      ? adjustedRecommendations
+      : getRecommendations({
+          ...testAnswers.value,
+          excludedIds: testRejectedActivityIds.value,
+        })
 
-  const secondRecommendation = testRecommendations.value[0] ?? null
+  testRecommendations.value = fallbackRecommendations
+
+  const secondRecommendation = fallbackRecommendations[0] ?? null
   syncSelectedActivity(secondRecommendation?.id ?? null, 'test-adjusted')
 
   return secondRecommendation?.id ?? null

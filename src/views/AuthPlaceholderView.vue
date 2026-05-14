@@ -51,6 +51,9 @@ const content = computed(() => ({
   note: props.note || routeCopy.value.note,
   backLabel:
     props.backLabel ||
+    (route.name === 'ai-consult' && typeof route.query.activityId === 'string'
+      ? routeCopy.value.backActivityLabel
+      : null) ||
     (route.name === 'settings' && route.query.from === 'home'
       ? authPageCopy.value.settings.backHomeLabel
       : routeCopy.value.backLabel),
@@ -65,6 +68,15 @@ function goBack() {
   }
 
   if (route.name === 'ai-consult') {
+    if (typeof route.query.activityId === 'string') {
+      router.push({
+        name: 'activity',
+        params: { id: route.query.activityId },
+        query: { source: typeof route.query.source === 'string' ? route.query.source : 'normal' },
+      })
+      return
+    }
+
     router.push({ name: 'home' })
     return
   }

@@ -969,7 +969,7 @@ const selectedSchedulingDayLabel = computed(() => {
                   </div>
 
                   <button class="edit-schedule-button btn" type="button" :aria-label="`${profileCopy.calendar.editActivityAria}: ${activity.title}`" @click="openEditActivityModal(activity.id)">
-                    <Edit2 :size="16" />
+                    <Edit2 :size="22" :stroke-width="2.5" />
                   </button>
                 </article>
               </div>
@@ -2334,25 +2334,37 @@ const selectedSchedulingDayLabel = computed(() => {
   font-size: 0.85rem;
 }
 
-.edit-schedule-button {
+.edit-schedule-button.btn {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 34px;
-  height: 34px;
-  border: 1px solid var(--surface-stroke-strong);
-  border-radius: 8px;
-  background: transparent;
-  color: var(--foreground);
+  width: 46px;
+  min-width: 46px;
+  height: 46px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--violet-soft) 42%, var(--surface-contrast));
+  color: #1f2937;
+  opacity: 1;
   cursor: pointer;
   transition: all 0.2s ease;
   flex-shrink: 0;
 }
 
-.edit-schedule-button:hover {
-  background: color-mix(in srgb, var(--surface-contrast) 40%, transparent);
-  border-color: var(--primary);
-  color: var(--primary);
+.edit-schedule-button.btn:hover,
+.edit-schedule-button.btn:focus-visible {
+  background: color-mix(in srgb, var(--violet-soft) 62%, var(--surface-contrast));
+  border-color: color-mix(in srgb, var(--violet) 28%, transparent);
+  color: #111827;
+  outline: none;
+}
+
+.edit-schedule-button svg {
+  width: 24px;
+  min-width: 24px;
+  height: 24px;
+  opacity: 1;
 }
 
 .add-schedule-button {

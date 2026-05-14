@@ -1,5 +1,6 @@
 <script setup>
 import { computed } from 'vue'
+import { RouterLink } from 'vue-router'
 import AppContainer from '@/components/ui/AppContainer.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
 import SectionHeader from '@/components/ui/SectionHeader.vue'
@@ -24,6 +25,8 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
         :brand-route="displayCopy.nav.brandRoute"
         :aria-label="displayCopy.nav.ariaLabel"
         :links="displayCopy.nav.links"
+        :discover-action="displayCopy.nav.discoverAction"
+        :discover-route="displayCopy.nav.discoverRoute"
         :primary-action="displayCopy.nav.primaryAction"
         :primary-route="displayCopy.nav.primaryRoute"
         :secondary-action="displayCopy.nav.secondaryAction"
@@ -61,8 +64,22 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
           </div>
         </div>
 
-        <div class="landing-hero-art" aria-hidden="true">
-          <img :src="HeroLogo" alt="" class="landing-hero-logo" />
+        <div class="landing-hero-art">
+          <RouterLink class="landing-hero-orb" :to="displayCopy.nav.discoverRoute" :aria-label="displayCopy.hero.discoverCard">
+            <span class="landing-hero-orb-face landing-hero-orb-front">
+              <img :src="HeroLogo" alt="" class="landing-hero-logo" />
+            </span>
+            <span class="landing-hero-orb-face landing-hero-orb-back">
+              <span class="orb-glow"></span>
+              <span class="orb-ring ring-one"></span>
+              <span class="orb-ring ring-two"></span>
+              <span class="orb-ring ring-three"></span>
+              <span class="orb-spark spark-one"></span>
+              <span class="orb-spark spark-two"></span>
+              <span class="orb-spark spark-three"></span>
+              <strong>{{ displayCopy.hero.discoverCard }}</strong>
+            </span>
+          </RouterLink>
         </div>
       </AppContainer>
     </section>
@@ -295,16 +312,160 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
   display: flex;
   justify-content: center;
   align-items: center;
-  min-height: 420px;
+  min-height: 360px;
+}
+
+.landing-hero-orb {
+  position: relative;
+  display: block;
+  width: clamp(260px, 25vw, 360px);
+  max-width: min(100%, 360px);
+  aspect-ratio: 1 / 1;
+  border-radius: 50%;
+  color: var(--foreground);
+  text-decoration: none;
+  perspective: 1200px;
+  transform-style: preserve-3d;
+}
+
+.landing-hero-orb-face {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  backface-visibility: hidden;
+  transition: transform 0.7s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.landing-hero-orb-front {
+  transform: rotateY(0deg);
+}
+
+.landing-hero-orb-back {
+  overflow: hidden;
+  padding: 14%;
+  background:
+    radial-gradient(circle at 30% 22%, color-mix(in srgb, var(--emerald-soft) 82%, transparent), transparent 34%),
+    radial-gradient(circle at 70% 78%, color-mix(in srgb, var(--violet-soft) 78%, transparent), transparent 36%),
+    linear-gradient(145deg, color-mix(in srgb, var(--surface-contrast) 92%, transparent), color-mix(in srgb, var(--sky-soft) 58%, transparent));
+  box-shadow:
+    0 22px 70px color-mix(in srgb, var(--violet) 16%, transparent),
+    inset 0 1px 0 var(--surface-inset-highlight);
+  color: var(--foreground);
+  transform: rotateY(180deg);
+}
+
+.landing-hero-orb-back strong {
+  position: relative;
+  z-index: 3;
+  max-width: 8.8ch;
+  color: var(--violet-strong);
+  font-size: clamp(1.45rem, 2.5vw, 2.25rem);
+  font-weight: 900;
+  line-height: 1;
+  text-align: center;
+}
+
+.orb-glow,
+.orb-ring,
+.orb-spark {
+  position: absolute;
+  pointer-events: none;
+}
+
+.orb-glow {
+  inset: 18%;
+  border-radius: 50%;
+  background: radial-gradient(circle, color-mix(in srgb, var(--surface-contrast) 76%, transparent), transparent 70%);
+  filter: blur(2px);
+}
+
+.orb-ring {
+  inset: 13%;
+  border: 2px solid color-mix(in srgb, var(--violet) 22%, transparent);
+  border-radius: 44% 56% 52% 48%;
+}
+
+.ring-one {
+  transform: rotate(18deg);
+}
+
+.ring-two {
+  inset: 21%;
+  border-color: color-mix(in srgb, var(--sky) 20%, transparent);
+  border-radius: 56% 44% 48% 52%;
+  transform: rotate(68deg);
+}
+
+.ring-three {
+  inset: 7%;
+  border-color: color-mix(in srgb, var(--emerald) 18%, transparent);
+  border-radius: 52% 48% 42% 58%;
+  transform: rotate(-34deg);
+}
+
+.orb-spark {
+  width: 14px;
+  height: 14px;
+  color: var(--violet);
+}
+
+.orb-spark::before,
+.orb-spark::after {
+  position: absolute;
+  inset: 6px 0;
+  border-radius: 999px;
+  background: currentColor;
+  content: '';
+}
+
+.orb-spark::after {
+  transform: rotate(90deg);
+}
+
+.orb-spark.spark-one {
+  top: 24%;
+  left: 22%;
+}
+
+.orb-spark.spark-two {
+  right: 28%;
+  bottom: 27%;
+  color: var(--emerald);
+  transform: scale(0.78);
+}
+
+.orb-spark.spark-three {
+  left: 26%;
+  bottom: 18%;
+  color: var(--sky);
+  transform: scale(0.62);
+}
+
+.landing-hero-orb:hover .landing-hero-orb-front,
+.landing-hero-orb:focus-visible .landing-hero-orb-front {
+  transform: rotateY(180deg);
+}
+
+.landing-hero-orb:hover .landing-hero-orb-back,
+.landing-hero-orb:focus-visible .landing-hero-orb-back {
+  transform: rotateY(360deg);
+}
+
+.landing-hero-orb:focus-visible {
+  outline: 3px solid color-mix(in srgb, var(--emerald) 70%, var(--surface-contrast));
+  outline-offset: 8px;
 }
 
 .landing-hero-logo {
-  width: min(100%, 620px);
-  max-height: 62vh;
+  width: 100%;
+  height: 100%;
   border-radius: 50%;
   image-rendering: auto;
   filter: none;
   object-fit: contain;
+  transform: scale(1.3);
 }
 
 .landing-section-header {
@@ -365,7 +526,6 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
 
 .landing-hero {
   min-height: 64vh;
-  overflow-y: auto;
 }
 
 @media (max-width: 1100px) {
@@ -384,8 +544,8 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
     min-height: auto;
   }
 
-  .landing-hero-logo {
-    width: min(72vw, 420px);
+  .landing-hero-orb {
+    width: min(72vw, 340px);
   }
 }
 

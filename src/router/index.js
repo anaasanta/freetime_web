@@ -12,7 +12,7 @@ import ProfileView from '@/views/ProfileView.vue'
 import RegisterView from '@/views/AuthPlaceholderView.vue'
 import ScheduleConfirmView from '@/views/ScheduleConfirmView.vue'
 import ScheduleDayView from '@/views/ScheduleDayView.vue'
-import SettingsView from '@/views/AuthPlaceholderView.vue'
+import SettingsView from '@/views/SettingsView.vue'
 import TestView from '@/views/TestView.vue'
 
 initializeAppSession()
@@ -36,13 +36,12 @@ const routes = [
     meta: { guestOnly: true },
   },
   { path: '/register', name: 'register', component: RegisterView, meta: { guestOnly: true } },
-  { path: '/home', name: 'home', component: HomeView, meta: { requiresAuth: true } },
-  { path: '/test', name: 'test', component: TestView, meta: { requiresAuth: true } },
+  { path: '/home', name: 'home', component: HomeView },
+  { path: '/test', name: 'test', component: TestView },
   {
     path: '/activity/:id',
     name: 'activity',
     component: ActivityView,
-    meta: { requiresAuth: true },
   },
   {
     path: '/ai-consult',
@@ -67,7 +66,6 @@ const routes = [
     path: '/settings',
     name: 'settings',
     component: SettingsView,
-    meta: { requiresAuth: true },
   },
 ]
 

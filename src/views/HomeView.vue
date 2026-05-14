@@ -1,5 +1,6 @@
 <script setup>
 import { computed, ref } from 'vue'
+import { RouterLink } from 'vue-router'
 import { useRouter } from 'vue-router'
 import {
   Sparkles,
@@ -36,6 +37,7 @@ import {
   Settings,
   Menu,
   Trash2,
+  X,
 } from 'lucide-vue-next'
 
 import AppBrand from '@/components/layout/AppBrand.vue'
@@ -43,6 +45,7 @@ import AppNavbar from '@/components/layout/AppNavbar.vue'
 import ThemeToggle from '@/components/theme/ThemeToggle.vue'
 import AppContainer from '@/components/ui/AppContainer.vue'
 import AppTooltip from '@/components/ui/AppTooltip.vue'
+import AuthPromptModal from '@/components/ui/AuthPromptModal.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import ClickSpark from '@/components/ui/ClickSpark/ClickSpark.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
@@ -70,8 +73,14 @@ const savedRow = ref(null)
 const activeAddTooltip = ref('')
 const addTooltipStyle = ref({})
 const showConfirmDeleteId = ref(null)
+const showGuestAuthPrompt = ref(false)
 
 const displayCopy = computed(() => getHomeCopy(currentLanguage.value))
+const isGuest = computed(() => !currentUser.value)
+const loginRoute = computed(() => ({
+  name: 'login',
+  query: { redirect: router.currentRoute.value.fullPath },
+}))
 
 function translatedActivity(activity) {
   return getActivityByIdWithTranslations(activity.id, currentLanguage.value) ?? activity
@@ -82,12 +91,13 @@ const translatedStartedActivities = computed(() => startedActivities.value.map(t
 const translatedRecommendedActivities = computed(() => recommendedActivities.value.map(translatedActivity))
 
 const activityAtlasActivities = computed(() => {
+  const atlasTargetCount = 9
   const uniqueActivities = new Map()
   const savedIds = new Set(translatedSavedActivities.value.map((activity) => activity.id))
   const recommendedIds = new Set(translatedRecommendedActivities.value.map((activity) => activity.id))
   const recommendedPool = translatedRecommendedActivities.value
     .filter((activity) => !savedIds.has(activity.id))
-    .slice(0, 3)
+    .slice(0, 4)
 
   const hasLongRecommendation = recommendedPool.some((activity) => activity.duration >= 45)
 
@@ -106,12 +116,18 @@ const activityAtlasActivities = computed(() => {
     }
   }
 
-  if (recommendedPool.length < 4) {
-    allActivities
+  if (recommendedPool.length < atlasTargetCount) {
+    const variedExtras = allActivities
       .map(translatedActivity)
       .filter((activity) => !savedIds.has(activity.id) && !recommendedIds.has(activity.id))
-      .sort((a, b) => b.duration - a.duration)
-      .slice(0, 4 - recommendedPool.length)
+      .sort((a, b) => {
+        const aScore = Math.abs(a.energy - 50) + Math.abs(a.duration - 35)
+        const bScore = Math.abs(b.energy - 50) + Math.abs(b.duration - 35)
+        return bScore - aScore
+      })
+
+    variedExtras
+      .slice(0, atlasTargetCount - recommendedPool.length)
       .forEach((activity) => recommendedPool.push(activity))
   }
 
@@ -133,7 +149,7 @@ const activityAtlasActivities = computed(() => {
     },
   )
 
-  return [...uniqueActivities.values()].slice(0, 10).map((activity, index) => {
+  return [...uniqueActivities.values()].slice(0, 12).map((activity, index) => {
     const durationPercent = clamp(((activity.duration - 10) / 80) * 100, 0, 100)
     const energyPercent = clamp(activity.energy, 0, 100)
     const spreadX = ((index % 4) - 1.5) * 3.2
@@ -288,6 +304,11 @@ function closeAddTooltip() {
 }
 
 function handleAddActivity(activityId) {
+  if (isGuest.value) {
+    showGuestAuthPrompt.value = true
+    return
+  }
+
   window.setTimeout(() => {
     addSavedActivity(activityId)
   }, 420)
@@ -305,6 +326,10 @@ function confirmRemoveSavedActivity() {
 
 function cancelConfirmDelete() {
   showConfirmDeleteId.value = null
+}
+
+function closeGuestAuthPrompt() {
+  showGuestAuthPrompt.value = false
 }
 </script>
 
@@ -385,7 +410,7 @@ function cancelConfirmDelete() {
     <div class="header-actions">
       <ThemeToggle />
 
-        <AppTooltip :label="displayCopy.tooltips.profile" position="bottom">
+        <AppTooltip v-if="!isGuest" :label="displayCopy.tooltips.profile" position="bottom">
             <button class="profile-button btn" type="button" @click="router.push({ name: 'profile' })">
             <img
                 v-if="avatarSrc"
@@ -397,6 +422,15 @@ function cancelConfirmDelete() {
             </button>
         </AppTooltip>
 
+            <AppTooltip v-if="isGuest" :label="displayCopy.tooltips.login" position="bottom">
+              <BaseButton
+                :as="RouterLink"
+                class="home-login-button"
+                :to="loginRoute"
+              >
+                {{ displayCopy.loginAction }}
+              </BaseButton>
+            </AppTooltip>
             <AppTooltip :label="displayCopy.tooltips.logout" position="bottom">
                 <button class="logout-button btn" type="button" @click="handleLogout">
                 <LogOut :size="20" />
@@ -432,6 +466,75 @@ function cancelConfirmDelete() {
         </AppTooltip>
         </div>
 
+      <div v-if="isGuest" class="guest-home-preview">
+        <section class="home-section">
+          <SectionHeader :title="displayCopy.savedActivitiesTitle" size="section" class="section-heading" />
+          <EmptyState>{{ displayCopy.savedActivitiesEmpty }}</EmptyState>
+        </section>
+
+        <section class="home-section">
+          <SectionHeader :title="displayCopy.recommendedTitle" size="section" class="section-heading">
+            <template #actions>
+              <span class="chip">{{ displayCopy.recommendedBadge }}</span>
+            </template>
+          </SectionHeader>
+          <EmptyState>{{ displayCopy.guest.locked }}</EmptyState>
+        </section>
+
+        <section class="home-section">
+          <SectionHeader :title="displayCopy.startedActivitiesTitle" size="section" class="section-heading" />
+          <EmptyState>{{ displayCopy.startedActivitiesEmpty }}</EmptyState>
+        </section>
+
+        <section class="activity-atlas home-section" :aria-label="displayCopy.activityAtlas.title">
+          <SectionHeader :title="displayCopy.activityAtlas.title" size="section" class="section-heading activity-atlas-heading">
+            <template #actions>
+              <div class="activity-atlas-legend" aria-hidden="true">
+                <div class="atlas-legend-item">
+                  <span class="atlas-legend-dot recommended"></span>
+                  <small>{{ displayCopy.activityAtlas.legend.recommended }}</small>
+                </div>
+              </div>
+            </template>
+          </SectionHeader>
+
+          <div class="activity-atlas-visual">
+            <span class="atlas-axis atlas-axis-x"></span>
+            <span class="atlas-axis atlas-axis-y"></span>
+            <span class="atlas-axis-label atlas-axis-top">{{ displayCopy.activityAtlas.axis.highEnergy }}</span>
+            <span class="atlas-axis-label atlas-axis-bottom">{{ displayCopy.activityAtlas.axis.lowEnergy }}</span>
+            <span class="atlas-axis-label atlas-axis-left">{{ displayCopy.activityAtlas.axis.lessTime }}</span>
+            <span class="atlas-axis-label atlas-axis-right">{{ displayCopy.activityAtlas.axis.moreTime }}</span>
+
+            <button
+              v-for="activity in activityAtlasActivities"
+              :key="activity.id"
+              class="atlas-node btn"
+              :class="[`tone-${activity.tone || 'violet'}`, `source-${activity.atlasSource}`]"
+              :style="activity.atlasStyle"
+              type="button"
+              :aria-label="activity.title"
+              @click="openActivity(activity.id)"
+            >
+              <span class="activity-icon">
+                <component :is="iconFor(activity)" :size="24" />
+              </span>
+              <span class="atlas-node-title">{{ activity.title }}</span>
+            </button>
+          </div>
+        </section>
+
+        <div class="guest-lock-card">
+          <Sparkles :size="28" />
+          <h2>{{ displayCopy.guest.title }}</h2>
+          <p>{{ displayCopy.guest.description }}</p>
+          <BaseButton :as="RouterLink" :to="loginRoute" class="guest-login-cta">
+            {{ displayCopy.guest.login }}
+          </BaseButton>
+        </div>
+      </div>
+
+      <template v-else>
       <section class="home-section">
         <SectionHeader :title="displayCopy.savedActivitiesTitle" size="section" class="section-heading">
           <template v-if="translatedSavedActivities.length > 0" #actions>
@@ -612,6 +715,7 @@ function cancelConfirmDelete() {
           </button>
         </div>
       </section>
+      </template>
 
       <span
         v-if="activeAddTooltip"
@@ -623,7 +727,9 @@ function cancelConfirmDelete() {
 
     <div v-if="showConfirmDeleteId" class="confirm-modal">
       <div class="confirm-dialog" role="dialog" aria-modal="true">
-        <button class="confirm-close btn" type="button" @click="cancelConfirmDelete">×</button>
+        <button class="confirm-close btn" type="button" :aria-label="displayCopy.deleteConfirm.cancel" @click="cancelConfirmDelete">
+          <X :size="18" />
+        </button>
         <h3>{{ displayCopy.deleteConfirm.title }}</h3>
         <p>{{ displayCopy.deleteConfirm.message }}</p>
         <div class="confirm-actions">
@@ -632,6 +738,13 @@ function cancelConfirmDelete() {
         </div>
       </div>
     </div>
+
+    <AuthPromptModal
+      v-if="showGuestAuthPrompt"
+      :copy="displayCopy.guest"
+      :login-route="loginRoute"
+      @close="closeGuestAuthPrompt"
+    />
     </AppContainer>
   </main>
 </template>
@@ -668,6 +781,11 @@ h1 {
   display: flex;
   gap: 12px;
   align-items: center;
+}
+
+.home-login-button {
+  min-height: 46px;
+  padding-inline: 18px;
 }
 
 .profile-button,
@@ -862,36 +980,92 @@ h1 {
   inset: 0;
   display: grid;
   place-items: center;
-  background: color-mix(in srgb, var(--background) 45%, transparent);
+  padding: 24px;
+  background: color-mix(in srgb, var(--background) 58%, transparent);
+  backdrop-filter: blur(3px);
   z-index: 1200;
 }
 
 .confirm-dialog {
-  width: 360px;
-  background: var(--surface-contrast);
-  border-radius: 12px;
-  padding: 18px;
+  width: min(100%, 440px);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--violet-soft) 18%, transparent), transparent 58%),
+    var(--surface-contrast);
+  border: 1px solid var(--surface-stroke-strong);
+  border-radius: 28px;
+  padding: 34px 34px 28px;
   box-shadow: var(--shadow-panel-strong);
   color: var(--foreground);
   position: relative;
   text-align: center;
 }
 
+.confirm-dialog h3 {
+  margin: 0;
+  color: var(--violet-strong);
+  font-size: clamp(1.45rem, 2.1vw, 1.7rem);
+  line-height: 1.18;
+  font-weight: 900;
+}
+
+.confirm-dialog p {
+  max-width: 32ch;
+  margin: 12px auto 0;
+  color: var(--muted-foreground);
+  font-size: 1rem;
+  line-height: 1.6;
+}
+
 .confirm-close {
   position: absolute;
-  right: 10px;
-  top: 8px;
-  border: 0;
-  background: transparent;
+  right: 14px;
+  top: 14px;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--surface-contrast) 76%, transparent);
   color: var(--muted-foreground);
-  font-size: 20px;
+}
+
+.confirm-close:hover,
+.confirm-close:focus-visible {
+  background: color-mix(in srgb, var(--violet-soft) 62%, var(--surface-contrast));
+  color: var(--foreground);
+  outline: none;
 }
 
 .confirm-actions {
   display: flex;
   justify-content: flex-end;
-  gap: 10px;
-  margin-top: 16px;
+  gap: 12px;
+  margin-top: 26px;
+}
+
+.confirm-actions > * {
+  min-width: 116px;
+}
+
+.confirm-actions .secondary-button {
+  border-color: color-mix(in srgb, var(--violet-soft) 70%, var(--border));
+  background: color-mix(in srgb, var(--violet-soft) 34%, var(--surface-contrast));
+  color: var(--violet-strong);
+  box-shadow: none;
+}
+
+.confirm-actions .secondary-button:hover,
+.confirm-actions .secondary-button:focus-visible {
+  border-color: color-mix(in srgb, var(--violet) 34%, var(--border));
+  background: color-mix(in srgb, var(--violet-soft) 54%, var(--surface-contrast));
+}
+
+.confirm-actions .primary-button {
+  background: var(--primary);
+  color: var(--primary-foreground);
+  box-shadow: 0 10px 22px var(--primary-shadow);
 }
 
 .hero-area {
@@ -971,6 +1145,80 @@ h1 {
 
 .home-section:has(.saved-row) {
   z-index: 20;
+}
+
+.guest-home-preview {
+  position: relative;
+  display: grid;
+  gap: 0;
+  margin-top: 10px;
+}
+
+.guest-home-preview > .home-section:not(.activity-atlas) {
+  opacity: 0.48;
+  filter: saturate(0.72);
+  pointer-events: none;
+}
+
+.guest-home-preview::before {
+  position: absolute;
+  top: 28px;
+  right: -12px;
+  left: -12px;
+  z-index: 8;
+  height: min(560px, 56vh);
+  border-radius: 36px;
+  background: color-mix(in srgb, var(--background) 26%, transparent);
+  backdrop-filter: blur(2px);
+  content: '';
+}
+
+.guest-lock-card {
+  position: absolute;
+  top: min(340px, 34vh);
+  left: 50%;
+  z-index: 10;
+  display: grid;
+  align-content: center;
+  justify-items: center;
+  gap: 14px;
+  width: min(92%, 620px);
+  padding: clamp(24px, 4vw, 36px);
+  border: 1px solid var(--surface-stroke-strong);
+  border-radius: 28px;
+  background: color-mix(in srgb, var(--surface-contrast) 72%, transparent);
+  box-shadow: var(--shadow-panel-strong);
+  text-align: center;
+  transform: translate(-50%, -50%);
+  backdrop-filter: blur(18px);
+}
+
+.guest-lock-card svg {
+  color: var(--violet);
+}
+
+.guest-lock-card h2,
+.guest-lock-card p {
+  margin: 0;
+}
+
+.guest-lock-card h2 {
+  color: var(--foreground);
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  line-height: 1.04;
+}
+
+.guest-lock-card p {
+  color: var(--muted-foreground);
+  line-height: 1.6;
+}
+
+.guest-login-cta.primary-button,
+.home-login-button.primary-button {
+  border: 0;
+  background: linear-gradient(90deg, var(--violet-strong), var(--sky));
+  color: var(--primary-foreground);
+  box-shadow: var(--shadow-glow);
 }
 
 .section-heading {
@@ -2052,4 +2300,16 @@ h1 {
   width: 100%;
   height: 100%;
 }
+
+@media (max-width: 820px) {
+  .guest-lock-card {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: 100%;
+    margin-top: 22px;
+    transform: none;
+  }
+}
 </style>
+

@@ -52,10 +52,11 @@ export function getAuthCopy(language) {
       settings: {
         ...authCopy.settings,
         title: 'Ajustes',
-        description: 'Pantalla de configuración',
-        note: 'No forma parte del prototipo',
-        backLabel: 'Volver al perfil',
-        backHomeLabel: 'Volver al inicio',
+        description: '',
+        note: '',
+        backLabel: 'Volver',
+        backHomeLabel: 'Volver',
+        backTooltip: 'Volver atrás',
       },
       aiConsult: {
         ...authCopy.aiConsult,
@@ -63,6 +64,7 @@ export function getAuthCopy(language) {
         description: 'Pantalla para probar una consulta rápida.',
         note: 'No forma parte del prototipo',
         backLabel: 'Volver al inicio',
+        backActivityLabel: 'Volver a la actividad',
       },
     }
   }
@@ -118,10 +120,11 @@ export function getAuthCopy(language) {
       settings: {
         ...authCopy.settings,
         title: 'Settings',
-        description: 'Screen of adjustments',
-        note: 'Not part of the prototype',
-        backLabel: 'Back to profile',
-        backHomeLabel: 'Back to home',
+        description: '',
+        note: '',
+        backLabel: 'Back',
+        backHomeLabel: 'Back',
+        backTooltip: 'Go back',
       },
       aiConsult: {
         ...authCopy.aiConsult,
@@ -129,6 +132,7 @@ export function getAuthCopy(language) {
         description: 'Screen to try a quick consultation.',
         note: 'Not part of the prototype',
         backLabel: 'Back to home',
+        backActivityLabel: 'Back to activity',
       },
     }
   }

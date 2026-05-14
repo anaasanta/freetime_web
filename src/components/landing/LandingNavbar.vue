@@ -46,6 +46,14 @@ defineProps({
     type: Array,
     default: () => [],
   },
+  discoverAction: {
+    type: String,
+    default: '',
+  },
+  discoverRoute: {
+    type: Object,
+    default: () => ({ name: 'home' }),
+  },
   primaryAction: {
     type: String,
     required: true,
@@ -87,6 +95,21 @@ defineProps({
           :label="link.label"
           @navigate="onSectionLinkClick($event, link.href)"
         />
+        <AppTooltip
+          v-if="discoverAction"
+          :label="tooltips.discover"
+          position="bottom"
+          class="landing-tooltip-wrap landing-discover-tooltip"
+        >
+          <BaseButton
+            :as="RouterLink"
+            variant="secondary"
+            class="landing-navbar-button landing-discover-button"
+            :to="discoverRoute"
+          >
+            {{ discoverAction }}
+          </BaseButton>
+        </AppTooltip>
       </nav>
     </template>
 
@@ -135,7 +158,7 @@ defineProps({
 
 .landing-links {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 0.7fr));
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   align-items: center;
   gap: 10px;
   width: 100%;
@@ -174,9 +197,61 @@ defineProps({
   color: var(--foreground);
 }
 
+.landing-discover-button.secondary-button {
+  position: relative;
+  overflow: hidden;
+  border: 0;
+  background:
+    radial-gradient(circle at 18% 18%, color-mix(in srgb, var(--surface-contrast) 34%, transparent), transparent 28%),
+    linear-gradient(110deg, var(--violet-strong), var(--violet) 58%, var(--sky));
+  color: var(--primary-foreground);
+  box-shadow: 0 14px 30px color-mix(in srgb, var(--violet) 24%, transparent);
+}
+
+.landing-discover-button.secondary-button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 18px 36px color-mix(in srgb, var(--violet) 30%, transparent);
+}
+
+@media (max-width: 1500px) {
+  .landing-navbar {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+
+  .landing-navbar :deep(.app-navbar__start),
+  .landing-navbar :deep(.app-navbar__center),
+  .landing-navbar :deep(.app-navbar__end) {
+    width: 100%;
+  }
+
+  .landing-navbar :deep(.app-navbar__start) {
+    justify-content: flex-start;
+  }
+
+  .landing-navbar :deep(.app-navbar__center),
+  .landing-navbar :deep(.app-navbar__end) {
+    justify-content: stretch;
+  }
+
+  .landing-links {
+    grid-template-columns: repeat(4, minmax(130px, 1fr));
+  }
+
+  .landing-navbar-actions {
+    display: grid;
+    grid-template-columns: auto minmax(150px, 1fr) minmax(150px, 1fr);
+    width: 100%;
+  }
+
+  .landing-navbar-button {
+    width: 100%;
+  }
+}
+
 @media (max-width: 920px) {
   .landing-links {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
     gap: 10px;
   }
 }

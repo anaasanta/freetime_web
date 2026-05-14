@@ -241,6 +241,12 @@ export function getActivityResultCopy(language) {
         backToHome: 'Volver a Home',
         notFound: 'No se ha encontrado esta actividad',
       },
+      authRequired: {
+        title: '¿Quieres guardar tus actividades?',
+        description: 'Inicia sesión para guardar, empezar y programar tus actividades.',
+        login: 'Iniciar sesión',
+        cancel: 'Cancelar',
+      },
       rejectModal: {
         title: '¿Por qué no te interesa?',
         subtitle: 'Elige un motivo para recalcular otra propuesta.',
@@ -300,6 +306,12 @@ export function getActivityResultCopy(language) {
         backToHome: 'Back to Home',
         notFound: 'This activity was not found',
       },
+      authRequired: {
+        title: 'Want to save your activities?',
+        description: 'Log in to save, start, and schedule your activities.',
+        login: 'Log in',
+        cancel: 'Cancel',
+      },
       rejectModal: {
         title: 'Why are you not interested?',
         subtitle: 'Choose a reason to recalculate another suggestion.',
@@ -357,6 +369,12 @@ export function getActivityResultCopy(language) {
       feedback: 'Feedback',
       backToHome: 'Tornar a Home',
       notFound: 'No s\'ha trobat aquesta activitat',
+    },
+    authRequired: {
+      title: 'Vols guardar les teves activitats?',
+      description: 'Inicia sessio per guardar, començar i programar les teves activitats.',
+      login: 'Iniciar sessio',
+      cancel: 'Cancel·lar',
     },
     rejectModal: {
       title: 'Per què no t\'interessa?',

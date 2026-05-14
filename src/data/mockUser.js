@@ -287,22 +287,7 @@ export const mockUsers = [
       },
     ],
 
-    plannedActivities: [
-      {
-        id: 'planned-1',
-        activityId: 'reading',
-        date: '2026-04-21',
-        time: '21:00',
-        reminder: '30 min abans',
-      },
-      {
-        id: 'planned-2',
-        activityId: 'drawing',
-        date: '2026-04-26',
-        time: '22:00',
-        reminder: '30 min abans',
-      },
-    ],
+    plannedActivities: [],
   },
 
   {
