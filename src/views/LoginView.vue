@@ -112,21 +112,21 @@ function togglePasswordVisibility() {
               <input
                 :id="loginCopy.fields.password.id"
                 v-model="password"
-                class="field-input password-input"
+                class="field-input form-control password-input"
                 :type="passwordFieldType"
                 :placeholder="loginCopy.fields.password.placeholder"
                 :autocomplete="loginCopy.fields.password.autocomplete"
               />
 
               <button
-                class="password-toggle-button"
+                class="password-toggle-button btn"
                 type="button"
                 :aria-label="passwordToggleLabel"
                 :title="passwordToggleLabel"
                 @click="togglePasswordVisibility"
               >
-                <Eye v-if="!isPasswordVisible" :size="18" />
-                <EyeOff v-else :size="18" />
+                <Eye v-if="!isPasswordVisible" :size="24" />
+                <EyeOff v-else :size="24" />
               </button>
             </span>
           </label>
@@ -182,20 +182,24 @@ function togglePasswordVisibility() {
 }
 
 .login-card {
-  width: min(100%, 760px);
-  max-width: 760px;
+  width: min(100%, 980px);
+  max-width: 980px;
   margin-top: 84px;
   box-shadow: var(--shadow-panel-strong);
   backdrop-filter: blur(22px);
 }
 
 .login-header {
-  max-width: 640px;
+  max-width: none;
 }
 
 .login-header .page-title {
   color: var(--violet-strong);
-  font-size: clamp(2.4rem, 5.5vw, 3.6rem);
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
 }
 
 .login-links {
@@ -247,7 +251,7 @@ function togglePasswordVisibility() {
 }
 
 .password-input {
-  padding-right: 52px;
+  padding-right: 64px;
 }
 
 .password-toggle-button {
@@ -257,8 +261,8 @@ function togglePasswordVisibility() {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 30px;
-  height: 30px;
+  width: 42px;
+  height: 42px;
   border: 0;
   border-radius: 999px;
   background: transparent;
@@ -282,6 +286,10 @@ function togglePasswordVisibility() {
 
   .login-card {
     margin-top: 56px;
+  }
+
+  .login-header .page-title {
+    white-space: normal;
   }
 }
 </style>

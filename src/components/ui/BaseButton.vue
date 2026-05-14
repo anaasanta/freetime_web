@@ -30,6 +30,13 @@ const variantClass = computed(() => {
   return `${props.variant}-button`
 })
 
+const bootstrapVariantClass = computed(() => {
+  if (props.variant === 'primary') return 'btn-primary'
+  if (props.variant === 'secondary') return 'btn-outline-secondary'
+  if (props.variant === 'danger') return 'btn-outline-danger'
+  return 'btn-link'
+})
+
 const buttonType = computed(() => (props.as === 'button' ? props.type : undefined))
 </script>
 
@@ -37,8 +44,12 @@ const buttonType = computed(() => (props.as === 'button' ? props.type : undefine
   <component
     :is="as"
     :type="buttonType"
-    class="base-button"
-    :class="[variantClass, { 'base-button--block': block, 'base-button--icon-only': iconOnly }]"
+    class="base-button btn"
+    :class="[
+      bootstrapVariantClass,
+      variantClass,
+      { 'w-100': block, 'base-button--block': block, 'base-button--icon-only': iconOnly },
+    ]"
   >
     <slot />
   </component>

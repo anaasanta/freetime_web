@@ -35,8 +35,6 @@ import {
   Edit2,
   Plus,
   CheckCircle2,
-  Star,
-  X,
 } from 'lucide-vue-next'
 import AppBrand from '@/components/layout/AppBrand.vue'
 import AppNavbar from '@/components/layout/AppNavbar.vue'
@@ -46,10 +44,12 @@ import AppContainer from '@/components/ui/AppContainer.vue'
 import AppTooltip from '@/components/ui/AppTooltip.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import FeedbackModal from '@/components/ui/FeedbackModal.vue'
 import SectionHeader from '@/components/ui/SectionHeader.vue'
 import { landingCopy } from '@/data/uiText'
 import { getHomeCopy, getProfileCopy } from '@/data/homeCopyI18n'
 import { getActivityByIdWithTranslations } from '@/data/activitiesCopyI18n'
+import { getActivityResultCopy } from '@/data/testCopyI18n'
 import { logout, syncSelectedActivity, useAppSession, addPlannedActivity, updatePlannedActivity, deletePlannedActivity, completeActivity } from '@/stores/appSession'
 import { useI18n } from '@/stores/i18n'
 
@@ -57,6 +57,7 @@ const router = useRouter()
 const { currentLanguage } = useI18n()
 const homeCopy = computed(() => getHomeCopy(currentLanguage.value))
 const profileCopy = computed(() => getProfileCopy(currentLanguage.value))
+const activityResultCopy = computed(() => getActivityResultCopy(currentLanguage.value))
 
 const {
   currentUser,
@@ -109,23 +110,9 @@ const editingPlannedActivityId = ref(null)
 // Mini-test al acabar la actividad
 const showFinishModal = ref(false)
 const finishingActivity = ref(null)
-const ratingStars = ref(0)
-const moodStars = ref(0)
-const hoveredRating = ref(0)
-const hoveredMood = ref(0)
-const finishNote = ref('')
-
-const canConfirmFinish = computed(
-  () => ratingStars.value > 0 && moodStars.value > 0,
-)
 
 function openFinishModal(activity) {
   finishingActivity.value = activity
-  ratingStars.value = 0
-  moodStars.value = 0
-  hoveredRating.value = 0
-  hoveredMood.value = 0
-  finishNote.value = ''
   showFinishModal.value = true
 }
 
@@ -134,18 +121,17 @@ function closeFinishModal() {
   finishingActivity.value = null
 }
 
-function confirmFinishActivity() {
+function confirmFinishActivity(feedback) {
   if (!finishingActivity.value) return
-  if (ratingStars.value === 0 || moodStars.value === 0) return
 
-  const moodDelta = [0, 5, 12, 22, 32, 42][moodStars.value] ?? 22
+  const moodDelta = [0, 5, 12, 22, 32, 42][feedback.moodImprovement] ?? 22
   const energyBefore = 35
   const energyAfter = Math.min(100, energyBefore + moodDelta)
 
   completeActivity(finishingActivity.value.id, {
-    rating: ratingStars.value,
-    moodImprovement: moodStars.value,
-    note: finishNote.value.trim(),
+    rating: feedback.rating,
+    moodImprovement: feedback.moodImprovement,
+    note: feedback.note,
     energyBefore,
     energyAfter,
     date: new Date().toISOString(),
@@ -756,7 +742,7 @@ const selectedSchedulingDayLabel = computed(() => {
 
             <AppTooltip :label="profileCopy.nav.settings" position="bottom">
               <button
-                class="icon-button"
+                class="icon-button btn"
                 type="button"
                 @click="router.push({ name: 'settings', query: { from: 'profile' } })"
               >
@@ -766,7 +752,7 @@ const selectedSchedulingDayLabel = computed(() => {
 
             <AppTooltip :label="profileCopy.nav.logout" position="bottom">
               <button
-                class="icon-button"
+                class="icon-button btn"
                 type="button"
                 @click="handleLogout"
               >
@@ -806,18 +792,18 @@ const selectedSchedulingDayLabel = computed(() => {
         </section>
 
         <section class="glass-panel calendar-panel">
-          <SectionHeader :title="profileCopy.calendar.title" />
+          <SectionHeader :title="profileCopy.calendar.title" size="section" />
 
           <div class="calendar-controls">
-            <button class="calendar-nav-button" type="button" @click="previousMonth">
+            <button class="calendar-nav-button btn" type="button" @click="previousMonth">
               <ChevronLeft :size="18" />
             </button>
 
-            <button class="calendar-month-button" type="button" @click="goToCurrentMonth">
+            <button class="calendar-month-button btn" type="button" @click="goToCurrentMonth">
               {{ visibleMonthLabel }}
             </button>
 
-            <button class="calendar-nav-button" type="button" @click="nextMonth">
+            <button class="calendar-nav-button btn" type="button" @click="nextMonth">
               <ChevronRight :size="18" />
             </button>
           </div>
@@ -837,7 +823,7 @@ const selectedSchedulingDayLabel = computed(() => {
             >
               <button
                 v-if="!day.empty"
-                class="day-cell"
+                class="day-cell btn"
                 :class="{
                   today: day.isToday,
                   planned: day.planned.length > 0,
@@ -867,7 +853,7 @@ const selectedSchedulingDayLabel = computed(() => {
           <!-- Normal view: Only Saved activities -->
           <template v-if="!isSchedulingMode">
             <div class="panel-block saved-block">
-              <SectionHeader :title="profileCopy.savedActivitiesTitle">
+              <SectionHeader :title="profileCopy.savedActivitiesTitle" size="section">
                 <template #actions>
                   <span class="section-counter">{{ savedDisplay.length }} {{ profileCopy.counters.saved }}</span>
                 </template>
@@ -898,7 +884,7 @@ const selectedSchedulingDayLabel = computed(() => {
                   <button
                     v-if="isStartedActivity(activity.id)"
                     type="button"
-                    class="finish-activity-button"
+                    class="finish-activity-button btn"
                     :aria-label="`Acabar actividad: ${activity.title}`"
                     @click.stop="openFinishModal(activity)"
                   >
@@ -917,7 +903,7 @@ const selectedSchedulingDayLabel = computed(() => {
           <!-- Scheduling mode: Day activities only -->
           <template v-else>
             <div class="scheduling-header">
-              <button class="back-to-activities" type="button" @click="exitSchedulingMode">
+              <button class="back-to-activities btn" type="button" @click="exitSchedulingMode">
                 <ChevronLeft :size="18" />
                 <span>{{ profileCopy.calendar.back }}</span>
               </button>
@@ -946,7 +932,7 @@ const selectedSchedulingDayLabel = computed(() => {
                     <p>{{ activity.time }}</p>
                   </div>
 
-                  <button class="edit-schedule-button" type="button" :aria-label="`${profileCopy.calendar.editActivityAria}: ${activity.title}`" @click="openEditActivityModal(activity.id)">
+                  <button class="edit-schedule-button btn" type="button" :aria-label="`${profileCopy.calendar.editActivityAria}: ${activity.title}`" @click="openEditActivityModal(activity.id)">
                     <Edit2 :size="16" />
                   </button>
                 </article>
@@ -982,7 +968,7 @@ const selectedSchedulingDayLabel = computed(() => {
           <button
             v-for="activity in feedbackActivityOptions"
             :key="activity.activityId"
-            class="feedback-tab"
+            class="feedback-tab btn"
             :class="{ active: activity.activityId === selectedFeedbackActivityId }"
             type="button"
             @click="selectedFeedbackActivityId = activity.activityId"
@@ -1002,12 +988,12 @@ const selectedSchedulingDayLabel = computed(() => {
             <div>
               <h3>{{ selectedFeedbackActivity?.title }}</h3>
             </div>
-          </div>
 
-          <div class="feedback-line-legend" aria-hidden="true">
-            <span v-for="series in feedbackLineSeries" :key="series.key" :class="`line-${series.key}`">
-              {{ series.label }}
-            </span>
+            <div class="feedback-line-legend" aria-hidden="true">
+              <span v-for="series in feedbackLineSeries" :key="series.key" :class="`line-${series.key}`">
+                {{ series.label }}
+              </span>
+            </div>
           </div>
 
           <div class="feedback-line-chart">
@@ -1033,7 +1019,7 @@ const selectedSchedulingDayLabel = computed(() => {
               <button
                 v-for="point in series.points"
                 :key="`${point.id}-tooltip`"
-                class="feedback-line-hotspot"
+                class="feedback-line-hotspot btn"
                 :class="`line-${series.key}`"
                 type="button"
                 :style="{ left: `${point.x}%`, top: `${point.y}%` }"
@@ -1084,7 +1070,7 @@ const selectedSchedulingDayLabel = computed(() => {
               <button
                 v-for="point in mainFeedbackChart"
                 :key="`${point.id}-bar`"
-                class="feedback-bar-column"
+                class="feedback-bar-column btn"
                 :class="{ active: point.id === selectedFeedbackSessionId }"
                 type="button"
                 :title="`${point.dateLabel} · ${point.before} → ${point.after}`"
@@ -1125,105 +1111,13 @@ const selectedSchedulingDayLabel = computed(() => {
       @cancel="handleActivityModalCancel"
     />
 
-    <!-- Mini-test al acabar la actividad -->
-    <div v-if="showFinishModal" class="finish-modal" role="presentation">
-      <div class="finish-dialog" role="dialog" aria-labelledby="finish-modal-title-profile">
-        <button
-          class="finish-close"
-          type="button"
-          aria-label="Cerrar"
-          title="Cerrar"
-          @click="closeFinishModal"
-        >
-          <X :size="18" />
-        </button>
-
-        <h3 id="finish-modal-title-profile">¡Actividad completada!</h3>
-        <p class="finish-subtitle">
-          <span v-if="finishingActivity">{{ finishingActivity.title }} — </span>
-          Cuéntanos qué te ha parecido para mejorar tus recomendaciones.
-        </p>
-
-        <div class="finish-question">
-          <label class="finish-label">¿Cómo valoras la actividad?</label>
-
-          <div class="star-row" role="radiogroup" aria-label="Valoración de la actividad">
-            <button
-              v-for="n in 5"
-              :key="`p-rating-${n}`"
-              type="button"
-              class="star-button"
-              :class="{ active: (hoveredRating || ratingStars) >= n }"
-              :aria-label="`${n} ${n === 1 ? 'estrella' : 'estrellas'}`"
-              role="radio"
-              :aria-checked="ratingStars === n"
-              @click="ratingStars = n"
-              @mouseenter="hoveredRating = n"
-              @mouseleave="hoveredRating = 0"
-              @focus="hoveredRating = n"
-              @blur="hoveredRating = 0"
-            >
-              <Star
-                :size="30"
-                :fill="(hoveredRating || ratingStars) >= n ? 'currentColor' : 'none'"
-              />
-            </button>
-          </div>
-        </div>
-
-        <div class="finish-question">
-          <label class="finish-label">¿Cuánto ha mejorado tu estado de ánimo?</label>
-
-          <div class="star-row" role="radiogroup" aria-label="Mejora del estado de ánimo">
-            <button
-              v-for="n in 5"
-              :key="`p-mood-${n}`"
-              type="button"
-              class="star-button mood"
-              :class="{ active: (hoveredMood || moodStars) >= n }"
-              :aria-label="`${n} ${n === 1 ? 'estrella' : 'estrellas'}`"
-              role="radio"
-              :aria-checked="moodStars === n"
-              @click="moodStars = n"
-              @mouseenter="hoveredMood = n"
-              @mouseleave="hoveredMood = 0"
-              @focus="hoveredMood = n"
-              @blur="hoveredMood = 0"
-            >
-              <Heart
-                :size="30"
-                :fill="(hoveredMood || moodStars) >= n ? 'currentColor' : 'none'"
-              />
-            </button>
-          </div>
-        </div>
-
-        <div class="finish-question">
-          <label class="finish-label" for="finish-note-profile">Notas (opcional)</label>
-          <textarea
-            id="finish-note-profile"
-            v-model="finishNote"
-            class="finish-textarea"
-            rows="3"
-            placeholder="¿Cómo te has sentido durante la actividad?"
-          ></textarea>
-        </div>
-
-        <div class="finish-actions">
-          <button class="secondary-button" type="button" @click="closeFinishModal">
-            Cancelar
-          </button>
-          <button
-            class="primary-button"
-            type="button"
-            :disabled="!canConfirmFinish"
-            @click="confirmFinishActivity"
-          >
-            Guardar
-          </button>
-        </div>
-      </div>
-    </div>
+    <FeedbackModal
+      v-if="showFinishModal"
+      :copy="activityResultCopy.finishModal"
+      title-id="finish-modal-title-profile"
+      @cancel="closeFinishModal"
+      @confirm="confirmFinishActivity"
+    />
   </main>
 </template>
 
@@ -1389,8 +1283,9 @@ const selectedSchedulingDayLabel = computed(() => {
   margin: 0;
   color: var(--foreground);
   font-size: clamp(2rem, 3vw, 3rem);
+  font-weight: 900;
   line-height: 1;
-  letter-spacing: -0.04em;
+  letter-spacing: 0;
 }
 
 .profile-copy p {
@@ -1796,7 +1691,7 @@ const selectedSchedulingDayLabel = computed(() => {
   display: grid;
   grid-template-columns: minmax(230px, 0.32fr) minmax(0, 1fr);
   gap: 24px;
-  align-items: stretch;
+  align-items: start;
 }
 
 .feedback-side {
@@ -1808,6 +1703,24 @@ const selectedSchedulingDayLabel = computed(() => {
 .feedback-selector-column {
   display: grid;
   gap: 14px;
+  max-height: 330px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+
+.feedback-selector-column::-webkit-scrollbar {
+  width: 8px;
+}
+
+.feedback-selector-column::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.feedback-selector-column::-webkit-scrollbar-thumb {
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--muted-foreground) 28%, transparent);
 }
 
 .feedback-tab {
@@ -1858,8 +1771,10 @@ const selectedSchedulingDayLabel = computed(() => {
 
 .feedback-main-chart {
   display: grid;
+  grid-template-rows: auto auto;
+  align-content: start;
   gap: 16px;
-  min-height: 420px;
+  min-height: 0;
   padding: 22px;
   border: 1px solid var(--surface-stroke-strong);
   border-radius: 28px;
@@ -1872,27 +1787,29 @@ const selectedSchedulingDayLabel = computed(() => {
 .feedback-line-legend {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  justify-content: flex-end;
+  gap: 8px;
 }
 
 .feedback-line-legend span {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  min-height: 30px;
-  padding: 6px 10px;
+  gap: 6px;
+  min-height: 24px;
+  padding: 4px 8px;
   border: 1px solid var(--surface-stroke-strong);
   border-radius: 999px;
   background: color-mix(in srgb, var(--surface-contrast) 42%, transparent);
   color: var(--foreground);
-  font-size: 0.78rem;
+  font-size: 0.72rem;
   font-weight: 900;
+  line-height: 1;
 }
 
 .feedback-line-legend span::before {
   content: '';
-  width: 9px;
-  height: 9px;
+  width: 7px;
+  height: 7px;
   border-radius: 999px;
   background: var(--series-color);
 }
@@ -2014,7 +1931,7 @@ const selectedSchedulingDayLabel = computed(() => {
 
 .feedback-chart-head {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
   gap: 14px;
 }
@@ -2029,7 +1946,12 @@ const selectedSchedulingDayLabel = computed(() => {
 }
 
 .feedback-chart-head h3 {
-  margin: 0 0 8px 0;
+  margin: 0;
+  color: var(--foreground);
+  font-size: clamp(1.25rem, 2.2vw, 1.7rem);
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1.1;
 }
 
 .feedback-chart-area {
@@ -2469,54 +2391,47 @@ const selectedSchedulingDayLabel = computed(() => {
   border-color: #059669;
 }
 
-/* ===== Modal de minitest ===== */
-.finish-modal {
+.reject-modal {
   position: fixed;
   inset: 0;
   display: grid;
   place-items: center;
   padding: 24px;
-  background: rgba(5, 7, 13, 0.5);
-  z-index: 1300;
+  background: var(--background);
+  z-index: 1200;
 }
 
-.finish-dialog {
+.reject-dialog {
   position: relative;
   width: min(100%, 520px);
-  padding: 26px 24px 22px;
+  padding: 22px;
   border: 1px solid var(--surface-stroke-strong, var(--border));
   border-radius: 28px;
   background: var(--surface-contrast, var(--card));
   color: var(--foreground);
-  box-shadow: 0 30px 80px rgba(0, 0, 0, 0.25);
+  box-shadow: 0 30px 80px color-mix(in srgb, var(--violet) 24%, transparent);
   max-height: 90vh;
   overflow-y: auto;
 }
 
-.finish-dialog h3 {
-  margin: 0 0 6px;
-  font-size: 1.45rem;
-}
-
-.finish-subtitle {
+.reject-dialog h3 {
   margin: 0 0 8px;
-  color: var(--muted-foreground);
-  line-height: 1.5;
+  font-size: 1.4rem;
 }
 
-.finish-close {
+.reject-dialog p {
+  margin: 0 0 18px;
+  color: var(--muted-foreground);
+}
+
+.reject-close {
   position: absolute;
   top: 12px;
   right: 12px;
-  display: grid;
-  place-items: center;
-  width: 36px;
-  height: 36px;
-  border: 1px solid var(--border);
-  border-radius: 999px;
-  background: var(--card);
+  border: 0;
+  background: transparent;
   color: var(--muted-foreground);
-  cursor: pointer;
+  font-size: 1.5rem;
 }
 
 .finish-question {
@@ -2542,10 +2457,12 @@ const selectedSchedulingDayLabel = computed(() => {
   place-items: center;
   width: 46px;
   height: 46px;
+  padding: 0;
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--card);
   color: var(--muted-foreground);
+  line-height: 1;
   cursor: pointer;
   transition:
     transform 0.18s ease,
@@ -2568,9 +2485,9 @@ const selectedSchedulingDayLabel = computed(() => {
 }
 
 .star-button.mood.active {
-  background: color-mix(in srgb, #fde2e7 70%, var(--card) 30%);
-  border-color: #e3577b;
-  color: #e3577b;
+  background: color-mix(in srgb, var(--rose-soft) 70%, var(--card) 30%);
+  border-color: var(--rose);
+  color: var(--rose);
 }
 
 .finish-textarea {
@@ -2593,14 +2510,14 @@ const selectedSchedulingDayLabel = computed(() => {
   box-shadow: 0 0 0 3px color-mix(in srgb, var(--violet) 22%, transparent);
 }
 
-.finish-actions {
+.reject-actions {
   display: flex;
   justify-content: flex-end;
   gap: 12px;
-  margin-top: 20px;
+  margin-top: 18px;
 }
 
-.finish-actions .primary-button:disabled {
+.reject-actions .primary-button:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }

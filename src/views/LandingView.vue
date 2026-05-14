@@ -194,8 +194,9 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
   background: linear-gradient(90deg, var(--foreground) 0%, var(--violet-strong) 45%, var(--sky) 100%);
   color: transparent;
   font-size: clamp(3.2rem, 7.2vw, 6.2rem);
+  font-weight: 900;
   line-height: 0.96;
-  letter-spacing: -0.05em;
+  letter-spacing: 0;
   -webkit-background-clip: text;
   background-clip: text;
 }
@@ -249,8 +250,8 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
   color: var(--foreground-soft);
   font-size: clamp(3.2rem, 7vw, 6.2rem);
   line-height: 1;
-  font-weight: 800;
-  letter-spacing: -0.045em;
+  font-weight: 900;
+  letter-spacing: 0;
 }
 
 .landing-rotating-prefix {
@@ -313,12 +314,16 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
   margin-bottom: 18px;
 }
 
-.landing-section-header .section-title {
+.landing-section-header :deep(.section-header__title) {
   color: var(--violet-strong);
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0;
 }
 
 .landing-contact-header {
-  max-width: 720px;
+  max-width: 920px;
   margin-bottom: 16px;
 }
 
@@ -336,6 +341,11 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
   min-height: 100%;
   height: 100%;
   padding: 22px;
+}
+
+.feature-panel strong {
+  color: var(--violet-strong);
+  font-weight: 900;
 }
 
 .feature-panel p {

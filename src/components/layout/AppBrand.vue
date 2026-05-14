@@ -20,7 +20,7 @@ defineProps({
 </script>
 
 <template>
-  <RouterLink class="app-brand" :to="to">
+  <RouterLink class="app-brand navbar-brand" :to="to">
     <img :src="LogoImg" alt="Logo de FreeTime" class="app-brand__mark" />
 
     <div class="app-brand__copy">

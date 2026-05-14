@@ -129,7 +129,7 @@ onBeforeUnmount(() => { // Limpia los event listeners al desmontar el componente
 <template>
   <div ref="panelRoot" class="accessibility-fab" :style="{ transform: `translate(${position.x}px, ${position.y}px)` }">
       <button
-        class="accessibility-fab__button"
+        class="accessibility-fab__button btn"
         type="button"
         :aria-label="isOpen ? t.accessibility.closePanel : t.accessibility.openPanel"
         :aria-expanded="isOpen"
@@ -148,7 +148,7 @@ onBeforeUnmount(() => { // Limpia los event listeners al desmontar el componente
         </div>
       </div>
 
-      <button class="accessibility-row" type="button" @click="toggleTheme">
+      <button class="accessibility-row btn" type="button" @click="toggleTheme">
         <span class="accessibility-row__icon">
           <component :is="themeIcon" :size="18" />
         </span>
@@ -172,7 +172,7 @@ onBeforeUnmount(() => { // Limpia los event listeners al desmontar el componente
             v-for="level in fontSizeValues"
             :key="level"
             type="button"
-            class="accessibility-pill"
+            class="accessibility-pill btn"
             :class="{ active: fontSizeLevel === level }"
             :aria-label="FONT_SIZES[level].label"
             :title="FONT_SIZES[level].label"
@@ -195,7 +195,7 @@ onBeforeUnmount(() => { // Limpia los event listeners al desmontar el componente
         <div class="accessibility-row__actions accessibility-row__actions--language">
           <button
             type="button"
-            class="accessibility-pill accessibility-pill--wide"
+            class="accessibility-pill accessibility-pill--wide btn"
             :class="{ active: currentLanguage === 'ca' }"
             @click="handleSetLanguage('ca')"
           >
@@ -203,7 +203,7 @@ onBeforeUnmount(() => { // Limpia los event listeners al desmontar el componente
           </button>
           <button
             type="button"
-            class="accessibility-pill accessibility-pill--wide"
+            class="accessibility-pill accessibility-pill--wide btn"
             :class="{ active: currentLanguage === 'es' }"
             @click="handleSetLanguage('es')"
           >
@@ -211,7 +211,7 @@ onBeforeUnmount(() => { // Limpia los event listeners al desmontar el componente
           </button>
           <button
             type="button"
-            class="accessibility-pill accessibility-pill--wide"
+            class="accessibility-pill accessibility-pill--wide btn"
             :class="{ active: currentLanguage === 'en' }"
             @click="handleSetLanguage('en')"
           >
@@ -220,7 +220,7 @@ onBeforeUnmount(() => { // Limpia los event listeners al desmontar el componente
         </div>
       </div>
 
-      <button class="accessibility-row" type="button" @click="toggleReducedMotion">
+      <button class="accessibility-row btn" type="button" @click="toggleReducedMotion">
         <span class="accessibility-row__icon accessibility-row__icon--motion" :class="{ active: reducedMotion }">
           <Wind :size="18" />
         </span>
@@ -233,7 +233,7 @@ onBeforeUnmount(() => { // Limpia los event listeners al desmontar el componente
         </span>
       </button>
 
-      <button class="accessibility-row" type="button" @click="toggleHighContrast">
+      <button class="accessibility-row btn" type="button" @click="toggleHighContrast">
         <span class="accessibility-row__icon accessibility-row__icon--contrast" :class="{ active: highContrast }">
           <Contrast :size="18" />
         </span>

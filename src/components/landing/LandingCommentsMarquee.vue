@@ -94,7 +94,7 @@ onBeforeUnmount(() => {
 
       <div v-if="reducedMotion && props.comments.length > 0" class="carousel-controls">
         <button
-          class="carousel-button"
+          class="carousel-button btn"
           type="button"
           :aria-label="props.previousLabel"
           @click="scrollComments(-1)"
@@ -103,7 +103,7 @@ onBeforeUnmount(() => {
         </button>
 
         <button
-          class="carousel-button"
+          class="carousel-button btn"
           type="button"
           :aria-label="props.nextLabel"
           @click="scrollComments(1)"
@@ -162,6 +162,10 @@ onBeforeUnmount(() => {
 
 .comments-marquee-header .section-title {
   color: var(--violet-strong);
+  font-size: clamp(2rem, 4vw, 3.4rem);
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0;
 }
 
 .carousel-controls {

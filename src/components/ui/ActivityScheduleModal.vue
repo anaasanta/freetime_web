@@ -150,9 +150,9 @@ function handleCancel() {
 
 <template>
   <Teleport to="body">
-    <div class="modal-backdrop" @click.self="handleCancel">
-      <div class="modal-card">
-        <button class="modal-close" type="button" @click="handleCancel">
+    <div class="modal-backdrop modal d-block" tabindex="-1" @click.self="handleCancel">
+      <div class="modal-card modal-dialog modal-dialog-centered">
+        <button class="modal-close btn" type="button" :aria-label="profileCopy.planned.cancel" @click="handleCancel">
           <X :size="18" />
         </button>
 
@@ -163,7 +163,7 @@ function handleCancel() {
           <input
             v-model="searchQuery"
             type="text"
-            class="search-input"
+            class="search-input form-control"
             :placeholder="profileCopy.planned.search"
           />
         </div>
@@ -175,7 +175,7 @@ function handleCancel() {
             <button
               v-if="myActivities.length === 0"
               disabled
-              class="no-activities"
+              class="no-activities btn"
               type="button"
             >
               {{ profileCopy.empty.saved }}
@@ -185,7 +185,7 @@ function handleCancel() {
               v-for="activity in myActivities"
               :key="activity.id"
               type="button"
-              class="activity-item"
+              class="activity-item btn"
               :class="{ selected: selectedActivityId === activity.id }"
               @click="selectedActivityId = activity.id"
             >
@@ -234,7 +234,7 @@ function handleCancel() {
               id="time-input"
               v-model="selectedTime"
               type="time"
-              class="time-input"
+              class="time-input form-control"
             />
           </div>
 
@@ -289,6 +289,8 @@ function handleCancel() {
 
 .modal-card {
   position: relative;
+  max-width: none;
+  pointer-events: auto;
   background:
     radial-gradient(circle at 12% 10%, color-mix(in srgb, var(--violet-soft) 28%, transparent), transparent 34%),
     color-mix(in srgb, var(--surface-contrast) 96%, var(--background));

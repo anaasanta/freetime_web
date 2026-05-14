@@ -34,11 +34,11 @@ function updateValue(event) {
 </script>
 
 <template>
-  <label class="field-label" :for="id || undefined">
+  <label class="field-label form-label mb-0" :for="id || undefined">
     <span class="field-label-text">{{ label }}</span>
     <input
       :id="id || undefined"
-      class="field-input"
+      class="field-input form-control"
       :type="type"
       :value="modelValue"
       :placeholder="placeholder"

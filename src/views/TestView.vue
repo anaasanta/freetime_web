@@ -106,7 +106,7 @@ function handleFinish() {
       <!-- Botón cerrar fijo arriba a la derecha -->
       <div class="test-top">
         <AppTooltip :label="copy.tooltips.close" position="bottom" class="close-tooltip-wrapper">
-          <button class="close-button" type="button" :aria-label="copy.closeLabel" @click="router.push({ name: 'home' })">
+          <button class="close-button btn" type="button" :aria-label="copy.closeLabel" @click="router.push({ name: 'home' })">
             <X :size="20" />
           </button>
         </AppTooltip>
@@ -144,7 +144,7 @@ function handleFinish() {
                 :min="testConfig.energy.min"
                 :max="testConfig.energy.max"
                 :step="testConfig.energy.step"
-                class="range-input"
+                class="range-input form-range"
               />
               <div class="range-track energy-track" :style="{ '--percent': energyPercent + '%' }"></div>
             </div>
@@ -163,7 +163,7 @@ function handleFinish() {
             <button
               v-for="option in copy.needs.options"
               :key="option.id"
-              class="need-option"
+              class="need-option btn"
               :class="{ selected: selectedNeed === option.id }"
               type="button"
               @click="selectNeed(option.id)"
@@ -206,7 +206,7 @@ function handleFinish() {
                 :min="testConfig.budget.min"
                 :max="testConfig.budget.max"
                 :step="testConfig.budget.step"
-                class="range-input"
+                class="range-input form-range"
               />
               <div class="range-track" :style="{ '--percent': budgetPercent + '%' }"></div>
             </div>
@@ -242,7 +242,7 @@ function handleFinish() {
                 :min="testConfig.time.min"
                 :max="testConfig.time.max"
                 :step="testConfig.time.step"
-                class="range-input"
+                class="range-input form-range"
               />
               <div class="range-track" :style="{ '--percent': timePercent + '%' }"></div>
             </div>
@@ -396,7 +396,8 @@ function handleFinish() {
   margin: 0 0 12px;
   color: var(--violet-strong);
   font-size: clamp(1.8rem, 4vw, 2.8rem);
-  letter-spacing: -0.03em;
+  font-weight: 900;
+  letter-spacing: 0;
 }
 
 .intro p {
@@ -415,6 +416,8 @@ function handleFinish() {
   margin: 0;
   color: var(--violet-strong);
   font-size: clamp(1.3rem, 2.5vw, 1.7rem);
+  font-weight: 900;
+  letter-spacing: 0;
 }
 
 .question-heading {
@@ -660,6 +663,29 @@ function handleFinish() {
   background: transparent;
   cursor: pointer;
   margin: 0;
+}
+
+.range-input.form-range {
+  padding: 0;
+  background: transparent;
+}
+
+.range-input::-webkit-slider-runnable-track {
+  height: 10px;
+  border: 0;
+  background: transparent;
+}
+
+.range-input::-moz-range-track {
+  height: 10px;
+  border: 0;
+  background: transparent;
+}
+
+.range-input::-moz-range-progress {
+  height: 10px;
+  border: 0;
+  background: transparent;
 }
 
 .range-input::-webkit-slider-thumb {

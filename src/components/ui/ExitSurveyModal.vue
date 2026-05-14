@@ -31,10 +31,10 @@ function confirm() {
 
 <template>
   <Teleport to="body">
-    <div class="modal-backdrop" @click.self="emit('cancel')">
-      <div class="modal-card">
+    <div class="modal-backdrop modal d-block" tabindex="-1" @click.self="emit('cancel')">
+      <div class="modal-card modal-dialog modal-dialog-centered">
 
-        <button class="modal-close" type="button" @click="emit('cancel')">
+        <button class="modal-close btn" type="button" :aria-label="config.buttons.cancel" @click="emit('cancel')">
           <X :size="18" />
         </button>
 
@@ -45,7 +45,7 @@ function confirm() {
           <button
             v-for="option in config.options"
             :key="option.id"
-            class="option-btn"
+            class="option-btn btn"
             :class="{ selected: selected === option.id }"
             type="button"
             @click="selected = option.id"
@@ -85,6 +85,8 @@ function confirm() {
 
 .modal-card {
   position: relative;
+  max-width: none;
+  pointer-events: auto;
   background: var(--surface);
   border-radius: 28px;
   padding: 36px;

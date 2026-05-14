@@ -8,7 +8,7 @@ defineProps({
 </script>
 
 <template>
-  <component :is="as" class="page-container">
+  <component :is="as" class="page-container container-fluid">
     <slot />
   </component>
 </template>

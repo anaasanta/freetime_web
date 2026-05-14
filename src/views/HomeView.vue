@@ -324,13 +324,14 @@ function cancelConfirmDelete() {
             <div class="search-content">
               <input
                 v-model="searchText"
+                class="form-control"
                 type="text"
                 :placeholder="displayCopy.searchPlaceholder"
               />
             </div>
 
             <AppTooltip :label="displayCopy.advancedSearch.tooltip" position="bottom">
-              <button class="search-advanced-button" type="button" :aria-label="displayCopy.advancedSearch.tooltip">
+              <button class="search-advanced-button icon-action-button icon-action-button--small btn" type="button" :aria-label="displayCopy.advancedSearch.tooltip">
                 <Menu :size="18" />
               </button>
             </AppTooltip>
@@ -349,7 +350,7 @@ function cancelConfirmDelete() {
 
                 <div v-if="isSavedActivity(activity.id)" class="tooltip-wrapper mini-tooltip-wrapper">
                   <button
-                    class="mini-delete"
+                    class="mini-delete icon-action-button icon-action-button--small icon-action-button--danger btn"
                     type="button"
                     @click.stop="openConfirmDelete(activity.id)"
                     :aria-label="`${displayCopy.deleteActivity}: ${activity.title}`"
@@ -360,7 +361,7 @@ function cancelConfirmDelete() {
 
                 <div v-else class="tooltip-wrapper mini-tooltip-wrapper">
                   <button
-                    class="mini-add"
+                    class="mini-add icon-action-button icon-action-button--small btn"
                     type="button"
                     @click.stop="handleAddActivity(activity.id)"
                   >
@@ -385,7 +386,7 @@ function cancelConfirmDelete() {
       <ThemeToggle />
 
         <AppTooltip :label="displayCopy.tooltips.profile" position="bottom">
-            <button class="profile-button" type="button" @click="router.push({ name: 'profile' })">
+            <button class="profile-button btn" type="button" @click="router.push({ name: 'profile' })">
             <img
                 v-if="avatarSrc"
                 :src="avatarSrc"
@@ -397,12 +398,12 @@ function cancelConfirmDelete() {
         </AppTooltip>
 
             <AppTooltip :label="displayCopy.tooltips.logout" position="bottom">
-                <button class="logout-button" type="button" @click="handleLogout">
+                <button class="logout-button btn" type="button" @click="handleLogout">
                 <LogOut :size="20" />
                 </button>
             </AppTooltip>
             <AppTooltip :label="displayCopy.tooltips.settings" position="bottom">
-                <button class="settings-button" type="button" @click="router.push({ name: 'settings', query: { from: 'home' } })">
+                <button class="settings-button btn" type="button" @click="router.push({ name: 'settings', query: { from: 'home' } })">
                 <Settings :size="20" />
                 </button>
             </AppTooltip>
@@ -412,7 +413,7 @@ function cancelConfirmDelete() {
 
         <div class="hero-area">
         <AppTooltip :label="displayCopy.testTooltip" position="bottom">
-            <button class="test-button" type="button" @click="router.push({ name: 'test' })">
+            <button class="test-button btn" type="button" @click="router.push({ name: 'test' })">
               <span class="test-orbit orbit-one"></span>
               <span class="test-orbit orbit-two"></span>
               <span class="test-orbit orbit-three"></span>
@@ -436,7 +437,7 @@ function cancelConfirmDelete() {
           <template v-if="translatedSavedActivities.length > 0" #actions>
             <div class="carousel-controls">
             <button
-              class="carousel-button"
+              class="carousel-button btn"
               type="button"
               :aria-label="displayCopy.aria.previousSaved"
               @click="scrollSavedActivities(-1)"
@@ -445,7 +446,7 @@ function cancelConfirmDelete() {
             </button>
 
             <button
-              class="carousel-button"
+              class="carousel-button btn"
               type="button"
               :aria-label="displayCopy.aria.nextSaved"
               @click="scrollSavedActivities(1)"
@@ -481,7 +482,7 @@ function cancelConfirmDelete() {
 
             <AppTooltip :label="displayCopy.deleteActivity" position="top" class="delete-tooltip-wrapper">
               <button
-                class="activity-card-delete"
+                class="activity-card-delete icon-action-button btn"
                 type="button"
                 :aria-label="`${displayCopy.deleteActivity}: ${activity.title}`"
                 @click.stop="openConfirmDelete(activity.id)"
@@ -514,7 +515,7 @@ function cancelConfirmDelete() {
           >
             <AppTooltip :label="displayCopy.tooltips.addSaved" position="top" class="add-tooltip-wrapper">
               <button
-                class="add-button"
+                class="add-button icon-action-button btn"
                 type="button"
                 :aria-label="displayCopy.aria.addActivity"
                 @click.stop="handleAddActivity(activity.id)"
@@ -597,7 +598,7 @@ function cancelConfirmDelete() {
           <button
             v-for="activity in activityAtlasActivities"
             :key="activity.id"
-            class="atlas-node"
+            class="atlas-node btn"
             :class="[`tone-${activity.tone || 'violet'}`, `source-${activity.atlasSource}`]"
             :style="activity.atlasStyle"
             type="button"
@@ -622,7 +623,7 @@ function cancelConfirmDelete() {
 
     <div v-if="showConfirmDeleteId" class="confirm-modal">
       <div class="confirm-dialog" role="dialog" aria-modal="true">
-        <button class="confirm-close" type="button" @click="cancelConfirmDelete">×</button>
+        <button class="confirm-close btn" type="button" @click="cancelConfirmDelete">×</button>
         <h3>{{ displayCopy.deleteConfirm.title }}</h3>
         <p>{{ displayCopy.deleteConfirm.message }}</p>
         <div class="confirm-actions">
@@ -722,15 +723,47 @@ h1 {
 }
 
 .search-box svg {
+  flex: 0 0 auto;
   color: var(--muted-foreground);
 }
 
-.search-advanced-button {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+.icon-action-button {
+  display: grid;
+  place-items: center;
+  width: 36px;
+  height: 36px;
+  min-width: 36px;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--surface-contrast) 86%, transparent);
+  color: var(--foreground);
+  line-height: 1;
+  box-shadow: none;
+}
+
+.icon-action-button--small {
   width: 32px;
   height: 32px;
+  min-width: 32px;
+  border-radius: 12px;
+}
+
+.icon-action-button--danger {
+  color: var(--danger-foreground);
+}
+
+.icon-action-button svg {
+  display: block;
+  margin: 0;
+}
+
+.icon-action-button :deep(.click-spark) {
+  display: grid;
+  place-items: center;
+}
+
+.search-advanced-button {
   border: 0;
   background: transparent;
   color: var(--muted-foreground);
@@ -816,22 +849,10 @@ h1 {
 }
 
 .mini-add {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
   background: var(--surface-contrast);
 }
 
 .mini-delete {
-  display: grid;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--border);
-  border-radius: 12px;
   background: var(--surface-contrast);
   color: var(--danger-foreground);
 }
@@ -2005,5 +2026,30 @@ h1 {
   right: auto;
   left: auto;
   margin-left: auto;
+}
+
+.icon-action-button,
+.add-button.icon-action-button,
+.mini-add.icon-action-button,
+.mini-delete.icon-action-button,
+.activity-card-delete.icon-action-button,
+.search-advanced-button.icon-action-button {
+  display: grid;
+  place-items: center;
+  padding: 0;
+  line-height: 1;
+}
+
+.icon-action-button > svg,
+.icon-action-button :deep(svg) {
+  display: block;
+  margin: 0;
+}
+
+.icon-action-button :deep(.click-spark) {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  height: 100%;
 }
 </style>

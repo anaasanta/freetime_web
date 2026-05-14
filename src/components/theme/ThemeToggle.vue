@@ -31,7 +31,7 @@ const iconComponent = computed(() => (currentTheme.value === 'dark' ? Moon : Sun
 
 <template>
   <button
-    class="theme-toggle"
+    class="theme-toggle btn btn-outline-secondary"
     type="button"
     :aria-label="buttonLabel"
     :title="buttonLabel"

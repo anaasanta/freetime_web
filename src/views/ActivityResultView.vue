@@ -26,7 +26,6 @@ import {
   Sparkles,
   Spool,
   SunMedium,
-  Star,
   Volleyball,
   Waves,
   X,
@@ -36,6 +35,7 @@ import { getActivityByIdWithTranslations } from '@/data/activitiesCopyI18n'
 import { getActivityCopy, getActivityResultCopy } from '@/data/testCopyI18n'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
+import FeedbackModal from '@/components/ui/FeedbackModal.vue'
 import { useI18n } from '@/stores/i18n'
 import {
   addSavedActivity,
@@ -59,11 +59,6 @@ const detailIconRef = ref(null)
 let resizeObserver = null
 
 const showFinishModal = ref(false)
-const ratingStars = ref(0)
-const moodStars = ref(0)
-const hoveredRating = ref(0)
-const hoveredMood = ref(0)
-const finishNote = ref('')
 const activityImageModules = import.meta.glob('../data/activity_images/*.png', {
   eager: true,
   import: 'default',
@@ -136,10 +131,6 @@ const isStarted = computed(() =>
     : false,
 )
 
-const canConfirmFinish = computed(
-  () => ratingStars.value > 0 && moodStars.value > 0,
-)
-
 function iconFor(iconName) {
   if (iconName === 'book') return BookOpen
   if (iconName === 'dumbbell') return Dumbbell
@@ -185,11 +176,6 @@ function handleStart() {
 
 function openFinishModal() {
   if (!selectedActivity.value) return
-  ratingStars.value = 0
-  moodStars.value = 0
-  hoveredRating.value = 0
-  hoveredMood.value = 0
-  finishNote.value = ''
   showFinishModal.value = true
 }
 
@@ -197,18 +183,17 @@ function closeFinishModal() {
   showFinishModal.value = false
 }
 
-function confirmFinish() {
+function confirmFinish(feedback) {
   if (!selectedActivity.value) return
-  if (ratingStars.value === 0 || moodStars.value === 0) return
 
-  const moodDelta = [0, 5, 12, 22, 32, 42][moodStars.value] ?? 22
+  const moodDelta = [0, 5, 12, 22, 32, 42][feedback.moodImprovement] ?? 22
   const energyBefore = 35
   const energyAfter = Math.min(100, energyBefore + moodDelta)
 
   completeActivity(selectedActivity.value.id, {
-    rating: ratingStars.value,
-    moodImprovement: moodStars.value,
-    note: finishNote.value.trim(),
+    rating: feedback.rating,
+    moodImprovement: feedback.moodImprovement,
+    note: feedback.note,
     energyBefore,
     energyAfter,
     date: new Date().toISOString(),
@@ -216,14 +201,6 @@ function confirmFinish() {
 
   showFinishModal.value = false
   router.push({ name: 'home' })
-}
-
-function finishScaleLabel(value) {
-  const unit = value === 1
-    ? activityResultCopy.value.finishModal.starSingular
-    : activityResultCopy.value.finishModal.starPlural
-
-  return `${value} ${unit}`
 }
 
 function openRejectModal() {
@@ -300,7 +277,7 @@ function skipRejectQuestion() {
 
       <section class="detail-content">
         <button
-          class="close-detail-button"
+          class="close-detail-button btn"
           type="button"
           :aria-label="activityCopy.closeLabel"
           :title="activityCopy.closeLabel"
@@ -369,18 +346,18 @@ function skipRejectQuestion() {
         <div class="actions">
           <button
             v-if="isStarted"
-            class="primary-button finish-button"
+            class="primary-button btn btn-primary finish-button"
             type="button"
             @click="openFinishModal"
           >
             {{ activityResultCopy.buttons.finish }}
           </button>
 
-          <button v-else class="primary-button" type="button" @click="handleStart">
+          <button v-else class="primary-button btn btn-primary" type="button" @click="handleStart">
             {{ activityResultCopy.buttons.start }}
           </button>
 
-          <button class="list-button" :class="{ saved: isSaved }" type="button" @click="handleSaveToggle">
+          <button class="list-button btn btn-outline-secondary" :class="{ saved: isSaved }" type="button" @click="handleSaveToggle">
             <Trash2 v-if="isSaved" :size="18" />
             <Plus v-else :size="18" />
             {{ isSaved ? activityResultCopy.buttons.removeFromList : activityResultCopy.buttons.addToList }}
@@ -394,9 +371,6 @@ function skipRejectQuestion() {
             {{ activityResultCopy.buttons.reject }}
           </BaseButton>
 
-          <BaseButton variant="secondary" @click="router.push({ name: 'home' })">
-            {{ activityResultCopy.buttons.feedback }}
-          </BaseButton>
         </div>
       </section>
     </div>
@@ -410,7 +384,7 @@ function skipRejectQuestion() {
     <div v-if="showRejectModal" class="reject-modal">
       <div class="reject-dialog" role="dialog" :aria-label="activityResultCopy.rejectModal.closeLabel">
         <button
-          class="reject-close"
+          class="reject-close btn"
           type="button"
           :aria-label="activityResultCopy.rejectModal.closeLabel"
           :title="activityResultCopy.rejectModal.closeLabel"
@@ -426,7 +400,7 @@ function skipRejectQuestion() {
             v-for="[reason, label] in rejectionOptions"
             :key="reason"
             type="button"
-            class="reject-option"
+            class="reject-option btn"
             :class="{ selected: selectedRejectReason === reason }"
             @click="selectedRejectReason = reason"
           >
@@ -445,119 +419,13 @@ function skipRejectQuestion() {
       </div>
     </div>
 
-    <div v-if="showFinishModal" class="reject-modal finish-modal" role="presentation">
-      <div class="reject-dialog finish-dialog" role="dialog" aria-labelledby="finish-modal-title">
-        <button
-          class="reject-close"
-          type="button"
-          :aria-label="activityResultCopy.finishModal.closeLabel"
-          :title="activityResultCopy.finishModal.closeLabel"
-          @click="closeFinishModal"
-        >
-          <X :size="18" />
-        </button>
-
-        <h3 id="finish-modal-title">
-          {{ activityResultCopy.finishModal.title }}
-        </h3>
-        <p>
-          {{ activityResultCopy.finishModal.subtitle }}
-        </p>
-
-        <div class="finish-question">
-          <label class="finish-label">
-            {{ activityResultCopy.finishModal.ratingLabel }}
-          </label>
-
-          <div
-            class="star-row"
-            role="radiogroup"
-            :aria-label="activityResultCopy.finishModal.ratingAria"
-          >
-            <button
-              v-for="n in 5"
-              :key="`rating-${n}`"
-              type="button"
-              class="star-button"
-              :class="{ active: (hoveredRating || ratingStars) >= n }"
-              :aria-label="finishScaleLabel(n)"
-              role="radio"
-              :aria-checked="ratingStars === n"
-              @click="ratingStars = n"
-              @mouseenter="hoveredRating = n"
-              @mouseleave="hoveredRating = 0"
-              @focus="hoveredRating = n"
-              @blur="hoveredRating = 0"
-            >
-              <Star
-                :size="30"
-                :fill="(hoveredRating || ratingStars) >= n ? 'currentColor' : 'none'"
-              />
-            </button>
-          </div>
-        </div>
-
-        <div class="finish-question">
-          <label class="finish-label">
-            {{ activityResultCopy.finishModal.moodLabel }}
-          </label>
-
-          <div
-            class="star-row"
-            role="radiogroup"
-            :aria-label="activityResultCopy.finishModal.moodAria"
-          >
-            <button
-              v-for="n in 5"
-              :key="`mood-${n}`"
-              type="button"
-              class="star-button mood"
-              :class="{ active: (hoveredMood || moodStars) >= n }"
-              :aria-label="finishScaleLabel(n)"
-              role="radio"
-              :aria-checked="moodStars === n"
-              @click="moodStars = n"
-              @mouseenter="hoveredMood = n"
-              @mouseleave="hoveredMood = 0"
-              @focus="hoveredMood = n"
-              @blur="hoveredMood = 0"
-            >
-              <Heart
-                :size="30"
-                :fill="(hoveredMood || moodStars) >= n ? 'currentColor' : 'none'"
-              />
-            </button>
-          </div>
-        </div>
-
-        <div class="finish-question">
-          <label class="finish-label" for="finish-note">
-            {{ activityResultCopy.finishModal.noteLabel }}
-          </label>
-          <textarea
-            id="finish-note"
-            v-model="finishNote"
-            class="finish-textarea"
-            rows="3"
-            :placeholder="activityResultCopy.finishModal.notePlaceholder"
-          ></textarea>
-        </div>
-
-        <div class="reject-actions">
-          <button class="secondary-button" type="button" @click="closeFinishModal">
-            {{ activityResultCopy.finishModal.cancel }}
-          </button>
-          <button
-            class="primary-button"
-            type="button"
-            :disabled="!canConfirmFinish"
-            @click="confirmFinish"
-          >
-            {{ activityResultCopy.finishModal.confirm }}
-          </button>
-        </div>
-      </div>
-    </div>
+    <FeedbackModal
+      v-if="showFinishModal"
+      :copy="activityResultCopy.finishModal"
+      title-id="finish-modal-title"
+      @cancel="closeFinishModal"
+      @confirm="confirmFinish"
+    />
   </main>
 </template>
 
@@ -638,8 +506,9 @@ function skipRejectQuestion() {
   margin: 0;
   color: var(--foreground);
   font-size: clamp(2.4rem, 5vw, 4.6rem);
+  font-weight: 900;
   line-height: 1;
-  letter-spacing: -0.05em;
+  letter-spacing: 0;
 }
 
 .detail-visual p {
@@ -748,14 +617,16 @@ function skipRejectQuestion() {
   margin-top: 8px;
   color: var(--foreground);
   overflow-wrap: anywhere;
-  line-height: 1.15;
-  font-size: clamp(1rem, 1.25vw, 1.25rem);
+  line-height: 1.18;
+  font-size: clamp(0.88rem, 0.95vw, 1.05rem);
+  font-weight: 850;
 }
 
 .text-section h2 {
   margin: 0 0 12px;
   color: var(--foreground);
-  font-size: 1.6rem;
+  font-size: clamp(1.35rem, 2vw, 1.6rem);
+  font-weight: 850;
 }
 
 .text-section p {
@@ -818,6 +689,17 @@ function skipRejectQuestion() {
   gap: 12px;
 }
 
+.actions > .primary-button,
+.actions > .list-button,
+.actions > .base-button {
+  min-height: 54px;
+  border-radius: var(--radius-control);
+  padding: 12px 22px;
+  font-size: 0.98rem;
+  font-weight: 850;
+  box-shadow: var(--shadow-panel);
+}
+
 .list-button {
   display: inline-flex;
   align-items: center;
@@ -825,12 +707,12 @@ function skipRejectQuestion() {
   gap: 8px;
   min-height: 48px;
   border: 1px solid var(--border);
-  border-radius: 999px;
+  border-radius: var(--radius-control);
   padding: 12px 20px;
   background: var(--card-solid);
   color: var(--card-foreground);
   font-weight: 900;
-  box-shadow: var(--shadow-panel-strong);
+  box-shadow: var(--shadow-panel);
 }
 
 .list-button.saved {
@@ -860,6 +742,8 @@ function skipRejectQuestion() {
 .reject-dialog {
   position: relative;
   width: min(100%, 460px);
+  max-width: none;
+  pointer-events: auto;
   padding: 22px;
   border: 1px solid var(--surface-stroke-strong);
   border-radius: 28px;
@@ -990,10 +874,12 @@ function skipRejectQuestion() {
   place-items: center;
   width: 46px;
   height: 46px;
+  padding: 0;
   border: 1px solid var(--border);
   border-radius: 14px;
   background: var(--card);
   color: var(--muted-foreground);
+  line-height: 1;
   cursor: pointer;
   transition:
     transform 0.18s ease,

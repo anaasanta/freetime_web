@@ -236,6 +236,19 @@ svg {
 }
 
 .primary-button {
+  --bs-btn-bg: var(--primary);
+  --bs-btn-border-color: var(--primary);
+  --bs-btn-color: var(--primary-foreground);
+  --bs-btn-hover-bg: var(--primary);
+  --bs-btn-hover-border-color: var(--primary);
+  --bs-btn-hover-color: var(--primary-foreground);
+  --bs-btn-active-bg: var(--primary);
+  --bs-btn-active-border-color: var(--primary);
+  --bs-btn-active-color: var(--primary-foreground);
+  --bs-btn-focus-shadow-rgb: 30, 41, 59;
+  --bs-btn-disabled-bg: var(--primary);
+  --bs-btn-disabled-border-color: var(--primary);
+  --bs-btn-disabled-color: var(--primary-foreground);
   border: none;
   background: var(--primary);
   color: var(--primary-foreground);
@@ -288,6 +301,10 @@ svg {
   background: var(--surface-soft);
   color: var(--muted-foreground);
   text-align: center;
+}
+
+.btn {
+  --bs-btn-font-family: var(--font-main);
 }
 
 .tone-rose .activity-icon,

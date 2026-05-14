@@ -21,7 +21,7 @@ defineProps({
 </script>
 
 <template>
-  <header class="section-header" :class="`section-header--${size}`">
+  <header class="section-header d-flex" :class="`section-header--${size}`">
     <div class="section-header__copy">
       <component :is="titleAs" class="section-header__title">
         <slot name="title">{{ title }}</slot>

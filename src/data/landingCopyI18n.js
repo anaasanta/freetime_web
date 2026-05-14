@@ -56,7 +56,7 @@ export function getLandingCopy(language) {
       ],
       commentsHeader: {
         ...landingCopy.commentsHeader,
-        title: 'Comentarios de nuestros usuarios.',
+        title: 'Comentarios de nuestros usuarios',
         previousLabel: 'Comentario anterior',
         nextLabel: 'Comentario siguiente',
       },
@@ -198,7 +198,7 @@ export function getLandingCopy(language) {
       ],
       commentsHeader: {
         ...landingCopy.commentsHeader,
-        title: 'What our users say.',
+        title: 'What our users say',
         previousLabel: 'Previous comment',
         nextLabel: 'Next comment',
       },

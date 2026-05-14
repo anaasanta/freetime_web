@@ -8,7 +8,7 @@ defineProps({
 </script>
 
 <template>
-  <header class="app-navbar surface" :class="{ 'app-navbar--sticky': sticky }">
+  <header class="app-navbar surface navbar navbar-expand-lg" :class="{ 'app-navbar--sticky': sticky }">
     <div class="app-navbar__start">
       <slot name="start" />
     </div>

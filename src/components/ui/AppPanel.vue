@@ -12,7 +12,7 @@ defineProps({
 </script>
 
 <template>
-  <component :is="as" class="app-panel surface" :class="panelClass">
+  <component :is="as" class="app-panel surface card" :class="panelClass">
     <slot />
   </component>
 </template>

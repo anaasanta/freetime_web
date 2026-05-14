@@ -121,7 +121,7 @@ export const landingCopy = {
   ],
   commentsHeader: {
     ariaLabel: 'Comentaris destacats',
-    title: 'Comentaris dels nostres usuaris.',
+    title: 'Comentaris dels nostres usuaris',
     previousLabel: 'Comentari anterior',
     nextLabel: 'Comentari següent',
     speedSeconds: 42,

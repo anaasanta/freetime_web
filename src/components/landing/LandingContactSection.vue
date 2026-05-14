@@ -37,7 +37,7 @@ defineProps({
           <span class="field-label-text">{{ copy.form.fields.message.label }}</span>
           <textarea
             :id="copy.form.fields.message.id"
-            class="field-input contact-textarea"
+            class="field-input form-control contact-textarea"
             :placeholder="copy.form.fields.message.placeholder"
             rows="5"
           />
@@ -99,6 +99,14 @@ defineProps({
 
 .contact-submit {
   justify-self: start;
+  --bs-btn-bg: linear-gradient(90deg, var(--violet-strong), var(--sky));
+  --bs-btn-border-color: color-mix(in srgb, var(--violet-strong) 58%, var(--sky));
+  --bs-btn-disabled-bg: linear-gradient(90deg, var(--violet-strong), var(--sky));
+  --bs-btn-disabled-border-color: color-mix(in srgb, var(--violet-strong) 58%, var(--sky));
+  background: linear-gradient(90deg, var(--violet-strong), var(--sky));
+  border-color: color-mix(in srgb, var(--violet-strong) 58%, var(--sky));
+  color: white;
+  opacity: 0.72;
 }
 
 .contact-info-cards {

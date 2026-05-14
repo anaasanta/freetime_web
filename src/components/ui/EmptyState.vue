@@ -12,7 +12,7 @@ defineProps({
 </script>
 
 <template>
-  <div class="empty-state-box">
+  <div class="empty-state-box alert" role="status">
     <h3 v-if="title">{{ title }}</h3>
     <p v-if="text">{{ text }}</p>
     <slot v-if="!title && !text" />
