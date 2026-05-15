@@ -45,8 +45,8 @@ export const landingCopy = {
       'Quan tens temps lliure i zero idees, FreeTime et dona plans que sí venen de gust: hobbies curts, moments tranquils o activitats per activar-te segons com et sents avui.',
     descriptionNote:
       'Prova, guarda i descobreix què t’encaixa sense convertir el descans en una altra tasca.',
-    discoverCard: '¡Descobreix la teva activitat!',
-    flipHint: '¡Gira’m!',
+    discoverCard: 'Descobreix la teva activitat!',
+    flipHint: 'Gira’m!',
     primaryAction: 'Registra`t',
     primaryRoute: { name: 'register' },
     secondaryAction: 'Veure inici de sessio',
@@ -185,12 +185,12 @@ export const landingCopy = {
         name: {
           id: 'contact-name',
           label: 'Nom',
-          placeholder: 'Ex: Laura Serra',
+          placeholder: 'Ex: Juan García',
         },
         email: {
           id: 'contact-email',
           label: 'Correu electronic',
-          placeholder: 'Ex: laura@email.com',
+          placeholder: 'Ex: juan@gmail.com',
         },
         message: {
           id: 'contact-message',
@@ -229,7 +229,7 @@ export const authCopy = {
       username: {
         id: 'login-username',
         label: 'Usuari',
-        placeholder: 'Ex: laura',
+        placeholder: 'Ex: nom@gmail.com',
         autocomplete: 'username',
       },
       password: {
@@ -246,8 +246,8 @@ export const authCopy = {
       register: 'No tens compte? Registra’t',
     },
     testAccess: {
-      buttonLabel: 'Rellenar con usuario de prueba',
-      helperLabel: 'Acceso rápido de prueba',
+      buttonLabel: 'OMPLIR AMB USUARI DE PROVA',
+      helperLabel: 'Accés ràpid de prova',
       pairSeparator: ' / ',
       listSeparator: ' · ',
     },

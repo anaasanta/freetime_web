@@ -220,18 +220,54 @@ function togglePasswordVisibility() {
 }
 
 .login-test-button {
-  min-height: 42px;
-  padding-inline: 18px;
-  border-color: color-mix(in srgb, var(--violet) 22%, var(--border));
-  background: linear-gradient(135deg, color-mix(in srgb, var(--violet-soft) 70%, white), color-mix(in srgb, var(--sky-soft) 60%, white));
-  color: var(--foreground);
-  box-shadow: 0 8px 22px var(--shadow-soft);
+  width: min(100%, 500px);
+  min-height: 56px;
+  padding: 0.95rem 1.6rem;
+  border: 2px solid color-mix(in srgb, var(--sky) 58%, white);
+  background:
+    linear-gradient(100deg, var(--violet-strong) 0%, var(--violet) 52%, var(--sky) 100%);
+  color: white;
+  font-size: 1rem;
+  font-weight: 900;
+  letter-spacing: 0.04em;
+  text-align: center;
+  text-shadow: 0 1px 2px rgba(15, 23, 42, 0.34);
+  box-shadow:
+    0 18px 38px color-mix(in srgb, var(--emerald) 42%, transparent),
+    0 0 0 5px color-mix(in srgb, var(--emerald) 34%, transparent),
+    0 0 34px color-mix(in srgb, var(--emerald) 34%, transparent);
+}
+
+.login-test-button:hover,
+.login-test-button:focus-visible {
+  border-color: color-mix(in srgb, var(--sky) 78%, white);
+  background:
+    linear-gradient(100deg, color-mix(in srgb, var(--violet-strong) 88%, white) 0%, var(--violet) 46%, color-mix(in srgb, var(--sky) 92%, white) 100%);
+  color: #ffffff;
+  box-shadow:
+    0 24px 48px color-mix(in srgb, var(--emerald) 50%, transparent),
+    0 0 0 6px color-mix(in srgb, var(--emerald) 42%, transparent),
+    0 0 42px color-mix(in srgb, var(--emerald) 42%, transparent);
+  transform: translateY(-2px) scale(1.01);
+}
+
+.login-test-button:focus-visible {
+  outline: 4px solid color-mix(in srgb, var(--emerald) 62%, transparent);
+  outline-offset: 4px;
+}
+
+:global(:root[data-theme='dark']) .login-test-button {
+  border-color: color-mix(in srgb, var(--sky) 70%, white);
+  box-shadow:
+    0 20px 52px color-mix(in srgb, var(--emerald) 58%, transparent),
+    0 0 0 5px color-mix(in srgb, var(--emerald) 46%, transparent),
+    0 0 46px color-mix(in srgb, var(--emerald) 44%, transparent);
 }
 
 .login-test-caption {
   margin: 0;
   color: var(--muted-foreground);
-  font-size: 0.92rem;
+  font-size: 1.2rem;
   line-height: 1.5;
   text-align: center;
 }

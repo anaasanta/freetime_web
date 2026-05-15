@@ -164,6 +164,13 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
   scroll-margin-top: 110px;
 }
 
+.landing-hero {
+  display: grid;
+  align-items: center;
+  min-height: clamp(460px, 62svh, 620px);
+  padding: clamp(20px, 3vh, 36px) 0;
+}
+
 .landing-shell {
   display: grid;
   grid-template-columns: minmax(720px, 1fr) minmax(420px, 0.9fr);
@@ -176,7 +183,7 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
   gap: 24px;
   min-width: 0;
   max-width: 990px;
-  padding: 46px 0 34px;
+  padding: 28px 0;
 }
 
 .landing-eyebrow {
@@ -553,10 +560,6 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
 
 .landing-cta {
   padding-top: 28px;
-}
-
-.landing-hero {
-  min-height: 64vh;
 }
 
 @media (max-width: 1100px) {

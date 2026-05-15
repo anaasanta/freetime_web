@@ -10,7 +10,7 @@ export function getAuthCopy(language) {
           username: {
             ...authCopy.login.fields.username,
             label: 'Usuario',
-            placeholder: 'Ej: laura',
+            placeholder: 'Ej: nom@gmail.com',
           },
           password: {
             ...authCopy.login.fields.password,
@@ -25,7 +25,7 @@ export function getAuthCopy(language) {
           register: 'No tienes cuenta? Regístrate',
         },
         testAccess: {
-          buttonLabel: 'Rellenar con usuario de prueba',
+          buttonLabel: 'RELLENAR CON USUARIO DE PRUEBA',
           helperLabel: 'Acceso rápido de prueba',
           pairSeparator: ' / ',
           listSeparator: ' · ',
@@ -78,7 +78,7 @@ export function getAuthCopy(language) {
           username: {
             ...authCopy.login.fields.username,
             label: 'Username',
-            placeholder: 'Ex: laura',
+            placeholder: 'Ex: nom@gmail.com',
           },
           password: {
             ...authCopy.login.fields.password,
@@ -93,7 +93,7 @@ export function getAuthCopy(language) {
           register: "Don't have an account? Sign up",
         },
         testAccess: {
-          buttonLabel: 'Fill with sample user',
+          buttonLabel: 'FILL WITH SAMPLE USER',
           helperLabel: 'Quick test access',
           pairSeparator: ' / ',
           listSeparator: ' · ',

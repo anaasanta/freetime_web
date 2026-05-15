@@ -108,11 +108,11 @@ export function getLandingCopy(language) {
           title: 'Habla con el equipo',
           submitLabel: 'Enviar mensaje',
           fields: {
-            name: { ...landingCopy.contact.form.fields.name, label: 'Nombre', placeholder: 'Ej: Laura Serra' },
+            name: { ...landingCopy.contact.form.fields.name, label: 'Nombre', placeholder: 'Ej: Juan García' },
             email: {
               ...landingCopy.contact.form.fields.email,
               label: 'Correo electrónico',
-              placeholder: 'Ej: laura@email.com',
+              placeholder: 'Ej: juan@gmail.com',
             },
             message: {
               ...landingCopy.contact.form.fields.message,
@@ -255,11 +255,11 @@ export function getLandingCopy(language) {
           title: 'Talk to the team',
           submitLabel: 'Send message',
           fields: {
-            name: { ...landingCopy.contact.form.fields.name, label: 'Name', placeholder: 'Ex: Laura Serra' },
+            name: { ...landingCopy.contact.form.fields.name, label: 'Name', placeholder: 'Ex: Juan García' },
             email: {
               ...landingCopy.contact.form.fields.email,
               label: 'Email',
-              placeholder: 'Ex: laura@email.com',
+              placeholder: 'Ex: juan@gmail.com',
             },
             message: {
               ...landingCopy.contact.form.fields.message,
