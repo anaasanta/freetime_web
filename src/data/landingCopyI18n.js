@@ -17,7 +17,7 @@ export function getLandingCopy(language) {
         primaryAction: 'Regístrate',
         secondaryAction: 'Iniciar sesión',
         tooltips: {
-          discover: 'Explorar sin iniciar sesión',
+          discover: 'Realiza el test o descubre nuestro catálogo de actividades',
           login: 'Entrar en la cuenta',
           register: 'Crear cuenta',
         },
@@ -164,7 +164,7 @@ export function getLandingCopy(language) {
         primaryAction: 'Sign up',
         secondaryAction: 'Log in',
         tooltips: {
-          discover: 'Explore without logging in',
+          discover: 'Take the test or discover our activity catalog',
           login: 'Log into your account',
           register: 'Create an account',
         },

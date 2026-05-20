@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { computed } from 'vue'
 import { Contrast, Languages, Moon, Sun, Type, Wind } from 'lucide-vue-next'
 import { useAccessibility } from '@/stores/accessibility'
@@ -24,7 +24,9 @@ const {
 } = useAccessibility()
 const { currentLanguage, t, setLanguage } = useI18n()
 
+// Niveles de tamano disponibles en el panel.
 const fontSizeValues = computed(() => [0, 1, 2])
+// Cambiamos el icono segun el tema actual para que la accion sea mas clara.
 const themeIcon = computed(() => (currentTheme.value === 'dark' ? Moon : Sun))
 </script>
 
@@ -170,6 +172,7 @@ const themeIcon = computed(() => (currentTheme.value === 'dark' ? Moon : Sun))
 }
 
 .accessibility-row__text strong {
+  color: var(--foreground);
   font-size: 14px;
   font-weight: 700;
 }
@@ -259,5 +262,32 @@ const themeIcon = computed(() => (currentTheme.value === 'dark' ? Moon : Sun))
   margin: 12px 2px 0;
   font-size: 12px;
   color: var(--foreground-muted-soft);
+}
+
+:global(:root[data-theme='dark']) .accessibility-row {
+  background: color-mix(in srgb, var(--surface-strong) 86%, white 4%);
+  border-color: color-mix(in srgb, var(--surface-stroke-strong) 78%, white 10%);
+  color: var(--foreground);
+}
+
+:global(:root[data-theme='dark']) .accessibility-row__text small,
+:global(:root[data-theme='dark']) .accessibility-popover__hint {
+  color: color-mix(in srgb, var(--foreground) 72%, var(--muted-foreground));
+}
+
+:global(:root[data-theme='dark']) .accessibility-row__status {
+  background: color-mix(in srgb, var(--surface-contrast) 78%, white 8%);
+  color: color-mix(in srgb, var(--foreground) 76%, var(--muted-foreground));
+}
+
+:global(:root[data-theme='dark']) .accessibility-row__status.active {
+  background: color-mix(in srgb, var(--violet) 42%, var(--surface-contrast));
+  color: var(--foreground);
+}
+
+:global(:root[data-theme='dark']) .accessibility-pill {
+  background: color-mix(in srgb, var(--surface-contrast) 88%, white 4%);
+  border-color: color-mix(in srgb, var(--surface-stroke-strong) 72%, white 10%);
+  color: var(--foreground);
 }
 </style>

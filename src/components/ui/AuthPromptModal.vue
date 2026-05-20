@@ -3,9 +3,7 @@ import { RouterLink } from 'vue-router'
 import { Sparkles, X } from 'lucide-vue-next'
 import BaseButton from '@/components/ui/BaseButton.vue'
 
-// componente de modal que se muestra para invitar a los usuarios a iniciar sesión cuando intentan acceder a funciones que requieren autenticación. 
-
-
+// Modal para pedir login cuando se intenta usar una función privada.
 defineProps({
   copy: {
     type: Object,

@@ -2,7 +2,7 @@ import { computed, ref } from 'vue'
 
 const ACCESSIBILITY_STORAGE_KEY = 'freetime-accessibility'
 
-const fontSizeLevel = ref(1) // 0 = small, 1 = normal, 2 = large, 3 = x-large
+const fontSizeLevel = ref(1) // 0 = pequeno, 1 = normal, 2 = grande
 const reducedMotion = ref(false)
 const highContrast = ref(false)
 

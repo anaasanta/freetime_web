@@ -23,7 +23,7 @@ export const landingCopy = {
     secondaryAction: 'Iniciar sessio',
     secondaryRoute: { name: 'login' },
     tooltips: {
-      discover: 'Explorar sense iniciar sessio',
+      discover: 'Fes el test o descobreix el nostre cataleg d`activitats',
       login: 'Entrar al compte',
       register: 'Crear compte',
     },

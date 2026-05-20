@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { ref, computed } from 'vue'
 import {
   Amphora,
@@ -90,16 +90,16 @@ function translatedActivity(activity) {
   return getActivityByIdWithTranslations(activity.id, currentLanguage.value) ?? activity
 }
 
-// State
+// Estado del formulario del modal.
 const searchQuery = ref('')
 const selectedActivityId = ref(null)
 const selectedTime = ref('21:00')
 const selectedReminder = ref('30-min')
 const isReminderOpen = ref(false)
-//AÑADIDO: pestañas para que la usuaria vea de forma explícita que puede alternar entre sus actividades, recomendadas y todas.
+// La pestana activa separa actividades guardadas, recomendadas y todas.
 const activeActivitySection = ref('saved')
-//FIN
 
+// Pasamos los recordatorios a un valor estable antes de guardarlos.
 function normalizeReminder(reminder) {
   if (!reminder) return '30-min'
 
@@ -113,7 +113,7 @@ function normalizeReminder(reminder) {
     return '1-hour'
   }
 
-  if (['1-day', '1 dia abans', '1 día antes', '1 day before'].includes(normalized)) {
+  if (['1-day', '1 dia abans', '1 dÃ­a antes', '1 day before'].includes(normalized)) {
     return '1-day'
   }
 
@@ -121,14 +121,14 @@ function normalizeReminder(reminder) {
     return '30-min'
   }
 
-  if (['none', 'no rebre notificacio', 'no rebre notificació', 'no recibir notificacion', 'no recibir notificación', 'no notification'].includes(normalized)) {
+  if (['none', 'no rebre notificacio', 'no rebre notificaciÃ³', 'no recibir notificacion', 'no recibir notificaciÃ³n', 'no notification'].includes(normalized)) {
     return 'none'
   }
 
   return reminder
 }
 
-// For edit mode, initialize with existing data
+// En modo editar cargamos los datos que ya teni­a la actividad programada.
 if (props.mode === 'edit' && props.plannedActivityId) {
   const existing = plannedActivities.value.find((p) => p.id === props.plannedActivityId)
   if (existing) {
@@ -138,11 +138,13 @@ if (props.mode === 'edit' && props.plannedActivityId) {
   }
 }
 
-// Computed
+// Actividades traducidas para que el buscador funcione en el idioma actual.
 const translatedActivities = computed(() => allActivities.map(translatedActivity))
 
 const filteredActivities = computed(() => {
   const query = searchQuery.value.toLowerCase()
+
+  // El buscador mira tanto el titulo como la descripcion corta.
   return translatedActivities.value.filter(
     (activity) =>
       activity.title.toLowerCase().includes(query) ||
@@ -189,18 +191,16 @@ const activitySections = computed(() => {
       key: 'other',
       title: profileCopy.value.planned.filters?.other ?? profileCopy.value.otherActivitiesTitle,
       emptyLabel: profileCopy.value.planned.noActivities,
-      //AÑADIDO: en la pestaña "Todas" se muestran todas las actividades filtradas, no solo las que no son guardadas/recomendadas.
+      // En "Todas" se muestran todas las actividades que coinciden con el filtro.
       items: filteredActivities.value,
-      //FIN
     },
   ]
 })
 
-//AÑADIDO: mostramos solo la pestaña activa para reducir scroll y evitar que parezca que las listas están escondidas.
+// Mostramos solo una lista cada vez para que el modal no tenga demasiado scroll.
 const visibleActivitySections = computed(() =>
   activitySections.value.filter((section) => section.key === activeActivitySection.value),
 )
-//FIN
 
 const selectedActivity = computed(() =>
   filteredActivities.value.find((a) => a.id === selectedActivityId.value) ||
@@ -221,6 +221,8 @@ const modalTitle = computed(() =>
 
 function handleConfirm() {
   if (!isValid.value) return
+
+  // Enviamos al perfil la actividad, hora y recordatorio elegidos.
   emit('confirm', {
     activityId: selectedActivityId.value,
     time: selectedTime.value,
@@ -229,12 +231,15 @@ function handleConfirm() {
 }
 
 function selectReminder(reminderId) {
+  // Al escoger un recordatorio cerramos el desplegable.
   selectedReminder.value = reminderId
   isReminderOpen.value = false
 }
 
 function handleDelete() {
   if (props.mode !== 'edit') return
+
+  // Solo se puede borrar una actividad que ya estaba programada.
   emit('delete', props.plannedActivityId)
 }
 
@@ -263,7 +268,7 @@ function handleCancel() {
           />
         </div>
 
-        <!-- //AÑADIDO: selector visible de categoría de actividad. -->
+        <!-- Selector para cambiar entre actividades guardadas, recomendadas y todas. -->
         <div class="activity-section-tabs" role="tablist" :aria-label="profileCopy.planned.search">
           <button
             v-for="section in activitySections"
@@ -278,8 +283,6 @@ function handleCancel() {
             <span>{{ section.title }}</span>
           </button>
         </div>
-        <!-- //FIN -->
-
         <div class="activities-list">
           <div v-for="section in visibleActivitySections" :key="section.key" class="activity-section">
             <h3 class="activity-section-title">{{ section.title }}</h3>
@@ -483,7 +486,7 @@ h2 {
   margin: 0;
 }
 
-/* //AÑADIDO: pestañas compactas para elegir entre actividades propias, recomendadas o todas. */
+/* Pestanas compactas para elegir entre actividades propias, recomendadas o todas. */
 .activity-section-tabs {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -512,8 +515,6 @@ h2 {
   background: color-mix(in srgb, var(--violet-soft) 36%, var(--surface-contrast));
   color: var(--foreground);
 }
-/* //FIN */
-
 .search-container {
   position: relative;
   display: flex;
@@ -532,15 +533,23 @@ h2 {
 .search-input {
   width: 100%;
   padding: 10px 12px 10px 40px;
-  border: 1px solid var(--color-border);
+  border: 1px solid var(--surface-stroke-strong);
   border-radius: 12px;
+  background: color-mix(in srgb, var(--surface-strong) 76%, transparent);
+  color: var(--foreground);
   font-size: 14px;
   transition: border-color 0.2s;
 }
 
+.search-input::placeholder {
+  color: var(--muted-foreground);
+  opacity: 1;
+}
+
 .search-input:focus {
   outline: none;
-  border-color: var(--color-primary);
+  border-color: var(--violet);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--violet) 18%, transparent);
 }
 
 .activities-list {
@@ -854,9 +863,30 @@ h2 {
   color: var(--foreground);
 }
 
+.search-input::placeholder,
+.time-input::placeholder {
+  color: var(--muted-foreground);
+  opacity: 1;
+}
+
 .search-input:focus,
 .time-input:focus {
   border-color: var(--violet);
+}
+
+:global(:root[data-theme='dark']) .search-input,
+:global(:root[data-theme='dark']) .time-input {
+  background: color-mix(in srgb, var(--surface-contrast) 88%, white 4%);
+  border-color: color-mix(in srgb, var(--violet) 34%, var(--surface-stroke-strong));
+  color: var(--foreground);
+}
+
+:global(:root[data-theme='dark']) .search-input::placeholder {
+  color: color-mix(in srgb, var(--foreground) 66%, var(--muted-foreground));
+}
+
+:global(:root[data-theme='dark']) .search-icon {
+  color: color-mix(in srgb, var(--foreground) 72%, var(--muted-foreground));
 }
 
 .activity-section-title,

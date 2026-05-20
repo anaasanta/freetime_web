@@ -80,6 +80,7 @@ const activityImages = import.meta.glob('../assets/activities/*', {
 })
 
 function openActivity(activityId, source = 'normal') {
+  // Guardamos la actividad seleccionada antes de navegar al detalle.
   syncSelectedActivity(activityId, source)
   router.push({
     name: 'activity',
@@ -89,6 +90,7 @@ function openActivity(activityId, source = 'normal') {
 }
 
 function handleLogout() {
+  // Cerramos sesion y volvemos a la landing.
   logout()
   router.replace({ name: 'landing' })
 }
@@ -97,13 +99,13 @@ const visibleDate = ref(new Date())
 const today = new Date()
 const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate())
 
-// For scheduling activities
+// Estado para saber si la usuaria esta mirando un dia concreto del calendario.
 const isSchedulingMode = ref(false)
 const selectedScheduleDay = ref(null)
 
-// For activity modal
+// Estado del modal para anadir o editar actividades programadas.
 const isActivityModalOpen = ref(false)
-const activityModalMode = ref('add') // 'add' or 'edit'
+const activityModalMode = ref('add') // Puede ser 'add' o 'edit'.
 const activityModalDate = ref(null)
 const editingPlannedActivityId = ref(null)
 
@@ -124,6 +126,7 @@ function closeFinishModal() {
 function confirmFinishActivity(feedback) {
   if (!finishingActivity.value) return
 
+  // Simulamos la mejora de energia a partir del mini-test de feedback.
   const moodDelta = [0, 5, 12, 22, 32, 42][feedback.moodImprovement] ?? 22
   const energyBefore = 35
   const energyAfter = Math.min(100, energyBefore + moodDelta)
@@ -146,10 +149,12 @@ const visibleYear = computed(() => visibleDate.value.getFullYear())
 const visibleMonth = computed(() => visibleDate.value.getMonth())
 
 const visibleMonthLabel = computed(() => {
+  // Texto del mes que aparece encima del calendario.
   return `${profileCopy.value.calendar.months[visibleMonth.value]} ${visibleYear.value}`
 })
 
 const avatarSrc = computed(() => {
+  // Cargamos el avatar solo si el usuario tiene imagen asociada.
   const avatarFile = currentUser.value?.avatar
 
   if (!avatarFile) return null
@@ -158,10 +163,12 @@ const avatarSrc = computed(() => {
 })
 
 const profileTags = computed(() => {
+  // Si el usuario no tiene etiquetas, usamos una por defecto.
   return currentUser.value?.tags?.length ? currentUser.value.tags : [profileCopy.value.fallbackTag]
 })
 
 const savedDisplay = computed(() => {
+  // Preparamos las actividades guardadas con sus traducciones.
   return savedActivities.value
     .map((item) => {
       const activity = item?.title ? item : allActivities.find((activityItem) => activityItem.id === item)
@@ -171,6 +178,7 @@ const savedDisplay = computed(() => {
 })
 
 const startedDisplay = computed(() => {
+  // Separamos las actividades iniciadas para mostrar el boton de finalizar.
   return startedActivities.value
     .map((item) => {
       const activity = item?.title ? item : allActivities.find((activityItem) => activityItem.id === item)
@@ -184,10 +192,12 @@ function isStartedActivity(activityId) {
 }
 
 function isTriedActivity(activityId) {
+  // Una actividad cuenta como probada si esta iniciada o ya terminada.
   return isStartedActivity(activityId) || completedActivityIds.value.includes(activityId)
 }
 
 function normalizeReminder(reminder) {
+  // Igualamos distintos textos de recordatorio al mismo identificador interno.
   if (!reminder) return '30-min'
 
   const normalized = String(reminder).toLowerCase().trim()
@@ -200,7 +210,7 @@ function normalizeReminder(reminder) {
     return '1-hour'
   }
 
-  if (['1-day', '1 dia abans', '1 día antes', '1 day before'].includes(normalized)) {
+  if (['1-day', '1 dia abans', '1 dÃ­a antes', '1 day before'].includes(normalized)) {
     return '1-day'
   }
 
@@ -208,7 +218,7 @@ function normalizeReminder(reminder) {
     return 'custom'
   }
 
-  if (['none', 'no rebre notificacio', 'no rebre notificació', 'no recibir notificacion', 'no recibir notificación', 'no notification'].includes(normalized)) {
+  if (['none', 'no rebre notificacio', 'no rebre notificaciÃ³', 'no recibir notificacion', 'no recibir notificaciÃ³n', 'no notification'].includes(normalized)) {
     return 'none'
   }
 
@@ -216,6 +226,7 @@ function normalizeReminder(reminder) {
 }
 
 function plannedReminderLabel(reminder) {
+  // Convertimos el identificador del recordatorio en texto visible.
   const reminderId = normalizeReminder(reminder)
   const option = profileCopy.value.planned.notificationOptions?.find((item) => item.id === reminderId)
 
@@ -223,6 +234,7 @@ function plannedReminderLabel(reminder) {
 }
 
 const plannedDisplay = computed(() => {
+  // Actividades programadas listas para pintarse en la agenda.
   return plannedActivities.value
     .map((item, index) => {
       const activity =
@@ -267,6 +279,9 @@ const plannedDisplay = computed(() => {
 })
 
 const completedDisplay = computed(() => { 
+  // Evitamos duplicados del mismo tipo de actividad en el mismo dia.
+  const seenCompletedDays = new Set()
+
   return completedActivitiesDisplay.value
     .map((item, index) => {
       const activity =
@@ -297,10 +312,19 @@ const completedDisplay = computed(() => {
       }
     })
     .filter(Boolean)
+    .filter((item) => {
+      const key = `${item.activityId}-${item.date}`
+
+      if (seenCompletedDays.has(key)) return false
+
+      seenCompletedDays.add(key)
+      return true
+    })
 })
 
 const energyStats = computed(() => {
   if (completedDisplay.value.length > 0) {
+    // El grafico usa las ultimas sesiones reales registradas.
     return completedDisplay.value.slice(-5).map((item, index) => ({
       label: `${profileCopy.value.stats.labelPrefix}${index + 1}`,
       before: item.energyBefore,
@@ -313,6 +337,7 @@ const energyStats = computed(() => {
 })
 
 function formatFeedbackDate(dateString, language = currentLanguage.value) {
+  // Formateamos la fecha de feedback en el idioma actual.
   if (!dateString) return ''
 
   const parsed = parseDate(dateString)
@@ -328,6 +353,7 @@ function formatFeedbackDate(dateString, language = currentLanguage.value) {
 }
 
 const feedbackSessions = computed(() => {
+  // Sesiones completadas ordenadas de mas reciente a mas antigua.
   return completedDisplay.value
     .map((item, index) => {
       const translatedActivity = getActivityByIdWithTranslations(item.activityId, currentLanguage.value) || item.activity
@@ -350,6 +376,7 @@ const feedbackSessions = computed(() => {
 })
 
 const feedbackActivityOptions = computed(() => {
+  // Agrupamos las sesiones por actividad para construir los filtros del panel.
   const groups = new Map()
 
   feedbackSessions.value.forEach((session) => {
@@ -384,6 +411,7 @@ const selectedFeedbackActivityId = ref('')
 watch(
   feedbackActivityOptions,
   (options) => {
+    // Si cambia la lista, mantenemos una actividad seleccionada valida.
     if (!options.length) {
       selectedFeedbackActivityId.value = ''
       return
@@ -405,6 +433,7 @@ const selectedFeedbackActivity = computed(() => {
 const selectedFeedbackSessions = computed(() => {
   if (!selectedFeedbackActivityId.value) return []
 
+  // Sesiones que pertenecen a la actividad elegida en el selector.
   return feedbackSessions.value.filter((session) => session.activityId === selectedFeedbackActivityId.value)
 })
 
@@ -413,6 +442,7 @@ const selectedFeedbackSessionId = ref('')
 watch(
   selectedFeedbackSessions,
   (sessions) => {
+    // Al cambiar de actividad elegimos una sesion disponible.
     if (!sessions.length) {
       selectedFeedbackSessionId.value = ''
       return
@@ -440,6 +470,7 @@ const selectedFeedbackSummary = computed(() => {
 
   if (!sessions.length) return null
 
+  // Calculamos medias sencillas para el resumen superior.
   const totalBefore = sumMetric(sessions, 'energyBefore')
   const totalAfter = sumMetric(sessions, 'energyAfter')
   const totalRating = sumMetric(sessions, 'rating')
@@ -458,6 +489,7 @@ const selectedChartSessions = computed(() => {
 })
 
 const feedbackLineSeries = computed(() => {
+  // Convertimos energia antes/despues en puntos SVG para dibujar la evolucion.
   const sessions = selectedChartSessions.value
   const denominator = Math.max(1, sessions.length - 1)
   const horizontalPadding = 7
@@ -503,6 +535,7 @@ const mainFeedbackLinePath = computed(() => '')
 const bestFeedbackActivity = computed(() => {
   if (!feedbackActivityOptions.value.length) return null
 
+  // Actividad con mayor mejora media de energia.
   return [...feedbackActivityOptions.value]
     .map((activity) => {
       const sessions = feedbackSessions.value.filter((session) => session.activityId === activity.activityId)
@@ -527,6 +560,7 @@ function averageMetric(items, key) {
 }
 
 function iconFor(iconName) {
+  // Relacionamos el nombre de icono guardado en datos con el componente real.
   if (iconName === 'book') return BookOpen
   if (iconName === 'dumbbell') return Dumbbell
   if (iconName === 'footprints') return Footprints
@@ -555,6 +589,7 @@ function iconFor(iconName) {
 }
 
 function parseDate(dateString) {
+  // Parseamos fechas YYYY-MM-DD sin depender del timezone del navegador.
   if (!dateString) return null
 
   const [year, month, day] = dateString.split('-').map(Number)
@@ -569,6 +604,7 @@ function parseDate(dateString) {
 }
 
 function plannedForDate(year, month, day) {
+  // Busca actividades programadas para una celda concreta del calendario.
   return plannedDisplay.value.filter((planned) => {
     const parsed = parseDate(planned.date)
     if (!parsed) return false
@@ -578,6 +614,7 @@ function plannedForDate(year, month, day) {
 }
 
 function completedForDate(year, month, day) {
+  // Busca actividades completadas para una celda concreta del calendario.
   return completedDisplay.value.filter((completed) => {
     const parsed = parseDate(completed.date)
     if (!parsed) return false
@@ -587,6 +624,7 @@ function completedForDate(year, month, day) {
 }
 
 const calendarCells = computed(() => {
+  // Construimos celdas vacias y dias reales para mantener la cuadricula semanal.
   const year = visibleYear.value
   const month = visibleMonth.value
 
@@ -667,6 +705,8 @@ function dateForDay(day) {
 
 function selectDayForScheduling(day) {
   if (day.empty || !day.canSchedule) return
+
+  // Al elegir un dia pasamos la columna derecha a modo programacion.
   selectedScheduleDay.value = day
   isSchedulingMode.value = true
 }
@@ -687,7 +727,7 @@ function openAddActivityModal() {
 }
 
 function openEditActivityModal(plannedActivityId) {
-  activityModalDate.value = null // Will use the existing date from the planned activity
+  activityModalDate.value = null // En edicion se mantiene la fecha que ya tenia.
   activityModalMode.value = 'edit'
   editingPlannedActivityId.value = plannedActivityId
   isActivityModalOpen.value = true
@@ -702,7 +742,7 @@ function handleActivityModalConfirm(data) {
       updatePlannedActivity(
         editingPlannedActivityId.value,
         data.activityId,
-        existing.date, // Keep the original date when editing
+        existing.date, // Mantenemos la fecha original al editar.
         data.time,
         data.reminder,
       )
@@ -728,20 +768,20 @@ function handleActivityModalCancel() {
 }
 
 function handleProfileColumnsClick(event) {
-  // Only exit if clicking outside the right panel and in scheduling mode
+  // Si se hace clic fuera del panel derecho, salimos del modo programacion.
   if (isSchedulingMode.value && event.target.closest('.right-panel') === null) {
     exitSchedulingMode()
   }
 }
 
-// Get formatted date string for comparison
+// Formato comun para comparar fechas del calendario.
 function formatDateString(year, month, day) {
   const m = String(month + 1).padStart(2, '0')
   const d = String(day).padStart(2, '0')
   return `${year}-${m}-${d}`
 }
 
-// Get activities for the selected scheduling day
+// Actividades programadas para el dia seleccionado.
 const activitiesForSchedulingDay = computed(() => {
   if (!selectedScheduleDay.value) return []
 
@@ -752,7 +792,7 @@ const activitiesForSchedulingDay = computed(() => {
     .filter((activity) => activity.date === dateStr)
 })
 
-// Get label for selected scheduling day
+// Texto que aparece como titulo cuando se abre un dia del calendario.
 const selectedSchedulingDayLabel = computed(() => {
   if (!selectedScheduleDay.value) return ''
   const day = selectedScheduleDay.value.number
@@ -886,7 +926,7 @@ const selectedSchedulingDayLabel = computed(() => {
 
       <div class="right-column">
         <section class="glass-panel right-panel">
-          <!-- Normal view: Only Saved activities -->
+          <!-- Vista normal: muestra las actividades guardadas. -->
           <template v-if="!isSchedulingMode">
             <div class="panel-block saved-block">
               <SectionHeader :title="profileCopy.savedActivitiesTitle" size="section">
@@ -936,7 +976,7 @@ const selectedSchedulingDayLabel = computed(() => {
             </div>
           </template>
 
-          <!-- Scheduling mode: Day activities only -->
+          <!-- Modo calendario: muestra solo las actividades del dia seleccionado. -->
           <template v-else>
             <div class="scheduling-header">
               <button class="back-to-activities btn" type="button" @click="exitSchedulingMode">
@@ -987,7 +1027,7 @@ const selectedSchedulingDayLabel = computed(() => {
         </section>
       </div>
 
-      <!-- Scheduling overlay - click to close -->
+      <!-- Capa para cerrar el modo calendario al hacer clic fuera. -->
 
     </section>
 
@@ -1062,9 +1102,9 @@ const selectedSchedulingDayLabel = computed(() => {
                 :aria-label="`${series.label}: ${point.value}`"
               >
                 <span class="feedback-line-tooltip">
-                  <strong>{{ series.label }} · {{ point.value }}</strong>
+                  <strong>{{ series.label }} Â· {{ point.value }}</strong>
                   <small>{{ point.dateLabel }}</small>
-                  <small v-if="point.moodBefore">{{ point.moodBefore }} → {{ point.moodAfter }}</small>
+                  <small v-if="point.moodBefore">{{ point.moodBefore }} â†’ {{ point.moodAfter }}</small>
                 </span>
               </button>
             </template>
@@ -1084,7 +1124,7 @@ const selectedSchedulingDayLabel = computed(() => {
                 <span class="dimension-before" :style="{ width: `${dimension.before}%` }"></span>
                 <span class="dimension-after" :style="{ width: `${dimension.after}%` }"></span>
               </div>
-              <small>{{ dimension.before }} → {{ dimension.after }}</small>
+              <small>{{ dimension.before }} â†’ {{ dimension.after }}</small>
             </div>
           </div>
 
@@ -1109,7 +1149,7 @@ const selectedSchedulingDayLabel = computed(() => {
                 class="feedback-bar-column btn"
                 :class="{ active: point.id === selectedFeedbackSessionId }"
                 type="button"
-                :title="`${point.dateLabel} · ${point.before} → ${point.after}`"
+                :title="`${point.dateLabel} Â· ${point.before} â†’ ${point.after}`"
                 @click="selectedFeedbackSessionId = point.id"
               >
                 <span class="feedback-bar-track">
@@ -1124,7 +1164,7 @@ const selectedSchedulingDayLabel = computed(() => {
           <aside v-if="false && selectedFeedbackSession" class="feedback-session-card">
             <div>
               <span>{{ selectedFeedbackSession.dateLabel }}</span>
-              <h4>{{ selectedFeedbackSession.moodBefore }} → {{ selectedFeedbackSession.moodAfter }}</h4>
+              <h4>{{ selectedFeedbackSession.moodBefore }} â†’ {{ selectedFeedbackSession.moodAfter }}</h4>
               <p>{{ selectedFeedbackSession.note }}</p>
             </div>
             <strong>{{ selectedFeedbackSession.rating }} / 5</strong>
@@ -1136,7 +1176,7 @@ const selectedSchedulingDayLabel = computed(() => {
     </section>
     </AppContainer>
 
-    <!-- Activity Schedule Modal -->
+    <!-- Modal para anadir o editar una actividad programada. -->
     <ActivityScheduleModal
       v-if="isActivityModalOpen"
       :date="activityModalDate"
@@ -1470,6 +1510,17 @@ const selectedSchedulingDayLabel = computed(() => {
   border-color: color-mix(in srgb, var(--violet) 42%, var(--border));
 }
 
+:global(:root[data-theme='dark']) .day-cell.planned {
+  background:
+    radial-gradient(circle at 35% 24%, color-mix(in srgb, white 14%, transparent), transparent 42%),
+    color-mix(in srgb, var(--violet) 44%, var(--surface-contrast));
+  color: color-mix(in srgb, var(--violet) 42%, white);
+  border-color: color-mix(in srgb, var(--violet) 72%, var(--surface-stroke-strong));
+  box-shadow:
+    0 14px 30px color-mix(in srgb, var(--violet) 20%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, white 10%, transparent);
+}
+
 .day-cell.selected {
   border-color: var(--primary);
   background: var(--primary);
@@ -1489,6 +1540,16 @@ const selectedSchedulingDayLabel = computed(() => {
     color-mix(in srgb, var(--violet-soft) 88%, var(--surface-contrast))
   );
   color: var(--foreground-soft);
+}
+
+:global(:root[data-theme='dark']) .day-cell.mixed {
+  background: linear-gradient(
+    135deg,
+    color-mix(in srgb, var(--emerald) 34%, var(--surface-contrast)),
+    color-mix(in srgb, var(--violet) 46%, var(--surface-contrast))
+  );
+  color: var(--foreground);
+  border-color: color-mix(in srgb, var(--violet) 62%, var(--emerald));
 }
 
 .day-tooltip {
@@ -2235,7 +2296,7 @@ const selectedSchedulingDayLabel = computed(() => {
   }
 }
 
-/* Scheduling Mode Styles */
+/* Estilos del modo programacion */
 .scheduling-header {
   display: flex;
   align-items: center;
@@ -2408,7 +2469,7 @@ const selectedSchedulingDayLabel = computed(() => {
   display: inline-block;
 }
 
-/* ===== Botón "Acabar" en tarjetas de actividad iniciada ===== */
+/* ===== Boton "Acabar" en tarjetas de actividad iniciada ===== */
 .activity-row.compact {
   position: relative;
 }

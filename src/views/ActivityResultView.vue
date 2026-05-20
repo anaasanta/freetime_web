@@ -56,6 +56,7 @@ const { currentUser, selectedActivity, selectedActivitySource, savedActivities, 
 const showRejectModal = ref(false)
 const showAuthPrompt = ref(false)
 const selectedRejectReason = ref('effort')
+// Referencias usadas para calcular desde donde empieza la animacion del icono.
 const detailVisualRef = ref(null)
 const detailIconRef = ref(null)
 let resizeObserver = null
@@ -84,6 +85,7 @@ const activityImageSrc = computed(() => {
 })
 
 function syncFromRoute() {
+  // La actividad seleccionada se sincroniza con la URL para poder entrar directo al detalle.
   const activityId = typeof route.params.id === 'string' ? route.params.id : null
   const source = typeof route.query.source === 'string' ? route.query.source : 'normal'
   syncSelectedActivity(activityId, source)
@@ -94,6 +96,7 @@ watch(() => [route.params.id, route.query.source], syncFromRoute, { immediate: t
 function updateDockStartPosition() {
   if (!detailVisualRef.value || !detailIconRef.value) return
 
+  // Calculamos la diferencia entre la imagen grande y el icono final para animarlo bien.
   const visualRect = detailVisualRef.value.getBoundingClientRect()
   const iconRect = detailIconRef.value.getBoundingClientRect()
   const visualCenterX = visualRect.left + visualRect.width / 2
@@ -140,6 +143,7 @@ const isStarted = computed(() =>
 
 const canRejectActivity = computed(() => ['test', 'test-adjusted'].includes(selectedActivitySource.value) && !isStarted.value)
 
+// Relacionamos el nombre guardado en los datos con el icono que se muestra en pantalla.
 function iconFor(iconName) {
   if (iconName === 'book') return BookOpen
   if (iconName === 'dumbbell') return Dumbbell
@@ -170,6 +174,7 @@ function iconFor(iconName) {
 function handleSaveToggle() {
   if (!selectedActivity.value) return
   if (isGuest.value) {
+    // Si no hay sesion, mostramos el aviso antes de guardar nada.
     showAuthPrompt.value = true
     return
   }
@@ -184,6 +189,7 @@ function handleSaveToggle() {
 function handleStart() {
   if (!selectedActivity.value) return
   if (isGuest.value) {
+    // Empezar una actividad tambien requiere usuario identificado.
     showAuthPrompt.value = true
     return
   }
@@ -222,6 +228,7 @@ function closeFinishModal() {
 }
 
 function closeDetail() {
+  // Volvemos al perfil o a home segun desde donde se abrio el detalle.
   const from = typeof route.query.from === 'string' ? route.query.from : ''
   if (from === 'profile') {
     router.push({ name: 'profile' })
@@ -231,9 +238,10 @@ function closeDetail() {
   router.push({ name: 'home' })
 }
 
-function confirmFinish(feedback) { // Los valores de energyBefore y energyAfter son simulados para este ejemplo, ya que no forma parte del prototipo final pero queríamos añadirlo en el diseño 
+function confirmFinish(feedback) {
   if (!selectedActivity.value) return
 
+  // Estos valores son simulados porque el prototipo no mide energía real todavía.
   const moodDelta = [0, 5, 12, 22, 32, 42][feedback.moodImprovement] ?? 22
   const energyBefore = 35
   const energyAfter = Math.min(100, energyBefore + moodDelta)
@@ -267,6 +275,7 @@ function closeAuthPrompt() {
 function confirmReject() {
   if (!selectedActivity.value) return
 
+  // Recalculamos una alternativa usando el motivo que ha elegido la usuaria.
   const nextId = rejectActivity(selectedRejectReason.value)
   showRejectModal.value = false
 
@@ -285,6 +294,7 @@ function confirmReject() {
 function skipRejectQuestion() {
   if (!selectedActivity.value) return
 
+  // Si no quiere responder, igualmente buscamos otra recomendación distinta.
   const nextId = rejectActivity(null)
   showRejectModal.value = false
 
@@ -433,8 +443,13 @@ function skipRejectQuestion() {
       </BaseButton>
     </EmptyState>
 
-    <div v-if="showRejectModal" class="reject-modal">
-      <div class="reject-dialog" role="dialog" :aria-label="activityResultCopy.rejectModal.closeLabel">
+    <div v-if="showRejectModal" class="reject-modal" @click.self="closeRejectModal">
+      <div
+        class="reject-dialog"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="activityResultCopy.rejectModal.closeLabel"
+      >
         <button
           class="reject-close btn"
           type="button"
@@ -502,8 +517,9 @@ function skipRejectQuestion() {
 
 .detail-card {
   display: grid;
-  grid-template-columns: minmax(360px, 0.9fr) minmax(640px, 1.1fr);
+  grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.1fr);
   width: 100%;
+  min-width: 0;
 }
 
 .detail-visual {
@@ -618,6 +634,7 @@ function skipRejectQuestion() {
   display: grid;
   gap: 28px;
   align-content: start;
+  min-width: 0;
   padding: clamp(34px, 4.5vw, 74px);
   background: color-mix(in srgb, var(--surface-strong) 94%, transparent);
   backdrop-filter: blur(14px);
@@ -640,7 +657,7 @@ function skipRejectQuestion() {
 
 .info-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
   gap: 12px;
   padding-right: 72px;
 }
@@ -688,10 +705,15 @@ function skipRejectQuestion() {
   font-weight: 850;
 }
 
+.text-section {
+  min-width: 0;
+}
+
 .text-section p {
   margin: 0;
   color: var(--muted-foreground);
   line-height: 1.75;
+  overflow-wrap: anywhere;
 }
 
 .steps-list {
@@ -794,7 +816,8 @@ function skipRejectQuestion() {
   display: grid;
   place-items: center;
   padding: 24px;
-  background: var(--background);
+  background: color-mix(in srgb, var(--background) 38%, transparent);
+  backdrop-filter: blur(12px) saturate(1.08);
   z-index: 1200;
 }
 
@@ -868,6 +891,16 @@ function skipRejectQuestion() {
 
   .info-grid {
     padding-right: 0;
+  }
+}
+
+@media (max-width: 1280px) and (min-width: 1101px) {
+  .detail-content {
+    padding-inline: clamp(28px, 3vw, 46px);
+  }
+
+  .info-grid {
+    padding-right: 58px;
   }
 }
 

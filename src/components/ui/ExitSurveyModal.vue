@@ -5,7 +5,7 @@ import BaseButton from '@/components/ui/BaseButton.vue'
 
 const emit = defineEmits(['confirm', 'cancel'])
 
-// Config del modal (textos, opcions, etc.)
+// Configuración del modal: textos, botones y opciones.
 const config = {
   title:       'Per què vols sortir?',
   description: 'La teva resposta ens ajuda a millorar les recomanacions.',
@@ -21,10 +21,11 @@ const config = {
   ],
 }
 
-// Estat 
+// Opción seleccionada por la usuaria.
 const selected = ref(null)
 
 function confirm() {
+  // Enviamos la opción marcada al componente padre.
   emit('confirm', selected.value)
 }
 </script>

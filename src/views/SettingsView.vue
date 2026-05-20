@@ -1,4 +1,4 @@
-<script setup>
+﻿<script setup>
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ChevronLeft } from 'lucide-vue-next'
@@ -14,11 +14,13 @@ const route = useRoute()
 const router = useRouter()
 const { currentLanguage, t } = useI18n()
 
+// Textos de ajustes segun el idioma seleccionado.
 const authPageCopy = computed(() => getAuthCopy(currentLanguage.value))
 const settingsCopy = computed(() => authPageCopy.value.settings)
 const backTooltip = computed(() => settingsCopy.value.backTooltip)
 
 function goBack() {
+    // Si ajustes se abrio desde home, volvemos a home; si no, al perfil.
   router.push({ name: route.query.from === 'home' ? 'home' : 'profile' })
 }
 </script>

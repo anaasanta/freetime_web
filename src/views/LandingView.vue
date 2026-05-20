@@ -4,6 +4,7 @@ import { RouterLink } from 'vue-router'
 import AppContainer from '@/components/ui/AppContainer.vue'
 import AppPanel from '@/components/ui/AppPanel.vue'
 import SectionHeader from '@/components/ui/SectionHeader.vue'
+import AppTooltip from '@/components/ui/AppTooltip.vue'
 import RotatingText from '@/components/ui/RotatingText/RotatingText.vue'
 import LandingNavbar from '@/components/landing/LandingNavbar.vue'
 import LandingCommentsMarquee from '@/components/landing/LandingCommentsMarquee.vue'
@@ -65,22 +66,24 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
         </div>
 
         <div class="landing-hero-art">
-          <RouterLink class="landing-hero-orb" :to="displayCopy.nav.discoverRoute" :aria-label="displayCopy.hero.discoverCard">
-            <span class="landing-hero-orb-face landing-hero-orb-front">
-              <img :src="HeroLogo" alt="" class="landing-hero-logo" />
-              <span class="landing-flip-hint">{{ displayCopy.hero.flipHint }}</span>
-            </span>
-            <span class="landing-hero-orb-face landing-hero-orb-back">
-              <span class="orb-glow"></span>
-              <span class="orb-ring ring-one"></span>
-              <span class="orb-ring ring-two"></span>
-              <span class="orb-ring ring-three"></span>
-              <span class="orb-spark spark-one"></span>
-              <span class="orb-spark spark-two"></span>
-              <span class="orb-spark spark-three"></span>
-              <strong>{{ displayCopy.hero.discoverCard }}</strong>
-            </span>
-          </RouterLink>
+          <AppTooltip :label="displayCopy.nav.tooltips.discover" position="bottom" size="wide" class="landing-hero-tooltip">
+            <RouterLink class="landing-hero-orb" :to="displayCopy.nav.discoverRoute" :aria-label="displayCopy.hero.discoverCard">
+              <span class="landing-hero-orb-face landing-hero-orb-front">
+                <img :src="HeroLogo" alt="" class="landing-hero-logo" />
+                <span class="landing-flip-hint">{{ displayCopy.hero.flipHint }}</span>
+              </span>
+              <span class="landing-hero-orb-face landing-hero-orb-back">
+                <span class="orb-glow"></span>
+                <span class="orb-ring ring-one"></span>
+                <span class="orb-ring ring-two"></span>
+                <span class="orb-ring ring-three"></span>
+                <span class="orb-spark spark-one"></span>
+                <span class="orb-spark spark-two"></span>
+                <span class="orb-spark spark-three"></span>
+                <strong>{{ displayCopy.hero.discoverCard }}</strong>
+              </span>
+            </RouterLink>
+          </AppTooltip>
         </div>
       </AppContainer>
     </section>
@@ -323,11 +326,15 @@ const displayCopy = computed(() => getLandingCopy(currentLanguage.value))
   min-height: 360px;
 }
 
+.landing-hero-tooltip {
+  width: clamp(260px, 25vw, 360px);
+  max-width: min(100%, 360px);
+}
+
 .landing-hero-orb {
   position: relative;
   display: block;
-  width: clamp(260px, 25vw, 360px);
-  max-width: min(100%, 360px);
+  width: 100%;
   aspect-ratio: 1 / 1;
   border-radius: 50%;
   color: var(--foreground);

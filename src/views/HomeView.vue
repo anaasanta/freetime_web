@@ -54,10 +54,12 @@ import { activityCopy, landingCopy } from '@/data/uiText'
 import { getActivityByIdWithTranslations } from '@/data/activitiesCopyI18n'
 import { getHomeCopy } from '@/data/homeCopyI18n'
 import { useI18n } from '@/stores/i18n'
+import { useTheme } from '@/stores/theme'
 import { logout, syncSelectedActivity, addSavedActivity, useAppSession, removeSavedActivity } from '@/stores/appSession'
 
 const router = useRouter()
 const { currentLanguage } = useI18n()
+const { isDarkTheme } = useTheme()
 const {
   currentUser,
   savedActivities,
@@ -77,12 +79,15 @@ const showGuestAuthPrompt = ref(false)
 
 const displayCopy = computed(() => getHomeCopy(currentLanguage.value))
 const isGuest = computed(() => !currentUser.value)
+const addSparkColor = computed(() => (isDarkTheme.value ? '#7dd3fc' : '#8b5cf6'))
+// Ruta a login manteniendo la pantalla actual para poder volver despues.
 const loginRoute = computed(() => ({
   name: 'login',
   query: { redirect: router.currentRoute.value.fullPath },
 }))
 
 function translatedActivity(activity) {
+  // Aplicamos traducciones sin perder los datos originales de la actividad.
   return getActivityByIdWithTranslations(activity.id, currentLanguage.value) ?? activity
 }
 
@@ -91,6 +96,7 @@ const translatedStartedActivities = computed(() => startedActivities.value.map(t
 const translatedRecommendedActivities = computed(() => recommendedActivities.value.map(translatedActivity))
 
 const activityAtlasActivities = computed(() => {
+  // El atlas mezcla actividades guardadas y recomendadas para que la home no se vea vacia.
   const atlasTargetCount = 9
   const uniqueActivities = new Map()
   const savedIds = new Set(translatedSavedActivities.value.map((activity) => activity.id))
@@ -102,6 +108,7 @@ const activityAtlasActivities = computed(() => {
   const hasLongRecommendation = recommendedPool.some((activity) => activity.duration >= 45)
 
   if (!hasLongRecommendation) {
+    // Anadimos al menos una actividad larga para que el mapa tenga mas variedad visual.
     const longRecommendation = allActivities
       .map(translatedActivity)
       .find(
@@ -117,6 +124,7 @@ const activityAtlasActivities = computed(() => {
   }
 
   if (recommendedPool.length < atlasTargetCount) {
+    // Si faltan actividades, rellenamos con opciones variadas que no esten guardadas.
     const variedExtras = allActivities
       .map(translatedActivity)
       .filter((activity) => !savedIds.has(activity.id) && !recommendedIds.has(activity.id))
@@ -150,6 +158,7 @@ const activityAtlasActivities = computed(() => {
   )
 
   return [...uniqueActivities.values()].slice(0, 12).map((activity, index) => {
+    // La posicion depende de duracion y energia para que no parezca colocada al azar.
     const durationPercent = clamp(((activity.duration - 10) / 80) * 100, 0, 100)
     const energyPercent = clamp(activity.energy, 0, 100)
     const spreadX = ((index % 4) - 1.5) * 3.2
@@ -168,6 +177,7 @@ const activityAtlasActivities = computed(() => {
 const searchableActivities = computed(() => {
   if (!searchText.value.trim()) return []
 
+  // El buscador principal ensena solo los primeros resultados para no ocupar toda la pantalla.
   return allActivities
     .map(translatedActivity)
     .filter((activity) =>
@@ -177,10 +187,12 @@ const searchableActivities = computed(() => {
 })
 
 function clamp(value, min, max) {
+  // Limita un numero para que no se salga del rango indicado.
   return Math.min(Math.max(value, min), max)
 }
 
 function iconFor(activity) {
+  // Convierte el nombre del icono guardado en datos en un componente real.
   const iconName = activity.icon
 
   if (iconName === 'dumbbell') return Dumbbell
@@ -212,18 +224,22 @@ function iconFor(activity) {
 }
 
 function isSavedActivity(activityId) {
+  // Comprueba si la actividad ya esta en la lista personal.
   return savedActivities.value.some((activity) => activity.id === activityId)
 }
 
 function isStartedActivity(activityId) {
+  // Comprueba si la actividad esta marcada como iniciada.
   return startedActivities.value.some((activity) => activity.id === activityId)
 }
 
 function isCompletedActivity(activityId) {
+  // Comprueba si ya hay feedback o registro de esa actividad.
   return completedActivityIds.value.includes(activityId)
 }
 
 function isNewSavedActivity(activityId) {
+  // Sirve para mostrar la etiqueta de actividad nueva.
   return isSavedActivity(activityId) && !isStartedActivity(activityId) && !isCompletedActivity(activityId)
 }
 
@@ -233,6 +249,7 @@ const avatarModules = import.meta.glob('../assets/avatars/*', {
 })
 
 const avatarSrc = computed(() => {
+  // Si el usuario tiene avatar, buscamos el archivo importado.
   const avatarFile = currentUser.value?.avatar
 
   if (!avatarFile) return null
@@ -241,6 +258,7 @@ const avatarSrc = computed(() => {
 })
 
 function openActivity(activityId, source = 'normal') {
+  // Guardamos el origen para saber si viene de home, test o recomendacion ajustada.
   syncSelectedActivity(activityId, source)
 
   const query = source === 'normal' ? { from: 'home' } : { source, from: 'home' }
@@ -253,11 +271,13 @@ function openActivity(activityId, source = 'normal') {
 }
 
 function handleLogout() {
+  // Cerramos la sesion y volvemos a la pantalla inicial.
   logout()
   router.replace({ name: 'landing' })
 }
 
 function scrollSavedActivities(direction) {
+  // Desplaza la fila horizontal de actividades guardadas.
   if (!savedRow.value) return
 
   savedRow.value.scrollBy({
@@ -267,6 +287,7 @@ function scrollSavedActivities(direction) {
 }
 
 function updateAddTooltipPosition(event) {
+  // Calculamos la posicion del tooltip para que no se salga por los bordes.
   const target = event.currentTarget
 
   if (!target || typeof target.getBoundingClientRect !== 'function') return
@@ -305,6 +326,7 @@ function closeAddTooltip() {
 
 function handleAddActivity(activityId) {
   if (isGuest.value) {
+    // Invitamos a iniciar sesion si intenta guardar como invitado.
     showGuestAuthPrompt.value = true
     return
   }
@@ -315,20 +337,25 @@ function handleAddActivity(activityId) {
 }
 
 function openConfirmDelete(activityId) {
+  // Guardamos el id para saber que actividad debe confirmar el popup.
   showConfirmDeleteId.value = activityId
 }
 
 function confirmRemoveSavedActivity() {
   if (!showConfirmDeleteId.value) return
+
+  // Borramos la actividad seleccionada despues de confirmar el popup.
   removeSavedActivity(showConfirmDeleteId.value)
   showConfirmDeleteId.value = null
 }
 
 function cancelConfirmDelete() {
+  // Cierra el popup sin borrar nada.
   showConfirmDeleteId.value = null
 }
 
 function closeGuestAuthPrompt() {
+  // Cierra el aviso de login requerido.
   showGuestAuthPrompt.value = false
 }
 </script>
@@ -391,7 +418,7 @@ function closeGuestAuthPrompt() {
                     @click.stop="handleAddActivity(activity.id)"
                   >
                     <ClickSpark
-                      spark-color="var(--violet)"
+                      :spark-color="addSparkColor"
                       :spark-size="9"
                       :spark-radius="22"
                       :spark-count="8"
@@ -616,7 +643,7 @@ function closeGuestAuthPrompt() {
                 @click.stop="handleAddActivity(activity.id)"
               >
                 <ClickSpark
-                  spark-color="var(--violet)"
+                  :spark-color="addSparkColor"
                   :spark-size="10"
                   :spark-radius="24"
                   :spark-count="8"
@@ -909,7 +936,17 @@ h1 {
   outline: 0;
   background: transparent;
   color: var(--foreground);
+  caret-color: var(--foreground);
   font-size: 0.95rem;
+}
+
+.search-content input::placeholder {
+  color: color-mix(in srgb, var(--foreground) 58%, var(--muted-foreground));
+  opacity: 1;
+}
+
+:global(:root[data-theme='dark']) .search-content input::placeholder {
+  color: color-mix(in srgb, var(--foreground) 72%, var(--muted-foreground));
 }
 
 .search-results {
@@ -1860,7 +1897,7 @@ h1 {
   border-radius: 2px;
 }
 
-/* Tooltip pointing down */
+/* Tooltip apuntando hacia abajo */
 .tooltip-bubble-down {
   top: calc(100% + 12px);
   bottom: auto;
@@ -1931,12 +1968,12 @@ h1 {
   line-height: 1;
 }
 
-/* quitamos la descripción dentro del botón */
+/* Quitamos la descripcion dentro del boton */
 .test-content small {
   display: none;
 }
 
-/* ===== WRAPPERS ESPECÍFICOS ===== */
+/* ===== Wrappers especificos ===== */
 
 .add-tooltip-wrapper,
 .mini-tooltip-wrapper {
@@ -1961,7 +1998,7 @@ h1 {
   position: relative;
 }
 
-/* ===== BOTONES ===== */
+/* ===== Boton "Acabar" en tarjetas de actividad iniciada ===== */
 
 
 .logout-button {
@@ -2008,7 +2045,7 @@ h1 {
   color: var(--foreground);
 }
 
-/* para que los tooltips de las cards no queden cortados */
+/* Tooltips */
 .recommendation-card {
   overflow: visible;
 }
@@ -2025,7 +2062,7 @@ h1 {
   display: block;
 }
 
-/* ===== HOME REFINEMENTS ===== */
+/* ===== Ajustes finales de la home ===== */
 
 .hero-area {
   padding: 50px 0 52px;
@@ -2304,4 +2341,3 @@ h1 {
   }
 }
 </style>
-

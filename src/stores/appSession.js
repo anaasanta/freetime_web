@@ -9,6 +9,7 @@ const SESSION_STORAGE_KEY = 'freetime-session'
 const USER_STATE_STORAGE_KEY = 'freetime-user-state'
 const LAURA_ALLOWED_ACTIVITY_IDS = new Set(['yoga', 'breathing', 'walk'])
 
+// Estado principal de la sesion. Lo dejamos en refs para que las vistas se actualicen solas.
 const currentUser = ref(null)
 const loginError = ref('')
 
@@ -24,6 +25,7 @@ const testRecommendations = ref([])
 const testAnswers = ref(null)
 const testRejectedActivityIds = ref([])
 
+// Convertimos los ids guardados en objetos completos de actividad para pintarlos en la interfaz.
 const savedActivities = computed(() =>
   savedActivityIds.value
     .map((id) => allActivities.find((activity) => activity.id === id))
@@ -37,14 +39,17 @@ const startedActivities = computed(() =>
 )
 
 const recommendedActivities = computed(() =>
+  // Recomendaciones simples de home: evitamos enseñar lo que ya esta guardado.
   allActivities.filter((activity) => !savedActivityIds.value.includes(activity.id)).slice(0, 4),
 )
 
 const selectedActivity = computed(() =>
+  // Actividad que se esta viendo en la pantalla de detalle.
   allActivities.find((activity) => activity.id === selectedActivityId.value) || null,
 )
 
 const completedActivitiesDisplay = computed(() =>
+  // Juntamos cada sesion completada con los datos completos de su actividad.
   completedActivities.value
     .map((completed) => {
       const activity = allActivities.find((item) => item.id === completed.activityId)
@@ -63,6 +68,7 @@ const completedActivityIds = computed(() => [
   ...new Set(completedActivities.value.map((activity) => activity.activityId)),
 ])
 
+// Normalizamos recordatorios porque pueden venir en distintos idiomas o formatos.
 function normalizeReminder(reminder) {
   if (!reminder) return '30-min'
 
@@ -76,7 +82,7 @@ function normalizeReminder(reminder) {
     return '1-hour'
   }
 
-  if (['1-day', '1 dia abans', '1 día antes', '1 day before'].includes(normalized)) {
+  if (['1-day', '1 dia abans', '1 dÃ­a antes', '1 day before'].includes(normalized)) {
     return '1-day'
   }
 
@@ -84,7 +90,7 @@ function normalizeReminder(reminder) {
     return 'custom'
   }
 
-  if (['none', 'no rebre notificacio', 'no rebre notificació', 'no recibir notificacion', 'no recibir notificación', 'no notification'].includes(normalized)) {
+  if (['none', 'no rebre notificacio', 'no rebre notificaciÃ³', 'no recibir notificacion', 'no recibir notificaciÃ³n', 'no notification'].includes(normalized)) {
     return 'none'
   }
 
@@ -92,6 +98,7 @@ function normalizeReminder(reminder) {
 }
 
 function normalizePlannedActivities(items) {
+  // Algunas partes usan day y otras date, por eso guardamos ambos.
   return items.map((item) => ({
     ...item,
     day: item.day ?? item.date,
@@ -100,16 +107,33 @@ function normalizePlannedActivities(items) {
   }))
 }
 
+function dedupeCompletedActivities(items) {
+  // Evita que se repita la misma actividad completada el mismo dia.
+  const seen = new Set()
+
+  return items.filter((activity) => {
+    const key = `${activity.activityId ?? activity.id}-${activity.date ?? 'no-date'}`
+
+    if (seen.has(key)) return false
+
+    seen.add(key)
+    return true
+  })
+}
+
 function normalizeUserActivityState(user, state) {
   if (user.id !== 'laura') return state
+
+  // Laura tiene datos preparados para la demo, asi que limitamos su perfil a esas actividades.
+  const completedActivitiesForLaura = state.completedActivities.filter((activity) =>
+    LAURA_ALLOWED_ACTIVITY_IDS.has(activity.activityId),
+  )
 
   return {
     ...state,
     savedActivityIds: state.savedActivityIds.filter((id) => LAURA_ALLOWED_ACTIVITY_IDS.has(id)),
     startedActivityIds: state.startedActivityIds.filter((id) => LAURA_ALLOWED_ACTIVITY_IDS.has(id)),
-    completedActivities: state.completedActivities.filter((activity) =>
-      LAURA_ALLOWED_ACTIVITY_IDS.has(activity.activityId),
-    ),
+    completedActivities: dedupeCompletedActivities(completedActivitiesForLaura),
     plannedActivities: state.plannedActivities.filter((activity) =>
       LAURA_ALLOWED_ACTIVITY_IDS.has(activity.activityId),
     ),
@@ -117,6 +141,7 @@ function normalizeUserActivityState(user, state) {
 }
 
 function resetSessionState() {
+  // Dejamos la app como si acabara de abrirse sin usuario.
   currentUser.value = null
   savedActivityIds.value = []
   startedActivityIds.value = []
@@ -132,6 +157,7 @@ function resetSessionState() {
 }
 
 function clearPersistedSession() {
+  // Borra solo la sesion activa, no el historial guardado por usuario.
   if (typeof window === 'undefined') return
   window.localStorage.removeItem(SESSION_STORAGE_KEY)
 }
@@ -147,12 +173,14 @@ function getPersistedUserStates() {
     const states = JSON.parse(rawState)
     return states && typeof states === 'object' ? states : {}
   } catch {
+    // Si localStorage queda corrupto, lo limpiamos para que la app pueda arrancar bien.
     window.localStorage.removeItem(USER_STATE_STORAGE_KEY)
     return {}
   }
 }
 
 function persistCurrentUserState() {
+  // Guardamos el estado privado de cada usuario por separado.
   if (typeof window === 'undefined' || !currentUser.value) return
 
   const states = getPersistedUserStates()
@@ -168,6 +196,7 @@ function persistCurrentUserState() {
 }
 
 function getUserState(user) {
+  // Primero intentamos usar datos guardados; si no existen, usamos el mock inicial.
   const states = getPersistedUserStates()
   const persisted = states[user.id]
   const baseCompletedActivities = Array.isArray(persisted?.completedActivities)
@@ -190,6 +219,7 @@ function getUserState(user) {
 }
 
 function persistSession() {
+  // Guarda la sesion activa para no perder la navegacion al recargar.
   if (typeof window === 'undefined') return
 
   if (!currentUser.value) {
@@ -217,6 +247,7 @@ function persistSession() {
 }
 
 function restoreSession() {
+  // Recupera la sesion activa si existe en localStorage.
   if (typeof window === 'undefined') return
 
   const rawSession = window.localStorage.getItem(SESSION_STORAGE_KEY)
@@ -228,6 +259,7 @@ function restoreSession() {
     const foundUser = mockUsers.find((user) => user.id === session.userId)
 
     if (!foundUser) {
+      // Si el usuario guardado ya no existe en los mocks, borramos la sesion antigua.
       clearPersistedSession()
       return
     }
@@ -278,6 +310,7 @@ export function initializeAppSession() {
 
   restoreSession()
 
+  // Cada cambio importante se guarda para mantener la sesion al recargar la pagina.
   watch(
     [
       currentUser,
@@ -302,6 +335,7 @@ export function initializeAppSession() {
 }
 
 export function login(credentials) {
+  // En este prototipo el login se compara con usuarios mock.
   const foundUser = mockUsers.find(
     (user) =>
       user.username === credentials.username.trim() && user.password === credentials.password,
@@ -330,6 +364,7 @@ export function login(credentials) {
 }
 
 export function logout() {
+  // Antes de salir guardamos el estado del usuario actual.
   persistCurrentUserState()
   resetSessionState()
   clearPersistedSession()
@@ -340,17 +375,20 @@ export function isAuthenticated() {
 }
 
 export function syncSelectedActivity(activityId, source = 'normal') {
+  // El source indica si viene de home, perfil, test o recomendacion ajustada.
   selectedActivityId.value = activityId ?? null
   selectedActivitySource.value = source || 'normal'
 }
 
 export function addSavedActivity(activityId) {
+  // Evitamos ids repetidos en la lista guardada.
   if (!savedActivityIds.value.includes(activityId)) {
     savedActivityIds.value.push(activityId)
   }
 }
 
 export function addStartedActivity(activityId) {
+  // Una actividad empezada tambien queda guardada automaticamente.
   addSavedActivity(activityId)
 
   if (!startedActivityIds.value.includes(activityId)) {
@@ -363,6 +401,7 @@ export function removeSavedActivity(activityId) {
 }
 
 function formatDate(date) {
+  // Formato estable para comparar fechas sin depender del idioma.
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
@@ -373,6 +412,7 @@ function formatDate(date) {
 export function startActivity(activityId) {
   addStartedActivity(activityId)
 
+  // Para el prototipo marcamos la actividad como completada al empezarla.
   completedActivities.value.push({
     id: `completed-${activityId}-${Date.now()}`,
     activityId,
@@ -383,10 +423,19 @@ export function startActivity(activityId) {
   })
 }
 
+function getStartedActivityExclusionIds() {
+  // El test no deberia recomendar algo que la persona ya ha empezado o completado.
+  return [...new Set([...startedActivityIds.value, ...completedActivityIds.value])]
+}
+
 export function finishTest(answers) {
+  // Guardamos las respuestas para poder recalcular si luego pulsa "No me interesa".
   testAnswers.value = { ...answers }
   testRejectedActivityIds.value = []
-  testRecommendations.value = getRecommendations({ ...answers, excludedIds: [] })
+  testRecommendations.value = getRecommendations({
+    ...answers,
+    excludedIds: getStartedActivityExclusionIds(),
+  })
 
   const firstRecommendation = testRecommendations.value[0] ?? null
   syncSelectedActivity(firstRecommendation?.id ?? null, 'test')
@@ -399,6 +448,7 @@ export function rejectActivity(reason) {
   const rejectedActivity = allActivities.find((activity) => activity.id === currentId) ?? null
 
   if (currentId) {
+    // Evitamos volver a recomendar una actividad rechazada en este test.
     testRejectedActivityIds.value = [...new Set([...testRejectedActivityIds.value, currentId])]
   }
 
@@ -406,7 +456,7 @@ export function rejectActivity(reason) {
 
   const adjustedRecommendations = getRecommendations({
     ...testAnswers.value,
-    excludedIds: testRejectedActivityIds.value,
+    excludedIds: [...new Set([...testRejectedActivityIds.value, ...getStartedActivityExclusionIds()])],
     rejectionReason: reason,
     rejectedActivity,
   })
@@ -415,7 +465,7 @@ export function rejectActivity(reason) {
       ? adjustedRecommendations
       : getRecommendations({
           ...testAnswers.value,
-          excludedIds: testRejectedActivityIds.value,
+          excludedIds: [...new Set([...testRejectedActivityIds.value, ...getStartedActivityExclusionIds()])],
         })
 
   testRecommendations.value = fallbackRecommendations
@@ -427,6 +477,7 @@ export function rejectActivity(reason) {
 }
 
 export function createScheduleDraft(activityId, day, time, reminder) {
+  // Borrador temporal usado antes de confirmar una actividad programada.
   scheduleDraft.value = {
     activityId,
     day,
@@ -437,6 +488,7 @@ export function createScheduleDraft(activityId, day, time, reminder) {
 }
 
 export function confirmSchedule() {
+  // Pasa el borrador a la lista real de actividades programadas.
   if (!scheduleDraft.value) return false
 
   plannedActivities.value.push(
@@ -454,6 +506,7 @@ export function confirmSchedule() {
 }
 
 export function addPlannedActivity(activityId, date, time, reminder = '30-min') {
+  // Crea una actividad programada directamente desde el calendario.
   const newPlanned = {
     id: `${activityId}-${Date.now()}`,
     activityId,
@@ -467,6 +520,7 @@ export function addPlannedActivity(activityId, date, time, reminder = '30-min') 
 }
 
 export function updatePlannedActivity(plannedActivityId, activityId, date, time, reminder = '30-min') {
+  // Actualiza una actividad programada sin cambiar su identificador.
   const index = plannedActivities.value.findIndex((p) => p.id === plannedActivityId)
   if (index === -1) return false
 
@@ -482,6 +536,7 @@ export function updatePlannedActivity(plannedActivityId, activityId, date, time,
 }
 
 export function deletePlannedActivity(plannedActivityId) {
+  // Elimina una actividad del calendario.
   const index = plannedActivities.value.findIndex((p) => p.id === plannedActivityId)
   if (index === -1) return false
 
@@ -490,7 +545,7 @@ export function deletePlannedActivity(plannedActivityId) {
 }
 
 export function completeActivity(activityId, data) {
-  // 1) Añadir registro a completedActivities (usando el ref correcto)
+  // Anadimos el feedback de la actividad al historial.
   completedActivities.value.push({
     id: `completed-${activityId}-${Date.now()}`,
     activityId,
@@ -502,7 +557,7 @@ export function completeActivity(activityId, data) {
     date: data.date ?? formatDate(new Date()),
   })
 
-  // 2) Quitarla de las iniciadas
+  // Al terminarla ya no aparece como actividad en curso.
   startedActivityIds.value = startedActivityIds.value.filter(
     (id) => id !== activityId,
   )

@@ -13,29 +13,32 @@ import { useI18n } from '@/stores/i18n'
 const router = useRouter()
 const { currentLanguage } = useI18n()
 
+// Mapa de iconos para no repetir imports dentro del template.
 const iconMap = { Moon, Palette, Dumbbell, X, Frown, Annoyed, Laugh, Meh, Smile, TimerReset }
 
+// Textos del test segun el idioma activo.
 const copy = computed(() => getTestCopy(currentLanguage.value))
 
-// Estado inicial
+// Valores que va escogiendo la usuaria en el test.
 const energyValue = ref(testConfig.energy.defaultValue)
 const selectedNeed = ref(null)
 const timeValue = ref(testConfig.time.defaultValue)
 const budgetValue = ref(testConfig.budget.defaultValue)
 
-// Posición barra energía (0–100%)
+// Porcentaje usado para pintar el avance visual del slider de energia.
 const energyPercent = computed(() => {
   const { min, max } = testConfig.energy
   return ((energyValue.value - min) / (max - min)) * 100
 })
 
-// Posición barra tiempo (0–100%)
+// Porcentaje usado para pintar el avance visual del slider de tiempo.
 const timePercent = computed(() => {
   const { min, max } = testConfig.time
   return ((timeValue.value - min) / (max - min)) * 100
 })
 
 function formatTimeLabel(minutes) {
+  // Convertimos los minutos en un texto mas claro, por ejemplo "1 hora 30 minutos".
   const { minute, hour } = copy.value.time.units
   const { min, hourMinutes } = testConfig.time
   if (minutes === min) return `${min} ${minute}`
@@ -50,6 +53,7 @@ function formatTimeLabel(minutes) {
 const timeLabel = computed(() => formatTimeLabel(timeValue.value))
 
 const energyFace = computed(() => {
+  // La cara cambia segun el rango de energia elegido.
   const value = energyMood.value?.value
   if (value === 'angry') return Frown
   if (value === 'sad') return Annoyed
@@ -59,6 +63,7 @@ const energyFace = computed(() => {
 })
 
 const energyMood = computed(() => {
+  // Buscamos el texto de estado que corresponde al valor del slider.
   const moods = copy.value.energy.moods
   const thresholds = testConfig.energy.moodThresholds
   const index = thresholds.findIndex((limit) => energyValue.value < limit)
@@ -66,20 +71,24 @@ const energyMood = computed(() => {
 })
 
 const budgetPercent = computed(() => {
+  // Porcentaje para rellenar el icono del presupuesto.
   const { min, max } = testConfig.budget
   return ((budgetValue.value - min) / (max - min)) * 100
 })
 
 const budgetLabel = computed(() => {
+  // El presupuesto se muestra con etiquetas en lugar de solo numeros.
   const index = testConfig.budget.labelMaxValues.findIndex((maxValue) => budgetValue.value <= maxValue)
   return copy.value.budget.levels[index === -1 ? copy.value.budget.levels.length - 1 : index]
 })
 
 function selectNeed(id) {
+  // Si se pulsa la misma necesidad dos veces, se desmarca.
   selectedNeed.value = selectedNeed.value === id ? null : id
 }
 
 function handleFinish() {
+  // Enviamos las respuestas al recomendador y recibimos la actividad propuesta.
   const selectedId = finishTest({
     energy: energyValue.value,
     need: selectedNeed.value,
@@ -88,11 +97,13 @@ function handleFinish() {
   })
 
   if (!selectedId) {
+    // Si no hay recomendacion posible, volvemos a la home.
     router.replace({ name: 'home' })
     return
   }
 
   router.push({
+    // Marcamos el origen como test para mostrar acciones propias de recomendacion.
     name: 'activity',
     params: { id: selectedId },
     query: { source: 'test', from: 'test' },
@@ -103,7 +114,7 @@ function handleFinish() {
 <template>
   <main class="app-page test-page">
     <AppContainer as="section">
-      <!-- Botón cerrar fijo arriba a la derecha -->
+      <!-- Boton cerrar fijo arriba a la derecha -->
       <div class="test-top">
         <AppTooltip :label="copy.tooltips.close" position="bottom" class="close-tooltip-wrapper">
           <button class="close-button btn" type="button" :aria-label="copy.closeLabel" @click="router.push({ name: 'home' })">
@@ -119,12 +130,13 @@ function handleFinish() {
           <p>{{ copy.intro.description }}</p>
         </div>
 
-        <!-- Pregunta 1: Nivel de energía -->
+        <!-- Pregunta 1: Nivel de energia -->
         <section class="question">
           <div class="question-heading">
             <h2>{{ copy.energy.title }}</h2>
           </div>
 
+          <!-- Slider principal para saber con cuanta energia empieza la usuaria. -->
           <div class="slider-card energy-card">
             <!-- Stage con caritas de fondo y carita animada -->
             <div class="energy-mood-stage" :style="{ '--energy-percent': energyPercent + '%' }">
@@ -155,10 +167,11 @@ function handleFinish() {
           </div>
         </section>
 
-        <!-- Pregunta 2: ¿Qué necesitas hoy? (2x2 grid) -->
+        <!-- Pregunta 2: Que necesitas hoy -->
         <section class="question">
           <h2>{{ copy.needs.title }}</h2>
 
+          <!-- Opciones de necesidad. Solo se guarda una porque el recomendador espera un valor. -->
           <div class="needs-grid">
             <button
               v-for="option in copy.needs.options"
@@ -181,6 +194,7 @@ function handleFinish() {
             <h2>{{ copy.budget.title }}</h2>
           </div>
 
+          <!-- Slider de presupuesto para evitar recomendar actividades demasiado caras. -->
           <div class="slider-card budget-card">
             <div class="slider-mood-stage" :style="{ '--slider-percent': budgetPercent + '%' }">
               <div class="slider-mood-track money-scale" aria-hidden="true">
@@ -224,6 +238,7 @@ function handleFinish() {
             <span class="time-chip">{{ timeLabel }}</span>
           </div>
 
+          <!-- Slider de tiempo para filtrar actividades que quepan en el momento libre. -->
           <div class="slider-card time-card">
             <div class="time-visual" :style="{ '--time-percent': timePercent + '%' }">
               <span class="time-ring" aria-hidden="true">
@@ -253,7 +268,7 @@ function handleFinish() {
           </div>
         </section>
 
-        <!-- Botón finalizar -->
+        <!-- Boton finalizar -->
         <AppTooltip :label="copy.tooltips.finish" position="top" align="end" class="finish-tooltip-wrapper">
           <BaseButton
             class="finish-button"
@@ -286,7 +301,7 @@ function handleFinish() {
   margin: 0 auto;
 }
 
-/* ── Top bar con X a la derecha ── */
+/* Top bar con X a la derecha */
 .test-top {
   display: flex;
   justify-content: flex-end;
@@ -318,7 +333,7 @@ function handleFinish() {
   box-shadow: var(--shadow-panel-strong);
 }
 
-/* ── Tooltips ── */
+/* Tooltips */
 .tooltip-wrapper {
   position: relative;
   display: inline-flex;
@@ -385,7 +400,7 @@ function handleFinish() {
   transform: translateX(-50%) translateY(0);
 }
 
-/* ── Card principal ── */
+/* Card principal */
 .test-card {
   display: grid;
   gap: clamp(32px, 5vw, 56px);
@@ -406,7 +421,7 @@ function handleFinish() {
   line-height: 1.6;
 }
 
-/* ── Preguntas ── */
+/* Preguntas */
 .question {
   display: grid;
   gap: 20px;
@@ -428,7 +443,7 @@ function handleFinish() {
   flex-wrap: wrap;
 }
 
-/* ── Slider cards (homogéneos) ── */
+/* Slider cards homogeneos */
 .slider-card {
   border: 1px solid var(--border);
   border-radius: 24px;
@@ -455,7 +470,7 @@ function handleFinish() {
     color-mix(in srgb, var(--surface-contrast) 88%, transparent);
 }
 
-/* ── Stage de carita animada (energía) ── */
+/* Stage de carita animada para energia */
 .energy-mood-stage,
 .slider-mood-stage {
   position: relative;
@@ -600,7 +615,7 @@ function handleFinish() {
   50% { transform: translate(-50%, -50%) scale(1.06); }
 }
 
-/* ── Sliders ── */
+/* Sliders */
 .slider-wrapper {
   position: relative;
   height: 48px;
@@ -740,7 +755,7 @@ function handleFinish() {
   color: var(--sky);
 }
 
-/* ── Needs grid (2x2) ── */
+/* Grid de necesidades */
 .needs-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -822,7 +837,7 @@ function handleFinish() {
     color-mix(in srgb, var(--surface-contrast) 88%, transparent);
 }
 
-/* ── Time chip ── */
+/* Etiqueta de tiempo */
 .time-chip {
   padding: 6px 14px;
   border-radius: 999px;
@@ -832,7 +847,7 @@ function handleFinish() {
   font-size: 0.9rem;
 }
 
-/* ── Finish button ── */
+/* Boton finalizar */
 .finish-tooltip-wrapper {
   justify-self: end;
   width: fit-content;
@@ -862,7 +877,7 @@ function handleFinish() {
   transform: translateY(0);
 }
 
-/* ── Responsive ── */
+/* Responsive */
 @media (max-width: 600px) {
   .test-card {
     gap: 28px;

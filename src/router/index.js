@@ -11,7 +11,6 @@ import LoginView from '@/views/LoginView.vue'
 import ProfileView from '@/views/ProfileView.vue'
 import RegisterView from '@/views/AuthPlaceholderView.vue'
 import ScheduleConfirmView from '@/views/ScheduleConfirmView.vue'
-import ScheduleDayView from '@/views/ScheduleDayView.vue'
 import SettingsView from '@/views/SettingsView.vue'
 import TestView from '@/views/TestView.vue'
 
@@ -53,7 +52,7 @@ const routes = [
   {
     path: '/schedule',
     name: 'schedule-day',
-    component: ScheduleDayView,
+    redirect: { name: 'profile' },
     meta: { requiresAuth: true },
   },
   {

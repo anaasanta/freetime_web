@@ -138,6 +138,7 @@ svg {
   padding: 14px 16px;
   background: var(--surface-strong);
   color: var(--foreground);
+  caret-color: var(--foreground);
   box-shadow: inset 0 1px 0 var(--surface-inset-highlight);
   transition:
     border-color 0.18s ease,
@@ -145,13 +146,22 @@ svg {
     background-color 0.18s ease;
 }
 
+.field-input,
+.field-input:focus,
+.field-input:-webkit-autofill,
+.field-input:-webkit-autofill:focus {
+  -webkit-text-fill-color: var(--foreground);
+}
+
 .field-input::placeholder {
   color: var(--foreground-muted-soft);
+  -webkit-text-fill-color: var(--foreground-muted-soft);
 }
 
 .field-input:focus {
   outline: none;
   border-color: var(--border-focus);
+  color: var(--foreground);
   box-shadow:
     0 0 0 4px color-mix(in srgb, var(--violet) 12%, transparent),
     inset 0 1px 0 var(--surface-inset-highlight);
