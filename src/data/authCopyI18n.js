@@ -34,6 +34,14 @@ export function getAuthCopy(language) {
           showLabel: 'Mostrar contraseña',
           hideLabel: 'Ocultar contraseña',
         },
+        errors: {
+          missingAll:
+            'Faltan datos: escribe el usuario y la contraseña para entrar.',
+          missingUsername: 'Falta el usuario: escribe el nombre o correo de la cuenta.',
+          missingPassword: 'Falta la contraseña: escribela para continuar.',
+          invalidCredentials:
+            'No hemos encontrado ninguna cuenta con esa combinacion. Revisa usuario y contraseña.',
+        },
       },
       forgotPassword: {
         ...authCopy.forgotPassword,
@@ -102,6 +110,14 @@ export function getAuthCopy(language) {
           showLabel: 'Show password',
           hideLabel: 'Hide password',
         },
+        errors: {
+          missingAll:
+            'Some details are missing: add your username and password, then try again.',
+          missingUsername: 'Username missing: add the name or email for the account.',
+          missingPassword: 'Password missing: add it to continue.',
+          invalidCredentials:
+            'We could not find an account with that combination. Check the username and password.',
+        },
       },
       forgotPassword: {
         ...authCopy.forgotPassword,
@@ -148,6 +164,14 @@ export function getAuthCopy(language) {
       },
       passwordToggle: {
         ...authCopy.login.passwordToggle,
+      },
+      errors: {
+        missingAll:
+          "Falten dades: escriu l'usuari i la contrasenya per entrar.",
+        missingUsername: "Falta l'usuari: escriu el nom o correu del compte.",
+        missingPassword: 'Falta la contrasenya: escriu-la per continuar.',
+        invalidCredentials:
+          'No hem trobat cap compte amb aquesta combinacio. Revisa usuari i contrasenya.',
       },
     },
     forgotPassword: authCopy.forgotPassword,

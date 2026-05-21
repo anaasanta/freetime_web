@@ -334,7 +334,11 @@ export function initializeAppSession() {
   isInitialized = true
 }
 
-export function login(credentials) {
+export function clearLoginError() {
+  loginError.value = ''
+}
+
+export function login(credentials, messages = {}) {
   // En este prototipo el login se compara con usuarios mock.
   const foundUser = mockUsers.find(
     (user) =>
@@ -342,7 +346,7 @@ export function login(credentials) {
   )
 
   if (!foundUser) {
-    loginError.value = appMessages.auth.invalidCredentials
+    loginError.value = messages.invalidCredentials ?? appMessages.auth.invalidCredentials
     return false
   }
 
@@ -579,6 +583,7 @@ export function useAppSession() {
     selectedActivitySource,
     scheduleDraft,
     login,
+    clearLoginError,
     logout,
     syncSelectedActivity,
     addSavedActivity,

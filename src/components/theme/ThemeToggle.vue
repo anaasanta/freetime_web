@@ -44,6 +44,14 @@ const iconComponent = computed(() => (currentTheme.value === 'dark' ? Moon : Sun
 
 <style scoped>
 .theme-toggle {
+  --bs-btn-color: var(--foreground);
+  --bs-btn-border-color: var(--border);
+  --bs-btn-hover-color: var(--foreground);
+  --bs-btn-hover-bg: color-mix(in srgb, var(--violet-soft) 62%, var(--surface-contrast));
+  --bs-btn-hover-border-color: var(--border-focus);
+  --bs-btn-active-color: var(--foreground);
+  --bs-btn-active-bg: color-mix(in srgb, var(--violet-soft) 70%, var(--surface-contrast));
+  --bs-btn-active-border-color: var(--border-focus);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -65,7 +73,13 @@ const iconComponent = computed(() => (currentTheme.value === 'dark' ? Moon : Sun
 .theme-toggle:hover {
   transform: translateY(-1px);
   box-shadow: var(--shadow-panel);
-  background: color-mix(in srgb, var(--surface-strong) 92%, transparent);
+  background: color-mix(in srgb, var(--violet-soft) 62%, var(--surface-contrast));
+  color: var(--foreground);
+}
+
+.theme-toggle svg {
+  color: currentColor;
+  stroke-width: 2.2;
 }
 
 .theme-toggle:focus-visible {

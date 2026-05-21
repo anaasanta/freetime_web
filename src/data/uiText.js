@@ -540,7 +540,8 @@ export const activityResultCopy = {
 
 export const appMessages = {
   auth: {
-    invalidCredentials: 'Usuari o contrasenya incorrectes.',
+    invalidCredentials:
+      'No hem trobat cap compte amb aquesta combinacio. Revisa usuari i contrasenya.',
   },
 }
 

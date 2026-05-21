@@ -1,5 +1,5 @@
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { Eye, EyeOff } from 'lucide-vue-next'
 import { mockUsers } from '@/data/mockUser'
@@ -18,7 +18,7 @@ import { useI18n } from '@/stores/i18n'
 
 const route = useRoute()
 const router = useRouter()
-const { loginError, login } = useAppSession()
+const { loginError, login, clearLoginError } = useAppSession()
 const { currentLanguage } = useI18n()
 
 const loginCopy = computed(() => getAuthCopy(currentLanguage.value).login)
@@ -26,6 +26,7 @@ const isPasswordVisible = ref(false)
 
 const username = ref(loginCopy.value.defaultCredentials.username)
 const password = ref(loginCopy.value.defaultCredentials.password)
+const loginValidationError = ref('')
 
 const primarySampleUser = computed(() => mockUsers[0] ?? null)
 
@@ -47,11 +48,41 @@ const passwordToggleLabel = computed(() =>
     : loginCopy.value.passwordToggle.showLabel,
 )
 
+const visibleLoginError = computed(() => loginValidationError.value || loginError.value)
+
+watch([username, password], () => {
+  loginValidationError.value = ''
+  clearLoginError()
+})
+
 function submitLogin() {
-  const isValid = login({
-    username: username.value.trim(),
-    password: password.value,
-  })
+  const trimmedUsername = username.value.trim()
+  const errors = loginCopy.value.errors
+
+  if (!trimmedUsername && !password.value) {
+    loginValidationError.value = errors.missingAll
+    return
+  }
+
+  if (!trimmedUsername) {
+    loginValidationError.value = errors.missingUsername
+    return
+  }
+
+  if (!password.value) {
+    loginValidationError.value = errors.missingPassword
+    return
+  }
+
+  const isValid = login(
+    {
+      username: trimmedUsername,
+      password: password.value,
+    },
+    {
+      invalidCredentials: errors.invalidCredentials,
+    },
+  )
 
   if (!isValid) return
 
@@ -131,8 +162,8 @@ function togglePasswordVisibility() {
             </span>
           </label>
 
-          <FormMessage v-if="loginError">
-            {{ loginError }}
+          <FormMessage v-if="visibleLoginError">
+            {{ visibleLoginError }}
           </FormMessage>
 
           <BaseButton type="submit">
