@@ -168,15 +168,18 @@ defineProps({
   display: flex;
   align-items: center;
   gap: 10px;
+  min-width: 0;
 }
 
 .landing-tooltip-wrap {
   justify-content: center;
+  min-width: 0;
 }
 
 .landing-navbar-button {
   min-height: 42px;
   padding-inline: 16px;
+  min-width: 0;
 }
 
 .landing-navbar-button:focus-visible {
@@ -217,6 +220,7 @@ defineProps({
   .landing-navbar {
     grid-template-columns: 1fr;
     align-items: stretch;
+    overflow: hidden;
   }
 
   .landing-navbar :deep(.app-navbar__start),
@@ -240,7 +244,7 @@ defineProps({
 
   .landing-navbar-actions {
     display: grid;
-    grid-template-columns: auto minmax(150px, 1fr) minmax(150px, 1fr);
+    grid-template-columns: auto minmax(0, 1fr) minmax(0, 1fr);
     width: 100%;
   }
 
@@ -259,7 +263,8 @@ defineProps({
 @media (max-width: 640px) {
   .landing-navbar-actions {
     width: 100%;
-    flex-direction: column;
+    grid-template-columns: 58px minmax(0, 1fr) minmax(0, 1fr);
+    gap: 8px;
   }
 
   .landing-tooltip-wrap {
@@ -268,6 +273,25 @@ defineProps({
 
   .landing-navbar-button {
     width: 100%;
+    padding-inline: 10px;
+    white-space: normal;
+  }
+}
+
+@media (max-width: 430px) {
+  .landing-navbar {
+    gap: 14px;
+    padding: 10px;
+  }
+
+  .landing-links {
+    gap: 8px;
+  }
+
+  .landing-navbar-button {
+    min-height: 48px;
+    font-size: clamp(0.86rem, 4vw, 1rem);
+    line-height: 1.15;
   }
 }
 </style>
