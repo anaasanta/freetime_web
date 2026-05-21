@@ -1,319 +1,70 @@
 <script setup>
-import { computed, nextTick, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import {
-  Amphora,
-  Bike,
-  BookOpen,
-  CircleHelp,
-  CirclePlay,
-  CookingPot,
-  Dumbbell,
-  Footprints,
-  HandFist,
-  Headphones,
-  Heart,
-  Languages,
-  MountainSnow,
-  Music,
-  NotebookPen,
-  Origami,
-  Palette,
-  Pencil,
-  Plus,
-  Rose,
-  ScissorsLineDashed,
-  Sparkles,
-  Spool,
-  SunMedium,
-  Volleyball,
-  Waves,
-  X,
-  Trash2,
-} from 'lucide-vue-next'
-import { getActivityByIdWithTranslations } from '@/data/activitiesCopyI18n'
-import { getActivityCopy, getActivityResultCopy } from '@/data/testCopyI18n'
+import { CircleHelp, Plus, Trash2, X } from 'lucide-vue-next'
 import AuthPromptModal from '@/components/ui/AuthPromptModal.vue'
 import BaseButton from '@/components/ui/BaseButton.vue'
 import EmptyState from '@/components/ui/EmptyState.vue'
 import FeedbackModal from '@/components/ui/FeedbackModal.vue'
+import { useActivityHeroAnimation } from '@/composables/activity-result/useActivityHeroAnimation'
+import { useActivityResult } from '@/composables/activity-result/useActivityResult'
 import { useI18n } from '@/stores/i18n'
-import {
-  addSavedActivity,
-  completeActivity,
-  rejectActivity,
-  removeSavedActivity,
-  startActivity,
-  syncSelectedActivity,
-  useAppSession,
-} from '@/stores/appSession'
+import { iconFor } from '@/utils/activityIcons'
 
 const route = useRoute()
 const router = useRouter()
 const { currentLanguage } = useI18n()
-const { currentUser, selectedActivity, selectedActivitySource, savedActivities, startedActivities } = useAppSession()
-
-const showRejectModal = ref(false)
-const showAuthPrompt = ref(false)
-const selectedRejectReason = ref('effort')
-// Referencias usadas para calcular desde donde empieza la animacion del icono.
-const detailVisualRef = ref(null)
-const detailIconRef = ref(null)
-let resizeObserver = null
-
-const showFinishModal = ref(false)
 const activityImageModules = import.meta.glob('../data/activity_images/*.png', {
   eager: true,
   import: 'default',
 })
 
-const activityCopy = computed(() => getActivityCopy(currentLanguage.value)) 
-const activityResultCopy = computed(() => getActivityResultCopy(currentLanguage.value))
-const isGuest = computed(() => !currentUser.value)
-const loginRoute = computed(() => ({
-  name: 'login',
-  query: { redirect: router.currentRoute.value.fullPath },
-}))
-const rejectionOptions = computed(() => Object.entries(activityResultCopy.value.rejectModal.options))
-const translatedActivity = computed(() => {
-  if (!selectedActivity.value) return null
-  return getActivityByIdWithTranslations(selectedActivity.value.id, currentLanguage.value) ?? selectedActivity.value
-})
-const activityImageSrc = computed(() => {
-  if (!selectedActivity.value) return null
-  return activityImageModules[`../data/activity_images/${selectedActivity.value.id}.png`] ?? null
-})
+const {
+  selectedActivity,
+  activityCopy,
+  activityResultCopy,
+  translatedActivity,
+  activityImageSrc,
+  loginRoute,
+  rejectionOptions,
+  selectedRejectReason,
+  showRejectModal,
+  showAuthPrompt,
+  showFinishModal,
+  isSaved,
+  isStarted,
+  canRejectActivity,
+  handleSaveToggle,
+  handleStart,
+  openAiConsult,
+  openFinishModal,
+  closeFinishModal,
+  closeDetail,
+  confirmFinish,
+  openRejectModal,
+  closeRejectModal,
+  closeAuthPrompt,
+  confirmReject,
+  skipRejectQuestion,
+} = useActivityResult({ route, router, currentLanguage, activityImageModules })
 
-function syncFromRoute() {
-  // La actividad seleccionada se sincroniza con la URL para poder entrar directo al detalle.
-  const activityId = typeof route.params.id === 'string' ? route.params.id : null
-  const source = typeof route.query.source === 'string' ? route.query.source : 'normal'
-  syncSelectedActivity(activityId, source)
-}
-
-watch(() => [route.params.id, route.query.source], syncFromRoute, { immediate: true })
-
-function updateDockStartPosition() {
-  if (!detailVisualRef.value || !detailIconRef.value) return
-
-  // Calculamos la diferencia entre la imagen grande y el icono final para animarlo bien.
-  const visualRect = detailVisualRef.value.getBoundingClientRect()
-  const iconRect = detailIconRef.value.getBoundingClientRect()
-  const visualCenterX = visualRect.left + visualRect.width / 2
-  const visualCenterY = visualRect.top + visualRect.height / 2
-  const iconCenterX = iconRect.left + iconRect.width / 2
-  const iconCenterY = iconRect.top + iconRect.height / 2
-
-  detailVisualRef.value.style.setProperty('--dock-start-x', `${visualCenterX - iconCenterX}px`)
-  detailVisualRef.value.style.setProperty('--dock-start-y', `${visualCenterY - iconCenterY}px`)
-}
-
-watch(
-  () => selectedActivity.value?.id,
-  async () => {
-    await nextTick()
-    updateDockStartPosition()
-  },
-)
-
-onMounted(() => {
-  updateDockStartPosition()
-
-  if (typeof ResizeObserver !== 'undefined') {
-    resizeObserver = new ResizeObserver(updateDockStartPosition)
-    if (detailVisualRef.value) resizeObserver.observe(detailVisualRef.value)
-  }
-})
-
-onBeforeUnmount(() => {
-  resizeObserver?.disconnect()
-})
-
-const isSaved = computed(() =>
-  selectedActivity.value
-    ? savedActivities.value.some((activity) => activity.id === selectedActivity.value.id)
-    : false,
-)
-
-const isStarted = computed(() =>
-  selectedActivity.value
-    ? startedActivities.value.some((activity) => activity.id === selectedActivity.value.id)
-    : false,
-)
-
-const canRejectActivity = computed(() => ['test', 'test-adjusted'].includes(selectedActivitySource.value) && !isStarted.value)
-
-// Relacionamos el nombre guardado en los datos con el icono que se muestra en pantalla.
-function iconFor(iconName) {
-  if (iconName === 'book') return BookOpen
-  if (iconName === 'dumbbell') return Dumbbell
-  if (iconName === 'footprints') return Footprints
-  if (iconName === 'headphones') return Headphones
-  if (iconName === 'palette') return Palette
-  if (iconName === 'pencil') return Pencil
-  if (iconName === 'heart') return Heart
-  if (iconName === 'amphora') return Amphora
-  if (iconName === 'bike') return Bike
-  if (iconName === 'circle-play') return CirclePlay
-  if (iconName === 'cooking-pot') return CookingPot
-  if (iconName === 'hand-fist') return HandFist
-  if (iconName === 'languages') return Languages
-  if (iconName === 'mountain-snow') return MountainSnow
-  if (iconName === 'music') return Music
-  if (iconName === 'notebook-pen') return NotebookPen
-  if (iconName === 'origami') return Origami
-  if (iconName === 'rose') return Rose
-  if (iconName === 'scissors-line-dashed') return ScissorsLineDashed
-  if (iconName === 'spool') return Spool
-  if (iconName === 'sun-medium') return SunMedium
-  if (iconName === 'volleyball') return Volleyball
-  if (iconName === 'waves') return Waves
-  return Sparkles
-}
-
-function handleSaveToggle() {
-  if (!selectedActivity.value) return
-  if (isGuest.value) {
-    // Si no hay sesion, mostramos el aviso antes de guardar nada.
-    showAuthPrompt.value = true
-    return
-  }
-
-  if (isSaved.value) {
-    removeSavedActivity(selectedActivity.value.id)
-  } else {
-    addSavedActivity(selectedActivity.value.id)
-  }
-}
-
-function handleStart() {
-  if (!selectedActivity.value) return
-  if (isGuest.value) {
-    // Empezar una actividad tambien requiere usuario identificado.
-    showAuthPrompt.value = true
-    return
-  }
-
-  startActivity(selectedActivity.value.id)
-}
-
-function openAiConsult() {
-  if (!selectedActivity.value) return
-  if (isGuest.value) {
-    showAuthPrompt.value = true
-    return
-  }
-
-  router.push({
-    name: 'ai-consult',
-    query: {
-      activityId: selectedActivity.value.id,
-      source: selectedActivitySource.value,
-    },
-  })
-}
-
-function openFinishModal() {
-  if (!selectedActivity.value) return
-  if (isGuest.value) {
-    showAuthPrompt.value = true
-    return
-  }
-
-  showFinishModal.value = true
-}
-
-function closeFinishModal() {
-  showFinishModal.value = false
-}
-
-function closeDetail() {
-  // Volvemos al perfil o a home segun desde donde se abrio el detalle.
-  const from = typeof route.query.from === 'string' ? route.query.from : ''
-  if (from === 'profile') {
-    router.push({ name: 'profile' })
-    return
-  }
-
-  router.push({ name: 'home' })
-}
-
-function confirmFinish(feedback) {
-  if (!selectedActivity.value) return
-
-  // Estos valores son simulados porque el prototipo no mide energía real todavía.
-  const moodDelta = [0, 5, 12, 22, 32, 42][feedback.moodImprovement] ?? 22
-  const energyBefore = 35
-  const energyAfter = Math.min(100, energyBefore + moodDelta)
-
-  completeActivity(selectedActivity.value.id, {
-    rating: feedback.rating,
-    moodImprovement: feedback.moodImprovement,
-    note: feedback.note,
-    energyBefore,
-    energyAfter,
-    date: new Date().toISOString(),
-  })
-
-  showFinishModal.value = false
-  router.push({ name: 'home' })
-}
-
-function openRejectModal() {
-  if (!selectedActivity.value) return
-  showRejectModal.value = true
-}
-
-function closeRejectModal() {
-  showRejectModal.value = false
-}
-
-function closeAuthPrompt() {
-  showAuthPrompt.value = false
-}
-
-function confirmReject() {
-  if (!selectedActivity.value) return
-
-  // Recalculamos una alternativa usando el motivo que ha elegido la usuaria.
-  const nextId = rejectActivity(selectedRejectReason.value)
-  showRejectModal.value = false
-
-  if (!nextId) {
-    router.replace({ name: 'home' })
-    return
-  }
-
-  router.replace({
-    name: 'activity',
-    params: { id: nextId },
-    query: { source: 'test-adjusted' },
-  })
-}
-
-function skipRejectQuestion() {
-  if (!selectedActivity.value) return
-
-  // Si no quiere responder, igualmente buscamos otra recomendación distinta.
-  const nextId = rejectActivity(null)
-  showRejectModal.value = false
-
-  if (!nextId) {
-    router.replace({ name: 'home' })
-    return
-  }
-
-  router.replace({
-    name: 'activity',
-    params: { id: nextId },
-    query: { source: 'test-adjusted' },
-  })
-}
+const { detailVisualRef, detailIconRef } = useActivityHeroAnimation(selectedActivity)
 </script>
 
 <template>
   <main class="app-page detail-page">
     <div v-if="selectedActivity && translatedActivity" class="detail-card">
+      <div class="detail-actions">
+        <button
+          class="close-detail-button btn"
+          type="button"
+          :aria-label="activityCopy.closeLabel"
+          :title="activityCopy.closeLabel"
+          @click="closeDetail"
+        >
+          <X :size="22" />
+        </button>
+      </div>
+
       <section ref="detailVisualRef" class="detail-visual" :class="`tone-${selectedActivity.tone}`">
         <div ref="detailIconRef" :key="selectedActivity.id" class="detail-icon detail-icon-docked activity-icon">
           <component :is="iconFor(selectedActivity.icon)" :size="78" />
@@ -338,16 +89,6 @@ function skipRejectQuestion() {
       </section>
 
       <section class="detail-content">
-        <button
-          class="close-detail-button btn"
-          type="button"
-          :aria-label="activityCopy.closeLabel"
-          :title="activityCopy.closeLabel"
-          @click="closeDetail"
-        >
-          <X :size="22" />
-        </button>
-
         <div class="info-grid">
           <div>
             <span>{{ activityResultCopy.labels.duration }}</span>
@@ -516,6 +257,7 @@ function skipRejectQuestion() {
 }
 
 .detail-card {
+  position: relative;
   display: grid;
   grid-template-columns: minmax(320px, 0.9fr) minmax(0, 1.1fr);
   width: 100%;
@@ -534,11 +276,16 @@ function skipRejectQuestion() {
 .detail-icon {
   display: grid;
   place-items: center;
-  width: clamp(72px, 7vw, 104px);
-  height: clamp(72px, 7vw, 104px);
-  border-radius: 28px;
+  width: clamp(92px, 8vw, 112px);
+  height: clamp(92px, 8vw, 112px);
+  border-radius: 30px;
   box-shadow: var(--shadow-soft);
   color: var(--foreground);
+}
+
+.detail-icon svg {
+  width: clamp(58px, 5.2vw, 76px);
+  height: clamp(58px, 5.2vw, 76px);
 }
 
 .detail-icon-docked {
@@ -632,7 +379,7 @@ function skipRejectQuestion() {
 .detail-content {
   position: relative;
   display: grid;
-  gap: 28px;
+  gap: 24px;
   align-content: start;
   min-width: 0;
   padding: clamp(34px, 4.5vw, 74px);
@@ -640,10 +387,16 @@ function skipRejectQuestion() {
   backdrop-filter: blur(14px);
 }
 
-.close-detail-button {
+.detail-actions {
   position: absolute;
   top: clamp(18px, 3vw, 30px);
   right: clamp(18px, 3vw, 30px);
+  z-index: 8;
+  display: flex;
+  justify-content: flex-end;
+}
+
+.close-detail-button {
   display: grid;
   place-items: center;
   width: 46px;
@@ -653,6 +406,7 @@ function skipRejectQuestion() {
   background: var(--card);
   color: var(--foreground);
   box-shadow: var(--shadow-panel);
+  pointer-events: auto;
 }
 
 .info-grid {
@@ -889,6 +643,11 @@ function skipRejectQuestion() {
     min-height: 78vh;
   }
 
+  .detail-actions {
+    top: clamp(18px, 4vw, 32px);
+    right: clamp(18px, 4vw, 32px);
+  }
+
   .info-grid {
     padding-right: 0;
   }
@@ -913,6 +672,17 @@ function skipRejectQuestion() {
   .detail-activity-image,
   .detail-image-fallback {
     width: min(100%, 360px);
+  }
+
+  .detail-icon {
+    width: 88px;
+    height: 88px;
+    border-radius: 28px;
+  }
+
+  .detail-icon svg {
+    width: 58px;
+    height: 58px;
   }
 
   .info-grid {
