@@ -10,6 +10,8 @@ const isDragging = ref(false)
 const panelRoot = ref(null)
 const position = ref({ x: 24, y: 24 })
 const dragOffset = ref({ x: 0, y: 0 })
+const dragStart = ref({ x: 0, y: 0 })
+const suppressNextClick = ref(false)
 
 const { t } = useI18n()
 
@@ -23,21 +25,35 @@ const popoverPositionClass = computed(() => {
 })
 
 function defaultPosition() {
-  if (typeof window === 'undefined') return { x: 24, y: 24 }
+  const viewport = getViewport()
+  if (!viewport) return { x: 24, y: 24 }
 
   return {
-    x: window.innerWidth - 84,
-    y: window.innerHeight - 84,
+    x: viewport.width - 84,
+    y: viewport.height - 104,
+  }
+}
+
+function getViewport() {
+  if (typeof window === 'undefined') return null
+
+  const visualViewport = window.visualViewport
+
+  return {
+    width: visualViewport?.width ?? window.innerWidth,
+    height: visualViewport?.height ?? window.innerHeight,
   }
 }
 
 function clampPosition(nextPosition) {
-  if (typeof window === 'undefined') return nextPosition
+  const viewport = getViewport()
+  if (!viewport) return nextPosition
 
   const buttonSize = 60
   const margin = 18
-  const maxX = window.innerWidth - buttonSize - margin
-  const maxY = window.innerHeight - buttonSize - margin
+  const bottomMargin = window.matchMedia?.('(max-width: 520px)').matches ? 92 : margin
+  const maxX = viewport.width - buttonSize - margin
+  const maxY = viewport.height - buttonSize - bottomMargin
 
   return {
     x: Math.max(margin, Math.min(nextPosition.x, maxX)),
@@ -71,23 +87,39 @@ function closePanel() {
 }
 
 function togglePanel() {
+  if (suppressNextClick.value) {
+    suppressNextClick.value = false
+    return
+  }
+
   isOpen.value = !isOpen.value
 }
 
 function handlePointerDown(event) {
-  if (event.button !== 0) return
+  if (event.button !== 0 && event.pointerType !== 'touch') return
 
   isDragging.value = true
+  suppressNextClick.value = false
+  dragStart.value = {
+    x: event.clientX,
+    y: event.clientY,
+  }
   dragOffset.value = {
     x: event.clientX - position.value.x,
     y: event.clientY - position.value.y,
   }
 
+  event.currentTarget.setPointerCapture?.(event.pointerId)
   event.preventDefault()
 }
 
 function handlePointerMove(event) {
   if (!isDragging.value) return
+
+  const draggedDistance = Math.hypot(event.clientX - dragStart.value.x, event.clientY - dragStart.value.y)
+  if (draggedDistance > 6) {
+    suppressNextClick.value = true
+  }
 
   position.value = clampPosition({
     x: event.clientX - dragOffset.value.x,
@@ -118,6 +150,8 @@ onMounted(() => {
   document.addEventListener('pointerup', handlePointerUp)
   document.addEventListener('pointerdown', handleDocumentPointerDown)
   window.addEventListener('resize', handleResize)
+  window.visualViewport?.addEventListener('resize', handleResize)
+  window.visualViewport?.addEventListener('scroll', handleResize)
 })
 
 onBeforeUnmount(() => {
@@ -125,6 +159,8 @@ onBeforeUnmount(() => {
   document.removeEventListener('pointerup', handlePointerUp)
   document.removeEventListener('pointerdown', handleDocumentPointerDown)
   window.removeEventListener('resize', handleResize)
+  window.visualViewport?.removeEventListener('resize', handleResize)
+  window.visualViewport?.removeEventListener('scroll', handleResize)
 })
 </script>
 
@@ -162,6 +198,7 @@ onBeforeUnmount(() => {
   left: 0;
   z-index: 9999;
   user-select: none;
+  touch-action: none;
 }
 
 .accessibility-fab__button {
@@ -176,6 +213,7 @@ onBeforeUnmount(() => {
   color: var(--foreground);
   box-shadow: var(--shadow-panel);
   cursor: grab;
+  touch-action: none;
   transition:
     transform 180ms ease,
     box-shadow 180ms ease,
